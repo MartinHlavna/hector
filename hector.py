@@ -471,7 +471,7 @@ text_editor = tk.Text(main_frame, wrap=tk.WORD)
 text_editor.config(font=("Helvetica", text_size))
 text_editor.pack(expand=1, fill=tk.BOTH)
 
-text_editor.bind("<KeyRelease>", lambda event: root.after(1000, debouncer.released))
+text_editor.bind("<KeyRelease>", lambda event: root.after(1000, analyze_text))
 text_editor.bind("<Control-a>", select_all)
 text_editor.bind("<Control-A>", select_all)
 # MOUSE WHEEL
