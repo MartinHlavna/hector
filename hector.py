@@ -19,6 +19,10 @@ BOLD_FONT = "bold"
 # LOCATION OF CONFIG
 CONFIG_FILE = 'config.json'
 
+# TIMER FOR DEBOUNCING EDITOR CHANGE EVENT
+analyze_text_debounce_timer = None
+
+
 # DEFAULT CONFIGURATION VALUES
 # SANE DEFAULTS FOR CREATIVE WRITTING
 default_config = {
@@ -72,25 +76,6 @@ READABILITY_INDICES_EXPLANATIONS = {
 
 
 # DEFINITION OF FUNCTIONS
-
-# DEBOUNCE DECORATOR IMPLEMENTATION
-def debounce(wait):
-    """ Decorator that will postpone a functions
-        execution until after wait seconds
-        have elapsed since the last time it was invoked. """
-    def decorator(fn):
-        def debounced(*args, **kwargs):
-            def call_it():
-                fn(*args, **kwargs)
-            try:
-                debounced.t.cancel()
-            except AttributeError:
-                pass
-            debounced.t = Timer(wait, call_it)
-            debounced.t.start()
-        return debounced
-    return decorator
-
 
 # CHANGE TEXT SIZE WHEN USER SCROLL MOUSEWHEEL WITH CTRL PRESSED
 # TODO: MAYBE ADD ANOTHER WAY OF CHANGING TEXT SIZE
@@ -356,9 +341,15 @@ def save_file():
 
 # ANALYZE TEXT
 def analyze_text(event=None):
+    # CLEAR DEBOUNCE TIMER IF ANY
+    global analyze_text_debounce_timer
+    analyze_text_debounce_timer = None
+    # GET TEXT FROM EDITOR
     text = text_editor.get(1.0, tk.END)
+    # CLEAR TAGS
     for tag in text_editor.tag_names():
         text_editor.tag_delete(tag)
+    # RUN ANALYSIS FUNCTIONS
     display_word_frequencies(text)
     display_size_info(text)
     highlight_long_sentences(text)
@@ -367,9 +358,11 @@ def analyze_text(event=None):
 
 
 # RUN ANALYSIS ONE SECOND AFTER LAST CHANGE
-@debounce(1)
 def analyze_text_debounced(event=None):
-    analyze_text(event)
+    global analyze_text_debounce_timer
+    if analyze_text_debounce_timer is not None:
+        root.after_cancel(analyze_text_debounce_timer)
+    analyze_text_debounce_timer = root.after(1000, analyze_text)
 
 # SELECT ALL TEXT
 # TODO: SELECT WORD ON DOUBLE CLICK
@@ -652,7 +645,6 @@ root.mainloop()
 
 # TODO LEVEL 0 (knowm bugs)
 # Long sentences: Sometimes start of sentence is not highlighted. Need to debug
-# Text editore glitches on reanalization
 
 # TODO LEVEL A (must have for "production"):
 # Redesign to have nice and intuitive UI
