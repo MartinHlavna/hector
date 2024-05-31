@@ -187,7 +187,7 @@ def highlight_long_sentences(text):
         return
     sentences = re.split(r'([.!?:]+)', text)
     start = 0
-    quote_at_start_pattern = re.compile(r'["“”‘’„«»‹›‟]\s*\S')
+    quote_at_start_pattern = re.compile(r'^["“”‘’„«»‹›‟]\s*\S')
     for sentence in sentences:
         if re.match(r'([.!?:]+)', sentence):
             start = start + len(sentence)
@@ -195,6 +195,12 @@ def highlight_long_sentences(text):
         end = start + len(sentence)
         highlight_start = start
         highlight_end = end
+        if sentence.startswith('\n'):
+            old_len = len(sentence)
+            sentence = sentence.replace('\n', '')
+            highlight_start += old_len - len(sentence)
+        if '\n' in sentence:
+            sentence = sentence.replace('\n', '')
         if quote_at_start_pattern.match(sentence):
             old_len = len(sentence)
             sentence = re.sub(quote_at_start_pattern, '', sentence)
@@ -202,10 +208,6 @@ def highlight_long_sentences(text):
         if sentence.startswith(' '):
             old_len = len(sentence)
             sentence = sentence.strip()
-            highlight_start += old_len - len(sentence)
-        if sentence.startswith('\n'):
-            old_len = len(sentence)
-            sentence = sentence.replace('\n', '')
             highlight_start += old_len - len(sentence)
         words = [word for word in sentence.split() if
                  len(re.sub(r'[.!?]+', '', word)) >= config["long_sentence_min_word_length"]]
@@ -644,7 +646,6 @@ menu_bar.add_cascade(label="Pomoc", menu=help_menu)
 root.mainloop()
 
 # TODO LEVEL 0 (knowm bugs)
-# Long sentences: Sometimes start of sentence is not highlighted. Need to debug
 
 # TODO LEVEL A (must have for "production"):
 # Redesign to have nice and intuitive UI
