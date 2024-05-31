@@ -63,16 +63,22 @@ text_size = 10
 close_word_colors = {}
 
 # EXPLANATIONS OF DIFFERENT READABILITY INDICES
-# TODO: Translate to SK
 READABILITY_INDICES_EXPLANATIONS = {
-    "Flesch-Kincaid Reading Ease": "This index rates text on a 0 to 100 scale, where higher scores mean easier text. Higher values indicate easier readability.",
-    "Flesch-Kincaid Grade Level": "This index estimates the grade level appropriate for the text. Lower numbers indicate easier text.",
-    "Gunning Fog Index": "This index estimates the years of formal education needed to understand the text on the first reading. Lower values indicate easier readability.",
-    "Automated Readability Index": "This index rates the readability of the text. Lower numbers indicate easier text.",
-    "Coleman-Liau Index": "This index is based on the number of letters and sentences per 100 words. Lower values indicate easier text.",
-    "SMOG Index": "This index estimates the years of formal education needed to understand text containing at least 30 sentences. Lower numbers indicate easier text.",
-    "Lexikálna rôznorodosť (Type-Token Ratio)": "The ratio of unique words (types) to total words (tokens). Higher values indicate greater lexical diversity."
+    "Flesch-Kincaid Reading Ease": "Tento index hodnotí text na stupnici od 0 do 100, kde vyššie skóre znamená "
+                                   "jednoduchší text. Vyššie hodnoty naznačujú ľahšiu čitateľnosť.",
+    "Flesch-Kincaid Grade Level": "Tento index odhaduje školskú úroveň, pre ktorú je text vhodný. Nižšie čísla "
+                                  "naznačujú jednoduchší text.",
+    "Gunning Fog Index": "Tento index odhaduje roky formálneho vzdelania potrebného na pochopenie textu pri prvom "
+                         "čítaní. Nižšie hodnoty naznačujú ľahšiu čitateľnosť.",
+    "Automated Readability Index": 'Tento index hodnotí čitateľnosť textu. Nižšie čísla naznačujú jednoduchší text.',
+    "Coleman-Liau Index": "Tento index je založený na počte písmen a viet na 100 slov. Nižšie hodnoty naznačujú "
+                          "jednoduchší text.",
+    "SMOG Index": "Tento index odhaduje roky formálneho vzdelania potrebného na pochopenie textu obsahujúceho aspoň "
+                  "30 viet. Nižšie čísla naznačujú jednoduchší text.",
+    "Lexikálna rôznorodosť (Type-Token Ratio)": "Pomer jedinečných slov k celkovému počtu slov. "
+                                                "Vyššie hodnoty naznačujú väčšiu lexikálnu rôznorodosť."
 }
+
 
 
 # DEFINITION OF FUNCTIONS
