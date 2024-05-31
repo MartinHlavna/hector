@@ -1,6 +1,7 @@
 import platform
 import random
 import tkinter as tk
+from threading import Timer
 from tkinter import filedialog, messagebox
 import textstat
 import re
@@ -69,7 +70,28 @@ READABILITY_INDICES_EXPLANATIONS = {
     "Lexikálna rôznorodosť (Type-Token Ratio)": "The ratio of unique words (types) to total words (tokens). Higher values indicate greater lexical diversity."
 }
 
+
 # DEFINITION OF FUNCTIONS
+
+# DEBOUNCE DECORATOR IMPLEMENTATION
+def debounce(wait):
+    """ Decorator that will postpone a functions
+        execution until after wait seconds
+        have elapsed since the last time it was invoked. """
+    def decorator(fn):
+        def debounced(*args, **kwargs):
+            def call_it():
+                fn(*args, **kwargs)
+            try:
+                debounced.t.cancel()
+            except AttributeError:
+                pass
+            debounced.t = Timer(wait, call_it)
+            debounced.t.start()
+        return debounced
+    return decorator
+
+
 # CHANGE TEXT SIZE WHEN USER SCROLL MOUSEWHEEL WITH CTRL PRESSED
 # TODO: MAYBE ADD ANOTHER WAY OF CHANGING TEXT SIZE
 def change_text_size(event):
@@ -180,7 +202,7 @@ def highlight_long_sentences(text):
         return
     sentences = re.split(r'([.!?:]+)', text)
     start = 0
-    quote_at_start_pattern = re.compile(r'["“”‘’„”«»‹›‟]\s*\S')
+    quote_at_start_pattern = re.compile(r'["“”‘’„«»‹›‟]\s*\S')
     for sentence in sentences:
         if re.match(r'([.!?:]+)', sentence):
             start = start + len(sentence)
@@ -343,6 +365,11 @@ def analyze_text(event=None):
     highlight_multiple_issues(text)
     highlight_close_words(text)
 
+
+# RUN ANALYSIS ONE SECOND AFTER LAST CHANGE
+@debounce(1)
+def analyze_text_debounced(event=None):
+    analyze_text(event)
 
 # SELECT ALL TEXT
 # TODO: SELECT WORD ON DOUBLE CLICK
@@ -558,7 +585,7 @@ text_editor.config(font=(HELVETICA_FONT_NAME, text_size))
 text_editor.pack(expand=1, fill=tk.BOTH)
 
 # MOUSE AND KEYBOARD BINDINGS FOR TEXT EDITOR
-text_editor.bind("<KeyRelease>", lambda event: root.after(1000, analyze_text))
+text_editor.bind("<KeyRelease>", analyze_text_debounced)
 text_editor.bind("<Control-a>", select_all)
 text_editor.bind("<Control-A>", select_all)
 # MOUSE WHEEL BINDING ON ROOT WINDOW
@@ -625,12 +652,12 @@ root.mainloop()
 
 # TODO LEVEL 0 (knowm bugs)
 # Long sentences: Sometimes start of sentence is not highlighted. Need to debug
+# Text editore glitches on reanalization
 
 # TODO LEVEL A (must have for "production"):
 # Redesign to have nice and intuitive UI
 # Optimize text processing algo. Currently we pass text for every functionality. On longer text,
 #   or after adding more functionality, this can be litlle clunky
-# Debounce change events in editor. We should reanalyze text only when user stops typing
 
 # TODO LEVEL B (nice to have features): Consider adding:
 # Heatmap?
