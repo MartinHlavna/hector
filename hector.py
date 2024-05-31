@@ -132,13 +132,13 @@ def save_config(c):
 # FUNCTION THAT CALCULATE READABILITY INDICES
 def calculate_readability_indices(text):
     indices = {
-        "Flesch-Kincaid Reading Ease": textstat.flesch_reading_ease(text),
-        "Flesch-Kincaid Grade Level": textstat.flesch_kincaid_grade(text),
-        "Gunning Fog Index": textstat.gunning_fog(text),
-        "Automated Readability Index": textstat.automated_readability_index(text),
-        "Coleman-Liau Index": textstat.coleman_liau_index(text),
-        "SMOG Index": textstat.smog_index(text),
-        "Lexikálna rôznorodosť (Type-Token Ratio)": lexical_diversity(text)
+        "Flesch-Kincaid Reading Ease": min(max(0, textstat.flesch_reading_ease(text)), 100),
+        "Flesch-Kincaid Grade Level": max(0, textstat.flesch_kincaid_grade(text)),
+        "Gunning Fog Index": max(0, textstat.gunning_fog(text)),
+        "Automated Readability Index": max(0, textstat.automated_readability_index(text)),
+        "Coleman-Liau Index": max(0, textstat.coleman_liau_index(text)),
+        "SMOG Index": max(0, textstat.smog_index(text)),
+        "Lexikálna rôznorodosť": max(0, round(lexical_diversity(text), 4))
     }
     return indices
 
@@ -146,6 +146,8 @@ def calculate_readability_indices(text):
 # CALCULATE LEXICAL DIVERSITY (RATIO OF UNIQUE WORDS TO ALL WORDS)
 def lexical_diversity(text):
     words = text.split()
+    if len(words) == 0:
+        return 0
     unique_words = set(words)
     return len(unique_words) / len(words)
 
