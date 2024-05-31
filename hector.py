@@ -1,13 +1,13 @@
-import platform
-import random
-import tkinter as tk
-from threading import Timer
-from tkinter import filedialog, messagebox
-import textstat
-import re
-from collections import Counter
 import json
 import os
+import platform
+import random
+import re
+import tkinter as tk
+from collections import Counter
+from tkinter import filedialog, messagebox
+
+import textstat
 
 # PREFIX FOR CLOSE WORD EDITOR TAGS
 CLOSE_WORD_PREFIX = "close_word_"
