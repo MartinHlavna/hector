@@ -22,6 +22,15 @@ CONFIG_FILE = 'config.json'
 # TIMER FOR DEBOUNCING EDITOR CHANGE EVENT
 analyze_text_debounce_timer = None
 
+dark_colors = [
+    '#8B0000',  # Dark Red
+    '#FF0000',  # Red
+    '#0000FF',  # Red
+    '#8B008B',  # Dark Magenta
+    '#FF4500',  # Orange Red
+    '#CD5C5C',  # Indian Red
+]
+
 
 # DEFAULT CONFIGURATION VALUES
 # SANE DEFAULTS FOR CREATIVE WRITTING
@@ -254,13 +263,7 @@ def highlight_multiple_issues(text):
 # RANDOMLY PICK COLOR FOR WORD
 def get_color_for_close_words():
     # TODO: CREATE PALLETE FOR SUITABLE COLORS
-    dark_colors = [
-        '#8B0000',  # Dark Red
-        '#FF0000',  # Red
-        '#8B008B',  # Dark Magenta
-        '#FF4500',  # Orange Red
-        '#CD5C5C',  # Indian Red
-    ]
+
     return random.choice(dark_colors)
 
 
@@ -567,10 +570,9 @@ root.title("Hector")
 # TODO: ACreate simple logo and add icon
 
 # OPEN WINDOW IN MAXIMIZED STATE
-# FOR WINDOWS SET STATE ZOOMED
+# FOR WINDOWS AND MAC OS SET STATE ZOOMED
 # FOR LINUX SET ATTRIBUTE ZOOMED
-# TODO: MacOs?
-if platform.system() == "Windows":
+if platform.system() == "Windows" or platform.system() == "Darwin":
     root.state("zoomed")
 else:
     root.attributes('-zoomed', True)
@@ -655,6 +657,7 @@ root.mainloop()
 # TODO LEVEL 0 (knowm bugs)
 
 # TODO LEVEL A (must have for "production"):
+# Replace readability indices with Mistrik based value
 # Redesign to have nice and intuitive UI
 # Optimize text processing algo. Currently we pass text for every functionality. On longer text,
 #   or after adding more functionality, this can be litlle clunky
