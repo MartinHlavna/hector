@@ -4,11 +4,9 @@ import platform
 import random
 import re
 import tkinter as tk
-from collections import Counter
 from tkinter import filedialog, messagebox
-import stanza
 
-import textstat
+import stanza
 
 
 class Statistics:
@@ -211,7 +209,9 @@ def display_word_frequencies():
     if not config["enable_frequent_words"]:
         return
     global statistics
-    words = {k: v for (k, v) in statistics.words.items() if len(k) >= config["repeated_words_min_word_length"] and len(v.occourences) >= config["repeated_words_min_word_frequency"]}
+    words = {k: v for (k, v) in statistics.words.items() if
+             len(k) >= config["repeated_words_min_word_length"] and len(v.occourences) >= config[
+                 "repeated_words_min_word_frequency"]}
     sorted_word_counts = sorted(words.values(), key=lambda x: len(x.occourences), reverse=True)
 
     # TODO
@@ -335,7 +335,7 @@ def highlight_close_words(text):
                 text_editor.tag_bind(tag_name, "<Leave>", lambda e, w=word.text.lower(): unhighlight_same_word(w))
 
 
-#HIGHLIGHT SAME WORD ON MOUSE OVER
+# HIGHLIGHT SAME WORD ON MOUSE OVER
 def highlight_same_word(word):
     for tag in text_editor.tag_names():
         if tag.startswith(f"{CLOSE_WORD_PREFIX}{word}"):
@@ -405,6 +405,7 @@ def analyze_text(event=None):
     highlight_multiple_issues(text)
     highlight_close_words(text)
     text_editor.tag_raise("sel")
+
 
 # RUN ANALYSIS ONE SECOND AFTER LAST CHANGE
 def analyze_text_debounced(event=None):
@@ -616,7 +617,8 @@ config = load_config()
 # MAIN GUI WINDOW
 root = tk.Tk()
 root.title("Hector")
-# TODO: ACreate simple logo and add icon
+photo = tk.PhotoImage(file='images/hector-icon.png')
+root.wm_iconphoto(False, photo)
 
 # OPEN WINDOW IN MAXIMIZED STATE
 # FOR WINDOWS AND MAC OS SET STATE ZOOMED
