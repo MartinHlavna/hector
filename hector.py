@@ -6,9 +6,34 @@ import re
 import tkinter as tk
 from collections import Counter
 from tkinter import filedialog, messagebox
+import stanza
 
 import textstat
 
+
+class Statistics:
+    # TOTAL CHARS IN DOCUMENT
+    total_chars = 0
+    # NUMBER OF TOTAL WORDS IN DOCUMENT. LOOKS LIKE STANZA COUNTS PUNCTATION AS WORDS
+    total_words = 0
+    # NUMBER OF NORM PAGES (1800 CHARS) IN DOCUMENT
+    total_pages = 0
+    # DICTIONARY OF ALL WORDS IN DOCUMENTS (UniqueWord)
+    words = {}
+
+
+class UniqueWord:
+    def __init__(self, text):
+        self.text = text
+        self.occourences = []
+
+
+# INITIALIZE NLP ENGINE
+stanza.download('sk')
+nlp = stanza.Pipeline('sk', processors='tokenize')
+doc = nlp('', processors='tokenize')
+# WE NEED TO COMPUTE SOME MORE INFORMATION
+statistics = Statistics()
 # PREFIX FOR CLOSE WORD EDITOR TAGS
 CLOSE_WORD_PREFIX = "close_word_"
 
@@ -30,7 +55,6 @@ dark_colors = [
     '#FF4500',  # Orange Red
     '#CD5C5C',  # Indian Red
 ]
-
 
 # DEFAULT CONFIGURATION VALUES
 # SANE DEFAULTS FOR CREATIVE WRITTING
@@ -85,7 +109,10 @@ READABILITY_INDICES_EXPLANATIONS = {
     "SMOG Index": "Tento index odhaduje roky formálneho vzdelania potrebného na pochopenie textu obsahujúceho aspoň "
                   "30 viet. Nižšie čísla naznačujú jednoduchší text.",
     "Lexikálna rôznorodosť (Type-Token Ratio)": "Pomer jedinečných slov k celkovému počtu slov. "
-                                                "Vyššie hodnoty naznačujú väčšiu lexikálnu rôznorodosť."
+                                                "Vyššie hodnoty naznačujú väčšiu lexikálnu rôznorodosť.",
+    "Mistríkov index": "Index postavený na práci slovenského jazykovedca Mistríka "
+                       "Vyššie hodnoty naznačujú väčšiu čitateľnosť."
+
 }
 
 
@@ -138,53 +165,60 @@ def save_config(c):
 
 
 # FUNCTION THAT CALCULATE READABILITY INDICES
-def calculate_readability_indices(text):
-    indices = {
-        "Flesch-Kincaid Reading Ease": min(max(0, textstat.flesch_reading_ease(text)), 100),
-        "Flesch-Kincaid Grade Level": max(0, textstat.flesch_kincaid_grade(text)),
-        "Gunning Fog Index": max(0, textstat.gunning_fog(text)),
-        "Automated Readability Index": max(0, textstat.automated_readability_index(text)),
-        "Coleman-Liau Index": max(0, textstat.coleman_liau_index(text)),
-        "SMOG Index": max(0, textstat.smog_index(text)),
-        "Lexikálna rôznorodosť": max(0, round(lexical_diversity(text), 4))
+def evaluate_readability(text: None):
+    # TODO: Allow to run on part of text
+    type_to_token_ratio = lexical_diversity(text)
+    avarege_sentence_length = statistics.total_words / len(doc.sentences)
+    avarege_word_length = statistics.total_chars / statistics.total_words / 2
+    # NOTE lexical_diversity index is oposite of mistrik index of repetition.
+    #  Therefore we need to use multiplication instead of division
+    mistrik_index = 50 - (avarege_sentence_length * avarege_word_length * type_to_token_ratio)
+
+    return {
+        "Počet unikátnych slov": len(statistics.words),
+        "Priemerná dĺžka slova": round(avarege_word_length * 2, 1),
+        "Priemerný počet slov vo vete": round(avarege_sentence_length, 1),
+        "Index opakovania": max(0.0, round(type_to_token_ratio, 4)),
+        "Mistríkov index": max(0.0, round(mistrik_index, 0))
     }
-    return indices
 
 
 # CALCULATE LEXICAL DIVERSITY (RATIO OF UNIQUE WORDS TO ALL WORDS)
-def lexical_diversity(text):
-    words = text.split()
-    if len(words) == 0:
+def lexical_diversity(text: None):
+    if statistics.total_words == 0:
         return 0
-    unique_words = set(words)
-    return len(unique_words) / len(words)
+    # UNIQUE WORDS / TOTAL WORDS
+    return len(statistics.words) / statistics.total_words
+
+
+# FUNCTION THAT WILL NORMALIZE DIFFERENT QUOTO MARKS TO SIMPLIFY PROCESSING
+def normalize_quotes(text):
+    quotes_pattern = r"[\"'“”‘’„”‟]"
+    normalized_text = re.sub(quotes_pattern, '\'', text)
+    return normalized_text
 
 
 # DISPLAY INFORMATIONS ABOUT TEXT SIZE
 # TODO: Split every size into its own Text element with label
-def display_size_info(text):
-    char_count = len(text)
-    word_count = len(text.split())
-    norm_pages = char_count / 1800
+def display_size_info():
     size_info_label.config(
-        text=f"Počet znakov s medzerami: {char_count}   Počet slov: {word_count}   Počet normostrán: {norm_pages:.2f}"
+        text=f"Počet znakov s medzerami: {statistics.total_chars}   Počet slov: {statistics.total_words}   Počet normostrán: {statistics.total_pages:.2f}"
     )
 
 
 # CALCULATE AND DISPLAY FREQUENT WORDS
-def display_word_frequencies(text):
+def display_word_frequencies():
     if not config["enable_frequent_words"]:
         return
-    words = re.findall(r'\w+', text.lower())
-    words = [word for word in words if len(word) >= config["repeated_words_min_word_length"]]
-    word_counts = Counter(words)
-    sorted_word_counts = sorted(word_counts.items(), key=lambda x: x[1], reverse=True)
+    global statistics
+    words = {k: v for (k, v) in statistics.words.items() if len(k) >= config["repeated_words_min_word_length"] and len(v.occourences) >= config["repeated_words_min_word_frequency"]}
+    sorted_word_counts = sorted(words.values(), key=lambda x: len(x.occourences), reverse=True)
 
     # TODO
     # In tk, there is problem with scrolling so we default to using on big text to dispaly frequencies
     # ugly but it works for now
     frequent_words_text = "\n".join(
-        [f"{word}: {count}x" for word, count in sorted_word_counts if count >= config["repeated_words_min_word_frequency"]]
+        [f"{word.text}: {len(word.occourences)}x" for word in sorted_word_counts]
     )
 
     # WE NEED TO ENBLE TEXT, DELETE CONTENT AND INSERT NEW TEXT
@@ -196,42 +230,22 @@ def display_word_frequencies(text):
 
 
 # HIGHLIGHT LONG SENTENCES
-# TODO: Optimize highlighting methods so we parse text only once
 def highlight_long_sentences(text):
     text_editor.tag_remove("long_sentence", "1.0", tk.END)
     if not config["enable_long_sentences"]:
         return
-    sentences = re.split(r'([.!?:]+)', text)
-    start = 0
-    quote_at_start_pattern = re.compile(r'^["“”‘’„«»‹›‟]\s*\S')
-    for sentence in sentences:
-        if re.match(r'([.!?:]+)', sentence):
-            start = start + len(sentence)
-            continue
-        end = start + len(sentence)
-        highlight_start = start
-        highlight_end = end
-        if sentence.startswith('\n'):
-            old_len = len(sentence)
-            sentence = sentence.replace('\n', '')
-            highlight_start += old_len - len(sentence)
-        if '\n' in sentence:
-            sentence = sentence.replace('\n', '')
-        if quote_at_start_pattern.match(sentence):
-            old_len = len(sentence)
-            sentence = re.sub(quote_at_start_pattern, '', sentence)
-            highlight_start += old_len - len(sentence) - 1
-        if sentence.startswith(' '):
-            old_len = len(sentence)
-            sentence = sentence.strip()
-            highlight_start += old_len - len(sentence)
-        words = [word for word in sentence.split() if
-                 len(re.sub(r'[.!?]+', '', word)) >= config["long_sentence_min_word_length"]]
-        if len(words) > config["long_sentence_words"] or len(sentence) > config["long_sentence_char_count"]:
+    for sentence in doc.sentences:
+        first_token = sentence.tokens[0]
+        last_token = sentence.tokens[len(sentence.tokens) - 1]
+        highlight_start = first_token.start_char
+        highlight_end = last_token.end_char
+
+        words = [word for word in sentence.words if
+                 len(word.text) >= config["long_sentence_min_word_length"]]
+        if len(words) > config["long_sentence_words"] or len(sentence.text) > config["long_sentence_char_count"]:
             start_index = f"1.0 + {highlight_start} chars"
             end_index = f"1.0 + {highlight_end} chars"
             text_editor.tag_add("long_sentence", start_index, end_index)
-        start = end
     text_editor.tag_config("long_sentence", background="yellow")
 
 
@@ -274,48 +288,54 @@ def highlight_close_words(text):
     if config["enable_close_words"]:
         text_editor.tag_remove("close_word", "1.0", tk.END)
         words = re.findall(r'\w+', text.lower())
-        word_positions = {}
-        close_word_positions = {}
+        clusters = []
+        words_nlp = {k: v for (k, v) in statistics.words.items() if len(k) >= config["close_words_min_word_length"]}
+        for unique_word in words_nlp.values():
+            # IF WORD DOES NOT OCCOUR ENOUGH TIMES WE DONT NEED TO CHECK IF ITS OCCOURENCES ARE CLOSE
+            if len(unique_word.occourences) < config["close_words_min_frequency"]:
+                continue
 
-        for match in re.finditer(r'\w+', text):
-            word = match.group().lower()
-            start_pos = match.start()
-            end_pos = match.end()
-
-            if len(word) >= config["close_words_min_word_length"]:
-                if word not in word_positions:
-                    word_positions[word] = []
-                word_positions[word].append((start_pos, end_pos))
-        for word, positions in word_positions.items():
-            for i, (start_pos, end_pos) in enumerate(positions):
-                if i == 0:
+            current_cluster = set()
+            reference = None
+            for word_occource in unique_word.occourences:
+                if reference is None:
+                    reference = word_occource
                     continue
-                if start_pos - positions[i - 1][1] <= config["close_words_min_distance_between_words"]:
-                    if word not in close_word_positions:
-                        close_word_positions[word] = []
-                    close_word_positions[word].append((positions[i - 1][0], positions[i - 1][1]))
-                    close_word_positions[word].append((start_pos, end_pos))
+                if word_occource.start_char - reference.start_char < config["close_words_min_distance_between_words"]:
+                    # IF OCCOURENCE IS TOO CLOSE TO REFERENCE ADD TO CURRENT CLUSTER
+                    current_cluster.add(reference)
+                    current_cluster.add(word_occource)
+                else:
+                    # CLUSTER IS BROKEN, START NEW
+                    if len(current_cluster) > config["close_words_min_frequency"]:
+                        clusters.append(current_cluster)
+                    current_cluster = set()
+                    # MOVE REFERENCE TO NEXT WORD
+                    reference = word_occource
+            # PUSH REMAINING CLUSTER
+            if len(current_cluster) >= config["close_words_min_frequency"]:
+                clusters.append(current_cluster)
 
-        for word, positions in close_word_positions.items():
-            if len(positions) >= config["close_words_min_frequency"]:
-                color = get_color_for_close_words()
-                for i, (start_pos, end_pos) in enumerate(positions):
-                    start_index = f"1.0 + {start_pos} chars"
-                    end_index = f"1.0 + {end_pos} chars"
-                    tag_name = f"{CLOSE_WORD_PREFIX}{word}"
-                    original_color = close_word_colors.get(tag_name, "")
-                    if original_color != "":
-                        color = original_color
-                    else:
-                        close_word_colors[tag_name] = color
-                    text_editor.tag_add(tag_name, start_index, end_index)
-                    text_editor.tag_config(tag_name, foreground=color, font=(HELVETICA_FONT_NAME, text_size + 2, BOLD_FONT))
-                    # ON MOUSE OVER, HIGHLIGHT SAME WORDS
-                    text_editor.tag_bind(tag_name, "<Enter>", lambda e, w=word: highlight_same_word(w))
-                    text_editor.tag_bind(tag_name, "<Leave>", lambda e, w=word: unhighlight_same_word(w))
+        for cluster in clusters:
+            color = get_color_for_close_words()
+            for word in cluster:
+                start_index = f"1.0 + {word.start_char} chars"
+                end_index = f"1.0 + {word.end_char} chars"
+                tag_name = f"{CLOSE_WORD_PREFIX}{word.text.lower()}"
+                original_color = close_word_colors.get(tag_name, "")
+                if original_color != "":
+                    color = original_color
+                else:
+                    close_word_colors[tag_name] = color
+                text_editor.tag_add(tag_name, start_index, end_index)
+                text_editor.tag_config(tag_name, foreground=color,
+                                       font=(HELVETICA_FONT_NAME, text_size + 2, BOLD_FONT))
+                # ON MOUSE OVER, HIGHLIGHT SAME WORDS
+                text_editor.tag_bind(tag_name, "<Enter>", lambda e, w=word.text.lower(): highlight_same_word(w))
+                text_editor.tag_bind(tag_name, "<Leave>", lambda e, w=word.text.lower(): unhighlight_same_word(w))
 
 
-# HIGHLIGHT SAME WORD ON MOUSE OVER
+#HIGHLIGHT SAME WORD ON MOUSE OVER
 def highlight_same_word(word):
     for tag in text_editor.tag_names():
         if tag.startswith(f"{CLOSE_WORD_PREFIX}{word}"):
@@ -355,19 +375,36 @@ def save_file():
 def analyze_text(event=None):
     # CLEAR DEBOUNCE TIMER IF ANY
     global analyze_text_debounce_timer
+    global doc
+    global statistics
     analyze_text_debounce_timer = None
     # GET TEXT FROM EDITOR
     text = text_editor.get(1.0, tk.END)
+    # RUN ANALYSIS
+    doc = nlp(text, processors='tokenize')
+    statistics.words = {}
+    statistics.total_words = 0
+    statistics.total_chars = len(text)
+    statistics.total_pages = round(statistics.total_chars / 1800, 2)
+    for sentence in doc.sentences:
+        for token in sentence.tokens:
+            if re.match('\\w', token.text):
+                statistics.total_words += 1
+                word = statistics.words.get(token.text.lower())
+                if word is None:
+                    word = UniqueWord(token.text.lower())
+                    statistics.words[token.text.lower()] = word
+                word.occourences.append(token)
     # CLEAR TAGS
     for tag in text_editor.tag_names():
         text_editor.tag_delete(tag)
     # RUN ANALYSIS FUNCTIONS
-    display_word_frequencies(text)
-    display_size_info(text)
+    display_word_frequencies()
+    display_size_info()
     highlight_long_sentences(text)
     highlight_multiple_issues(text)
     highlight_close_words(text)
-
+    text_editor.tag_raise("sel")
 
 # RUN ANALYSIS ONE SECOND AFTER LAST CHANGE
 def analyze_text_debounced(event=None):
@@ -376,8 +413,8 @@ def analyze_text_debounced(event=None):
         root.after_cancel(analyze_text_debounce_timer)
     analyze_text_debounce_timer = root.after(1000, analyze_text)
 
+
 # SELECT ALL TEXT
-# TODO: SELECT WORD ON DOUBLE CLICK
 def select_all(event=None):
     text_editor.tag_add(tk.SEL, "1.0", tk.END)
     return "break"
@@ -411,11 +448,14 @@ def show_settings():
 
     # TODO: WE NEED TO DESIGN THIS A BIT
     # Frequent words settings
-    tk.Label(settings_window, text="Časté slová", font=(HELVETICA_FONT_NAME, 14, BOLD_FONT), anchor='w').grid(row=0, column=0,
-                                                                                                   columnspan=2,
-                                                                                                   padx=10,
-                                                                                                   pady=(10, 2),
-                                                                                                   sticky='w')
+    tk.Label(settings_window, text="Časté slová", font=(HELVETICA_FONT_NAME, 14, BOLD_FONT), anchor='w').grid(row=0,
+                                                                                                              column=0,
+                                                                                                              columnspan=2,
+                                                                                                              padx=10,
+                                                                                                              pady=(
+                                                                                                                  10,
+                                                                                                                  2),
+                                                                                                              sticky='w')
     tk.Label(settings_window, text="Minimálna dĺžka slova v znakoch", anchor='w').grid(row=1, column=0, padx=10, pady=2,
                                                                                        sticky='w')
     repeated_words_min_word_length_entry = tk.Entry(settings_window)
@@ -436,10 +476,13 @@ def show_settings():
     tk.Label(settings_window, text="", anchor='w').grid(row=4, column=0, padx=10, pady=5, sticky='w')
 
     # Long sentences settings
-    tk.Label(settings_window, text="Dlhé vety", font=(HELVETICA_FONT_NAME, 14, BOLD_FONT), anchor='w').grid(row=5, column=0,
-                                                                                                 columnspan=2, padx=10,
-                                                                                                 pady=(10, 2),
-                                                                                                 sticky='w')
+    tk.Label(settings_window, text="Dlhé vety", font=(HELVETICA_FONT_NAME, 14, BOLD_FONT), anchor='w').grid(row=5,
+                                                                                                            column=0,
+                                                                                                            columnspan=2,
+                                                                                                            padx=10,
+                                                                                                            pady=(
+                                                                                                                10, 2),
+                                                                                                            sticky='w')
     tk.Label(settings_window, text="Zvýrazniť vety, ktoré majú väčší počet slov", anchor='w').grid(row=6, column=0,
                                                                                                    padx=10, pady=2,
                                                                                                    sticky='w')
@@ -467,12 +510,13 @@ def show_settings():
     tk.Label(settings_window, text="", anchor='w').grid(row=10, column=0, padx=10, pady=5, sticky='w')
 
     # Multiple spaces settings
-    tk.Label(settings_window, text="Viacnásobné medzery", font=(HELVETICA_FONT_NAME, 14, BOLD_FONT), anchor='w').grid(row=11,
-                                                                                                           column=0,
-                                                                                                           columnspan=2,
-                                                                                                           padx=10,
-                                                                                                           pady=(10, 2),
-                                                                                                           sticky='w')
+    tk.Label(settings_window, text="Viacnásobné medzery", font=(HELVETICA_FONT_NAME, 14, BOLD_FONT), anchor='w').grid(
+        row=11,
+        column=0,
+        columnspan=2,
+        padx=10,
+        pady=(10, 2),
+        sticky='w')
     multiple_spaces_var = tk.BooleanVar(value=config["enable_multiple_spaces"])
     multiple_spaces_checkbox = tk.Checkbutton(settings_window, text="Povolené", variable=multiple_spaces_var)
     multiple_spaces_checkbox.grid(row=12, column=1, padx=10, pady=2, sticky='w')
@@ -481,13 +525,14 @@ def show_settings():
     tk.Label(settings_window, text="", anchor='w').grid(row=13, column=0, padx=10, pady=5, sticky='w')
 
     # Multiple punctuation settings
-    tk.Label(settings_window, text="Viacnásobná interpunkcia", font=(HELVETICA_FONT_NAME, 14, BOLD_FONT), anchor='w').grid(row=14,
-                                                                                                                column=0,
-                                                                                                                columnspan=2,
-                                                                                                                padx=10,
-                                                                                                                pady=(
-                                                                                                                    10, 2),
-                                                                                                                sticky='w')
+    tk.Label(settings_window, text="Viacnásobná interpunkcia", font=(HELVETICA_FONT_NAME, 14, BOLD_FONT),
+             anchor='w').grid(row=14,
+                              column=0,
+                              columnspan=2,
+                              padx=10,
+                              pady=(
+                                  10, 2),
+                              sticky='w')
     multiple_punctuation_var = tk.BooleanVar(value=config["enable_multiple_punctuation"])
     multiple_punctuation_checkbox = tk.Checkbutton(settings_window, text="Povolené", variable=multiple_punctuation_var)
     multiple_punctuation_checkbox.grid(row=15, column=1, padx=10, pady=2, sticky='w')
@@ -496,24 +541,26 @@ def show_settings():
     tk.Label(settings_window, text="", anchor='w').grid(row=16, column=0, padx=10, pady=5, sticky='w')
 
     # Trailing spaces settings
-    tk.Label(settings_window, text="Medzery na konci odstavca", font=(HELVETICA_FONT_NAME, 14, BOLD_FONT), anchor='w').grid(row=17,
-                                                                                                                 column=0,
-                                                                                                                 columnspan=2,
-                                                                                                                 padx=10,
-                                                                                                                 pady=(
-                                                                                                                     10, 2),
-                                                                                                                 sticky='w')
+    tk.Label(settings_window, text="Medzery na konci odstavca", font=(HELVETICA_FONT_NAME, 14, BOLD_FONT),
+             anchor='w').grid(row=17,
+                              column=0,
+                              columnspan=2,
+                              padx=10,
+                              pady=(
+                                  10, 2),
+                              sticky='w')
     trailing_spaces_var = tk.BooleanVar(value=config["enable_trailing_spaces"])
     trailing_spaces_checkbox = tk.Checkbutton(settings_window, text="Povolené", variable=trailing_spaces_var)
     trailing_spaces_checkbox.grid(row=18, column=1, padx=10, pady=2, sticky='w')
 
     # Close words settings
-    tk.Label(settings_window, text="Slová blízko seba", font=(HELVETICA_FONT_NAME, 14, BOLD_FONT), anchor='w').grid(row=20,
-                                                                                                         column=0,
-                                                                                                         columnspan=2,
-                                                                                                         padx=10,
-                                                                                                         pady=(10, 2),
-                                                                                                         sticky='w')
+    tk.Label(settings_window, text="Slová blízko seba", font=(HELVETICA_FONT_NAME, 14, BOLD_FONT), anchor='w').grid(
+        row=20,
+        column=0,
+        columnspan=2,
+        padx=10,
+        pady=(10, 2),
+        sticky='w')
     tk.Label(settings_window, text="Minimálna dlžka slova", anchor='w').grid(row=21, column=0, padx=10, pady=2,
                                                                              sticky='w')
     close_words_min_word_length_entry = tk.Entry(settings_window)
@@ -528,7 +575,8 @@ def show_settings():
     close_words_min_distance_between_words_entry.insert(0, str(config["close_words_min_distance_between_words"]))
 
     tk.Label(settings_window, text="Minimálna početnosť opakujúceho sa slova", anchor='w').grid(row=23, column=0,
-                                                                                                padx=10, pady=2, sticky='w')
+                                                                                                padx=10, pady=2,
+                                                                                                sticky='w')
     close_words_min_frequency_entry = tk.Entry(settings_window)
     close_words_min_frequency_entry.grid(row=23, column=1, padx=10, pady=2)
     close_words_min_frequency_entry.insert(0, str(config["close_words_min_frequency"]))
@@ -549,9 +597,10 @@ def show_about():
 
 # CALCULATE AND SHOW VARIOUS READABILITY INDECES WITH EXPLANATIONS
 def show_readability_indices():
-    indices = calculate_readability_indices(text_editor.get(1.0, tk.END))
+    indices = evaluate_readability(text_editor.get(1.0, tk.END))
     results = "\n".join([f"{index}: {value}" for index, value in indices.items()])
-    explanations_text = "\n\n".join([f"{index}:\n{explanation}" for index, explanation in READABILITY_INDICES_EXPLANATIONS.items()])
+    explanations_text = "\n\n".join(
+        [f"{index}:\n{explanation}" for index, explanation in READABILITY_INDICES_EXPLANATIONS.items()])
     index_window = tk.Toplevel(root)
     index_window.title("Indexy čitateľnosti")
     index_text = tk.Text(index_window, wrap=tk.WORD, font=("Arial", 10))
@@ -603,7 +652,8 @@ root.bind("<Button-5>", change_text_size)
 side_panel = tk.Frame(root, width=200, relief=tk.SUNKEN, borderwidth=1)
 side_panel.pack(fill=tk.BOTH, side=tk.RIGHT)
 
-word_freq_title = tk.Label(side_panel, text="Časté slová", font=(HELVETICA_FONT_NAME, 14, BOLD_FONT), anchor='n', justify='left')
+word_freq_title = tk.Label(side_panel, text="Časté slová", font=(HELVETICA_FONT_NAME, 14, BOLD_FONT), anchor='n',
+                           justify='left')
 word_freq_title.pack()
 
 word_freq_scroll = tk.Scrollbar(side_panel)
@@ -657,13 +707,12 @@ root.mainloop()
 # TODO LEVEL 0 (knowm bugs)
 
 # TODO LEVEL A (must have for "production"):
-# Replace readability indices with Mistrik based value
 # Redesign to have nice and intuitive UI
 # Optimize text processing algo. Currently we pass text for every functionality. On longer text,
 #   or after adding more functionality, this can be litlle clunky
 
 # TODO LEVEL B (nice to have features): Consider adding:
 # Heatmap?
-# Commas analysis based on some NLP apporach? Maybe SlovakBert model could help
+# Commas analysis based on some NLP apporach?
 # Left side panel with list of close words. On mouse over word, highlight words in editor
 # Highlighting words selected in right panel
