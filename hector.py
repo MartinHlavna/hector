@@ -8,30 +8,7 @@ from tkinter import filedialog, messagebox
 
 import stanza
 
-
-class Statistics:
-    # TOTAL CHARS IN DOCUMENT
-    total_chars = 0
-    # NUMBER OF TOTAL WORDS IN DOCUMENT. LOOKS LIKE STANZA COUNTS PUNCTATION AS WORDS
-    total_words = 0
-    # NUMBER OF NORM PAGES (1800 CHARS) IN DOCUMENT
-    total_pages = 0
-    # DICTIONARY OF ALL WORDS IN DOCUMENTS (UniqueWord)
-    words = {}
-
-
-class UniqueWord:
-    def __init__(self, text):
-        self.text = text
-        self.occourences = []
-
-
-# INITIALIZE NLP ENGINE
-stanza.download('sk')
-nlp = stanza.Pipeline('sk', processors='tokenize')
-doc = nlp('', processors='tokenize')
-# WE NEED TO COMPUTE SOME MORE INFORMATION
-statistics = Statistics()
+# CONSTANTS
 # PREFIX FOR CLOSE WORD EDITOR TAGS
 CLOSE_WORD_PREFIX = "close_word_"
 
@@ -42,9 +19,7 @@ BOLD_FONT = "bold"
 # LOCATION OF CONFIG
 CONFIG_FILE = 'config.json'
 
-# TIMER FOR DEBOUNCING EDITOR CHANGE EVENT
-analyze_text_debounce_timer = None
-
+# COLOR PALLETE FOR CLOSE WORDS
 dark_colors = [
     '#8B0000',  # Dark Red
     '#FF0000',  # Red
@@ -87,113 +62,132 @@ default_config = {
     "enable_close_words": True,
 }
 
-# DEFAULT TEXT SIZE IN EDITOR
-text_size = 10
 
-# DICTIONARY THAT HOLDS COLOR OF WORD TO PREVENT RECOLORING ON TYPING
-close_word_colors = {}
+# CLASS DEFINITIONS
+# TEXT STATISTICS
+class Statistics:
+    # TOTAL CHARS IN DOCUMENT
+    total_chars = 0
+    # NUMBER OF TOTAL WORDS IN DOCUMENT. LOOKS LIKE STANZA COUNTS PUNCTATION AS WORDS
+    total_words = 0
+    # NUMBER OF NORM PAGES (1800 CHARS) IN DOCUMENT
+    total_pages = 0
+    # DICTIONARY OF ALL WORDS IN DOCUMENTS (UniqueWord)
+    words = {}
 
-# EXPLANATIONS OF DIFFERENT READABILITY INDICES
-READABILITY_INDICES_EXPLANATIONS = {
-    "Flesch-Kincaid Reading Ease": "Tento index hodnotí text na stupnici od 0 do 100, kde vyššie skóre znamená "
-                                   "jednoduchší text. Vyššie hodnoty naznačujú ľahšiu čitateľnosť.",
-    "Flesch-Kincaid Grade Level": "Tento index odhaduje školskú úroveň, pre ktorú je text vhodný. Nižšie čísla "
-                                  "naznačujú jednoduchší text.",
-    "Gunning Fog Index": "Tento index odhaduje roky formálneho vzdelania potrebného na pochopenie textu pri prvom "
-                         "čítaní. Nižšie hodnoty naznačujú ľahšiu čitateľnosť.",
-    "Automated Readability Index": 'Tento index hodnotí čitateľnosť textu. Nižšie čísla naznačujú jednoduchší text.',
-    "Coleman-Liau Index": "Tento index je založený na počte písmen a viet na 100 slov. Nižšie hodnoty naznačujú "
-                          "jednoduchší text.",
-    "SMOG Index": "Tento index odhaduje roky formálneho vzdelania potrebného na pochopenie textu obsahujúceho aspoň "
-                  "30 viet. Nižšie čísla naznačujú jednoduchší text.",
-    "Lexikálna rôznorodosť (Type-Token Ratio)": "Pomer jedinečných slov k celkovému počtu slov. "
-                                                "Vyššie hodnoty naznačujú väčšiu lexikálnu rôznorodosť.",
-    "Mistríkov index": "Index postavený na práci slovenského jazykovedca Mistríka "
-                       "Vyššie hodnoty naznačujú väčšiu čitateľnosť."
 
-}
+# UNIQUE WORD WITH IT's OCCOURENCES
+class UniqueWord:
+    def __init__(self, text):
+        self.text = text
+        self.occourences = []
+
+
+# MAIN GUI WINDOW
+class MainWindow:
+    nlp: stanza.Pipeline = None
+
+    def __init__(self, _nlp: stanza.Pipeline):
+        self.nlp = _nlp
+
+    # TIMER FOR DEBOUNCING EDITOR CHANGE EVENT
+    analyze_text_debounce_timer = None
+    doc = nlp('', processors='tokenize')
+    # WE NEED TO COMPUTE SOME MORE INFORMATION
+    statistics = Statistics()
+    # EDITOR TEXT SIZE
+    text_size = 10
+    # DICTIONARY THAT HOLDS COLOR OF WORD TO PREVENT RECOLORING ON TYPING
+    close_word_colors = {}
+
+    # CHANGE TEXT SIZE WHEN USER SCROLL MOUSEWHEEL WITH CTRL PRESSED
+    # TODO: MAYBE ADD ANOTHER WAY OF CHANGING TEXT SIZE
+    def change_text_size(self, event):
+        # CHECK IF CTRL IS PRESSED
+        if event.state & 0x0004:
+            # ON WINDOWS IF USER SCROLLS "UP" event.delta IS POSITIVE
+            # ON LINUX IF USER SCROLLS "UP" event.num IS 4
+            # TODO What about mac os?
+            if event.delta > 0 or event.num == 4:
+                self.text_size += 1
+            # ON WINDOWS IF USER SCROLLS "DOWN" event.delta IS NEGATIVE
+            # ON LINUX IF USER SCROLLS "DOWN" event.num IS 5
+            # TODO What about mac os?
+            elif event.delta < 0 or event.num == 5:
+                self.text_size -= 1
+
+            # CHANGE FONT SIZE IN EDITOR
+            text_editor.config(font=(HELVETICA_FONT_NAME, self.text_size))
+            # CLOSE WORDS ARE ALWAYS HIGHLIGHTED WITH BIGGER FONT. WE NEED TO UPDATE TAGS
+            for tag in text_editor.tag_names():
+                if tag.startswith(CLOSE_WORD_PREFIX):
+                    text_editor.tag_configure(tagName=tag, font=(HELVETICA_FONT_NAME, self.text_size + 2, BOLD_FONT))
+
+    # FUNCTION THAT LOADS CONFIG FROM FILE
+    def load_config(self):
+        if os.path.exists(CONFIG_FILE):
+            with open(CONFIG_FILE, 'r') as file:
+                c = json.load(file)
+                # CHECK IF ALL CONFIG_KEYS ARE PRESENT
+                # PROVIDE MISSING KEYS FROM DEFAULTS
+                for key, value in default_config.items():
+                    if key not in c:
+                        c[key] = value
+                return c
+        else:
+            return default_config
+
+    # FUNCTION THAT SAVES CONFIG TO FILE
+    def save_config(self, c):
+        with open(CONFIG_FILE, 'w') as file:
+            json.dump(c, file, indent=4)
+
+    # FUNCTION THAT CALCULATE READABILITY INDICES
+    def evaluate_readability(self, text: None):
+        # TODO: Allow to run on part of text
+        type_to_token_ratio = self.lexical_diversity(text)
+        avarege_sentence_length = statistics.total_words / len(doc.sentences)
+        avarege_word_length = statistics.total_chars / statistics.total_words / 2
+        # NOTE lexical_diversity index is oposite of mistrik index of repetition.
+        #  Therefore we need to use multiplication instead of division
+        mistrik_index = 50 - (avarege_sentence_length * avarege_word_length * type_to_token_ratio)
+
+        return {
+            "Počet unikátnych slov": len(statistics.words),
+            "Priemerná dĺžka slova": round(avarege_word_length * 2, 1),
+            "Priemerný počet slov vo vete": round(avarege_sentence_length, 1),
+            "Index opakovania": max(0.0, round(type_to_token_ratio, 4)),
+            "Mistríkov index": max(0.0, round(mistrik_index, 0))
+        }
+
+    # CALCULATE LEXICAL DIVERSITY (RATIO OF UNIQUE WORDS TO ALL WORDS)
+    def lexical_diversity(self, text: None):
+        if statistics.total_words == 0:
+            return 0
+        # UNIQUE WORDS / TOTAL WORDS
+        return len(statistics.words) / statistics.total_words
+
+    # FUNCTION THAT WILL NORMALIZE DIFFERENT QUOTO MARKS TO SIMPLIFY PROCESSING
+    def normalize_quotes(self, text):
+        quotes_pattern = r"[\"'“”‘’„”‟]"
+        normalized_text = re.sub(quotes_pattern, '\'', text)
+        return normalized_text
+
+
+# SPLASH SCREEN TO SHOW WHILE INITIALIZING MAIN APP
+class SplashWindow:
+    fixme = "true"
+
+
+# INITIALIZE NLP ENGINE
+stanza.download('sk')
+nlp = stanza.Pipeline('sk', processors='tokenize')
 
 
 # DEFINITION OF FUNCTIONS
 
-# CHANGE TEXT SIZE WHEN USER SCROLL MOUSEWHEEL WITH CTRL PRESSED
-# TODO: MAYBE ADD ANOTHER WAY OF CHANGING TEXT SIZE
-def change_text_size(event):
-    global text_size
-    # CHECK IF CTRL IS PRESSED
-    if event.state & 0x0004:
-        # ON WINDOWS IF USER SCROLLS "UP" event.delta IS POSITIVE
-        # ON LINUX IF USER SCROLLS "UP" event.num IS 4
-        # TODO What about mac os?
-        if event.delta > 0 or event.num == 4:
-            text_size += 1
-        # ON WINDOWS IF USER SCROLLS "DOWN" event.delta IS NEGATIVE
-        # ON LINUX IF USER SCROLLS "DOWN" event.num IS 5
-        # TODO What about mac os?
-        elif event.delta < 0 or event.num == 5:
-            text_size -= 1
-
-        # CHANGE FONT SIZE IN EDITOR
-        text_editor.config(font=(HELVETICA_FONT_NAME, text_size))
-        # CLOSE WORDS ARE ALWAYS HIGHLIGHTED WITH BIGGER FONT. WE NEED TO UPDATE TAGS
-        for tag in text_editor.tag_names():
-            if tag.startswith(CLOSE_WORD_PREFIX):
-                text_editor.tag_configure(tagName=tag, font=(HELVETICA_FONT_NAME, text_size + 2, BOLD_FONT))
 
 
-# FUNCTION THAT LOADS CONFIG FROM FILE
-def load_config():
-    if os.path.exists(CONFIG_FILE):
-        with open(CONFIG_FILE, 'r') as file:
-            c = json.load(file)
-            # CHECK IF ALL CONFIG_KEYS ARE PRESENT
-            # PROVIDE MISSING KEYS FROM DEFAULTS
-            for key, value in default_config.items():
-                if key not in c:
-                    c[key] = value
-            return c
-    else:
-        return default_config
-
-
-# FUNCTION THAT SAVES CONFIG TO FILE
-def save_config(c):
-    with open(CONFIG_FILE, 'w') as file:
-        json.dump(c, file, indent=4)
-
-
-# FUNCTION THAT CALCULATE READABILITY INDICES
-def evaluate_readability(text: None):
-    # TODO: Allow to run on part of text
-    type_to_token_ratio = lexical_diversity(text)
-    avarege_sentence_length = statistics.total_words / len(doc.sentences)
-    avarege_word_length = statistics.total_chars / statistics.total_words / 2
-    # NOTE lexical_diversity index is oposite of mistrik index of repetition.
-    #  Therefore we need to use multiplication instead of division
-    mistrik_index = 50 - (avarege_sentence_length * avarege_word_length * type_to_token_ratio)
-
-    return {
-        "Počet unikátnych slov": len(statistics.words),
-        "Priemerná dĺžka slova": round(avarege_word_length * 2, 1),
-        "Priemerný počet slov vo vete": round(avarege_sentence_length, 1),
-        "Index opakovania": max(0.0, round(type_to_token_ratio, 4)),
-        "Mistríkov index": max(0.0, round(mistrik_index, 0))
-    }
-
-
-# CALCULATE LEXICAL DIVERSITY (RATIO OF UNIQUE WORDS TO ALL WORDS)
-def lexical_diversity(text: None):
-    if statistics.total_words == 0:
-        return 0
-    # UNIQUE WORDS / TOTAL WORDS
-    return len(statistics.words) / statistics.total_words
-
-
-# FUNCTION THAT WILL NORMALIZE DIFFERENT QUOTO MARKS TO SIMPLIFY PROCESSING
-def normalize_quotes(text):
-    quotes_pattern = r"[\"'“”‘’„”‟]"
-    normalized_text = re.sub(quotes_pattern, '\'', text)
-    return normalized_text
 
 
 # DISPLAY INFORMATIONS ABOUT TEXT SIZE
