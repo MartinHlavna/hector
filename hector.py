@@ -4,13 +4,23 @@ import platform
 import random
 import re
 import tkinter as tk
-from tkinter import filedialog, messagebox
+from tkinter import filedialog, messagebox, ttk
+from ttkthemes import ThemedTk
 
 import stanza
 from PIL import ImageTk, Image
 
+EDITOR_LOGO_HEIGHT = 300
+
+EDITOR_LOGO_WIDTH = 300
+
+TEXT_COLOR_WHITE = "#ffffff"
+
 # COLORS
 PRIMARY_BLUE = "#42659d"
+LIGHT_BLUE = "#bfd5e3"
+MID_BLUE = "#7ea6d7"
+LIGHT_WHITE = "#d7e6e1"
 
 # CONSTANTS
 # PREFIX FOR CLOSE WORD EDITOR TAGS
@@ -133,15 +143,42 @@ class Service:
         # UNIQUE WORDS / TOTAL WORDS
         return len(statistics.words) / statistics.total_words
 
+class AutoScrollbar(ttk.Scrollbar):
+    """Create a scrollbar that hides itself if it's not needed. Only
+    works if you use the pack geometry manager from tkinter.
+    """
+    def set(self, lo, hi):
+        if float(lo) <= 0.0 and float(hi) >= 1.0:
+            self.pack_forget()
+        else:
+            if self.cget("orient") == tk.HORIZONTAL:
+                self.pack(fill=tk.X, side=tk.BOTTOM)
+            else:
+                self.pack(fill=tk.Y, side=tk.RIGHT)
+        tk.Scrollbar.set(self, lo, hi)
+    def grid(self, **kw):
+        raise tk.TclError("cannot use grid with this widget")
+    def place(self, **kw):
+        raise tk.TclError("cannot use place with this widget")
 
 # MAIN GUI WINDOW
 class MainWindow:
     nlp: stanza.Pipeline = None
 
-    def __init__(self, root, _nlp: stanza.Pipeline):
+    def __init__(self, r, _nlp: stanza.Pipeline):
         self.nlp = _nlp
-        self.root = root
-        root.overrideredirect(False)
+        self.root = r
+        r.overrideredirect(False)
+        style = ttk.Style(self.root)
+        print(style.element_options("Vertical.TScrollbar.trough"))
+        style.configure("Vertical.TScrollbar", gripcount=0, troughcolor=PRIMARY_BLUE, bordercolor=PRIMARY_BLUE, background=LIGHT_BLUE, lightcolor=LIGHT_BLUE, darkcolor=MID_BLUE)
+
+        # create new scrollbar layout
+        style.layout('arrowless.Vertical.TScrollbar',
+                     [('Vertical.Scrollbar.trough',
+                       {'children': [('Vertical.Scrollbar.thumb',
+                                      {'expand': '1', 'sticky': 'nswe'})],
+                        'sticky': 'ns'})])
         # TIMER FOR DEBOUNCING EDITOR CHANGE EVENT
         self.analyze_text_debounce_timer = None
         self.doc = nlp('', processors='tokenize')
@@ -154,7 +191,7 @@ class MainWindow:
         # MAIN PROGRAM RUN
         # LOAD CONFIG
         self.config = Service.load_config()
-
+        self.root.eval('tk::PlaceWindow . center')
         # OPEN WINDOW IN MAXIMIZED STATE
         # FOR WINDOWS AND MAC OS SET STATE ZOOMED
         # FOR LINUX SET ATTRIBUTE ZOOMED
@@ -168,16 +205,33 @@ class MainWindow:
         self.main_frame.pack(expand=1, fill=tk.BOTH, side=tk.LEFT)
 
         # TEXT EDITOR WINDOW
-        # TODO: Maybe add visible scrollbar for text editor window
-        # TODO Maybe add logo as background if editor is empty
-        self.text_editor = tk.Text(self.main_frame, wrap=tk.WORD)
+        text_editor_frame = tk.Frame(self.main_frame)
+        text_editor_frame.pack(expand=1, fill=tk.BOTH)
+
+        text_editor_scroll_frame = tk.Frame(text_editor_frame, width=10, relief=tk.FLAT, background=PRIMARY_BLUE)
+        text_editor_scroll_frame.pack(side=tk.RIGHT, fill=tk.Y)
+        text_editor_scroll = AutoScrollbar(text_editor_scroll_frame, orient='vertical', style='arrowless.Vertical.TScrollbar', takefocus=False)
+        text_editor_scroll.pack(side=tk.RIGHT, fill=tk.Y)
+
+        self.text_editor = tk.Text(text_editor_frame, wrap=tk.WORD, relief=tk.FLAT, yscrollcommand=text_editor_scroll.set)
         self.text_editor.config(font=(HELVETICA_FONT_NAME, self.text_size))
         self.text_editor.pack(expand=1, fill=tk.BOTH)
+
+        image = Image.open("images/hector-logo.png")
+        logo = ImageTk.PhotoImage(image.resize((EDITOR_LOGO_WIDTH, EDITOR_LOGO_HEIGHT), Image.ANTIALIAS))
+
+        self.logo_holder = tk.Label(text_editor_frame, image=logo, background=TEXT_COLOR_WHITE)
+        self.logo_holder.image = logo
+
+
+        text_editor_scroll.config(command=self.text_editor.yview)
 
         # MOUSE AND KEYBOARD BINDINGS FOR TEXT EDITOR
         self.text_editor.bind("<KeyRelease>", self.analyze_text_debounced)
         self.text_editor.bind("<Control-a>", self.select_all)
         self.text_editor.bind("<Control-A>", self.select_all)
+        self.text_editor.bind("<Configure>", self.evaluate_logo_placement)
+
         # MOUSE WHEEL BINDING ON ROOT WINDOW
         # Windows OS
         self.root.bind("<MouseWheel>", self.change_text_size)
@@ -186,57 +240,79 @@ class MainWindow:
         self.root.bind("<Button-5>", self.change_text_size)
 
         # RIGHT SCROLLABLE SIDE PANEL WITH FREQUENT WORDS
-        self.side_panel = tk.Frame(self.root, width=200, relief=tk.SUNKEN, borderwidth=1)
-        self.side_panel.pack(fill=tk.BOTH, side=tk.RIGHT)
+        side_panel = tk.Frame(self.root, width=200, relief=tk.FLAT, borderwidth=1, background=PRIMARY_BLUE)
+        side_panel.pack(fill=tk.BOTH, side=tk.RIGHT)
 
-        self.word_freq_title = tk.Label(self.side_panel, text="Časté slová", font=(HELVETICA_FONT_NAME, 14, BOLD_FONT), anchor='n',
+        separator = ttk.Separator(side_panel, orient='horizontal')
+        separator.pack(fill=tk.X, padx=10)
+
+        word_freq_title = tk.Label(side_panel, pady=10,  background=PRIMARY_BLUE, foreground=TEXT_COLOR_WHITE, text="Často použité slová", font=(HELVETICA_FONT_NAME, 12), anchor='n',
                                    justify='left')
-        self.word_freq_title.pack()
+        word_freq_title.pack()
 
-        self.word_freq_scroll = tk.Scrollbar(self.side_panel)
-        self.word_freq_scroll.pack(side=tk.RIGHT, fill=tk.Y)
+        separator = ttk.Separator(side_panel, orient='horizontal')
+        separator.pack(fill=tk.X, padx=10)
 
-        self.word_freq_text = tk.Text(self.side_panel, wrap=tk.WORD, state=tk.DISABLED, width=20, yscrollcommand=self.word_freq_scroll.set)
+        side_panel_scroll_frame = tk.Frame(side_panel, width=10, relief=tk.FLAT, background=PRIMARY_BLUE)
+        side_panel_scroll_frame.pack(side=tk.RIGHT, fill=tk.Y)
+        side_frame_scroll = AutoScrollbar(side_panel_scroll_frame, orient='vertical', style='arrowless.Vertical.TScrollbar', takefocus=False)
+        side_frame_scroll.pack(side=tk.RIGHT, fill=tk.Y)
+
+        self.word_freq_text = tk.Text(side_panel, highlightthickness=0, bd=0, wrap=tk.WORD, state=tk.DISABLED, width=20, background=PRIMARY_BLUE, foreground=TEXT_COLOR_WHITE, yscrollcommand=side_frame_scroll.set)
         self.word_freq_text.pack(fill=tk.BOTH, expand=1, pady=10, padx=10)
 
-        self.word_freq_scroll.config(command=self.word_freq_text.yview)
+        side_frame_scroll.config(command=self.word_freq_text.yview)
 
         # BOTTOM PANEL WITH TEXT SIZE
         # TODO: Add text size input to change editor text size without mouse
-        self.bottom_panel = tk.Frame(self.main_frame)
+        self.bottom_panel = tk.Frame(self.main_frame, background=PRIMARY_BLUE)
         self.bottom_panel.pack(fill=tk.BOTH, side=tk.BOTTOM)
 
-        # TODO: We should add different elements for evey information. For now we are just appending text
-        self.size_info_label = tk.Label(self.bottom_panel, text="", anchor='sw', justify='left')
-        self.size_info_label.pack(side=tk.LEFT, padx=20, pady=20)
+        char_count_info_label = tk.Label(self.bottom_panel, text="Počet znakov s medzerami:", anchor='sw', justify='left', background=PRIMARY_BLUE, foreground=TEXT_COLOR_WHITE)
+        char_count_info_label.pack(side=tk.LEFT, padx=(20,0), pady=20)
 
+        self.char_count_info_value = tk.Label(self.bottom_panel, text="0", anchor='sw', justify='left', background=PRIMARY_BLUE, foreground=TEXT_COLOR_WHITE)
+        self.char_count_info_value.pack(side=tk.LEFT, padx=0, pady=20)
+
+        word_count_info_label = tk.Label(self.bottom_panel, text="Počet slov:", anchor='sw', justify='left', background=PRIMARY_BLUE, foreground=TEXT_COLOR_WHITE)
+        word_count_info_label.pack(side=tk.LEFT, padx=(5,0), pady=20)
+
+        self.word_count_info_value = tk.Label(self.bottom_panel, text="0", anchor='sw', justify='left', background=PRIMARY_BLUE, foreground=TEXT_COLOR_WHITE)
+        self.word_count_info_value.pack(side=tk.LEFT, padx=0, pady=20)
+
+        page_count_info_label = tk.Label(self.bottom_panel, text="Počet normostrán:", anchor='sw', justify='left', background=PRIMARY_BLUE, foreground=TEXT_COLOR_WHITE)
+        page_count_info_label.pack(side=tk.LEFT, padx=(5,0), pady=20)
+
+        self.page_count_info_value = tk.Label(self.bottom_panel, text="0", anchor='sw', justify='left', background=PRIMARY_BLUE, foreground=TEXT_COLOR_WHITE)
+        self.page_count_info_value.pack(side=tk.LEFT, padx=0, pady=20)
         # TOP MENU
-        self.menu_bar = tk.Menu(self.root)
+        self.menu_bar = tk.Menu(self.root, background=PRIMARY_BLUE, foreground=TEXT_COLOR_WHITE, border=0)
         self.root.config(menu=self.menu_bar)
 
         # FILE MENU
         # TODO: Maybe add a way to import MS word or other document type
-        self.file_menu = tk.Menu(self.menu_bar, tearoff=0)
+        self.file_menu = tk.Menu(self.menu_bar, tearoff=0, background=PRIMARY_BLUE, foreground=TEXT_COLOR_WHITE,)
         self.file_menu.add_command(label="Načítať súbor", command=self.load_file)
         self.file_menu.add_command(label="Uložiť súbor", command=self.save_file)
         self.menu_bar.add_cascade(label="Súbor", menu=self.file_menu)
 
         # ANALYZE MENU
         # TODO: We need to think of more things we can analyze... because everything can be and should be analyzed xD
-        self.analyze_menu = tk.Menu(self.menu_bar, tearoff=0)
+        self.analyze_menu = tk.Menu(self.menu_bar, tearoff=0, background=PRIMARY_BLUE, foreground=TEXT_COLOR_WHITE,)
         self.analyze_menu.add_command(label="Indexy čitateľnosti", command=self.show_readability_indices)
         self.menu_bar.add_cascade(label="Analýza", menu=self.analyze_menu)
 
         # SETTINGS MENU
-        self.settings_menu = tk.Menu(self.menu_bar, tearoff=0)
+        self.settings_menu = tk.Menu(self.menu_bar, tearoff=0, background=PRIMARY_BLUE, foreground=TEXT_COLOR_WHITE,)
         self.settings_menu.add_command(label="Parametre analýzy", command=self.show_settings)
         self.menu_bar.add_cascade(label="Nastavenia", menu=self.settings_menu)
 
         # HELP MENU
         # TODO: Add link to documentation
-        self.help_menu = tk.Menu(self.menu_bar, tearoff=0)
+        self.help_menu = tk.Menu(self.menu_bar, tearoff=0, background=PRIMARY_BLUE, foreground=TEXT_COLOR_WHITE,)
         self.help_menu.add_command(label="O programe", command=self.show_about)
         self.menu_bar.add_cascade(label="Pomoc", menu=self.help_menu)
+        root.after(100, self.evaluate_logo_placement)
 
     #START MAIN LOOP
     def start_main_loop(self):
@@ -265,11 +341,10 @@ class MainWindow:
                 if tag.startswith(CLOSE_WORD_PREFIX):
                     self.text_editor.tag_configure(tagName=tag, font=(HELVETICA_FONT_NAME, self.text_size + 2, BOLD_FONT))
     # DISPLAY INFORMATIONS ABOUT TEXT SIZE
-    # TODO: Split every size into its own Text element with label
     def display_size_info(self, statistics: Statistics):
-        self.size_info_label.config(
-            text=f"Počet znakov s medzerami: {statistics.total_chars}   Počet slov: {statistics.total_words}   Počet normostrán: {statistics.total_pages:.2f}"
-        )
+        self.char_count_info_value.config(text=f"{statistics.total_chars}")
+        self.word_count_info_value.config(text=f"{statistics.total_words}")
+        self.page_count_info_value.config(text=f"{statistics.total_pages}")
 
     # CALCULATE AND DISPLAY FREQUENT WORDS
     def display_word_frequencies(self, statistics: Statistics):
@@ -424,6 +499,7 @@ class MainWindow:
 
     # ANALYZE TEXT
     def analyze_text(self, event=None):
+        self.evaluate_logo_placement()
         # CLEAR DEBOUNCE TIMER IF ANY
         self.analyze_text_debounce_timer = None
         # GET TEXT FROM EDITOR
@@ -450,16 +526,27 @@ class MainWindow:
         self.display_word_frequencies(self.statistics)
         self.display_size_info(self.statistics)
         self.highlight_long_sentences(doc)
+        self.highlight_close_words(self.statistics)
         self.highlight_multiple_issues(text)
-        self.highlight_close_words(text)
         self.text_editor.tag_raise("sel")
 
     # RUN ANALYSIS ONE SECOND AFTER LAST CHANGE
     def analyze_text_debounced(self, event=None):
+        self.evaluate_logo_placement()
         if self.analyze_text_debounce_timer is not None:
             self.root.after_cancel(self.analyze_text_debounce_timer)
         self.analyze_text_debounce_timer = self.root.after(1000, self.analyze_text)
 
+    def evaluate_logo_placement(self, event=None):
+        text = self.text_editor.get(1.0, tk.END)
+        if len(text) > 1:
+            self.logo_holder.place_forget()
+        else:
+            screen_width = self.text_editor.winfo_width()
+            screen_height = self.text_editor.winfo_height()
+            x = screen_width/2 - (EDITOR_LOGO_WIDTH / 2)
+            y = screen_height/2 - (EDITOR_LOGO_HEIGHT / 2)
+            self.logo_holder.place(x=x,y=y)
     # SELECT ALL TEXT
     def select_all(self, event=None):
         self.text_editor.tag_add(tk.SEL, "1.0", tk.END)
@@ -472,7 +559,6 @@ class MainWindow:
         settings_window.title("Nastavenia")
 
         # SAVE SETTINGS
-        # TODO: Maybe we could extract this?
         def save_settings():
             self.config["repeated_words_min_word_length"] = int(repeated_words_min_word_length_entry.get())
             self.config["repeated_words_min_word_frequency"] = int(repeated_words_min_word_frequency_entry.get())
@@ -492,7 +578,6 @@ class MainWindow:
             self.analyze_text()  # Reanalyze text after saving settings
             settings_window.destroy()
 
-        # TODO: WE NEED TO DESIGN THIS A BIT
         # Frequent words settings
         tk.Label(settings_window, text="Časté slová", font=(HELVETICA_FONT_NAME, 14, BOLD_FONT), anchor='w').grid(row=0,
                                                                                                                   column=0,
@@ -642,7 +727,7 @@ class MainWindow:
 
     # CALCULATE AND SHOW VARIOUS READABILITY INDECES WITH EXPLANATIONS
     def show_readability_indices(self):
-        indices = self.evaluate_readability(self.text_editor.get(1.0, tk.END))
+        indices = Service.evaluate_readability(self.text_editor.get(1.0, tk.END))
         results = "\n".join([f"{index}: {value}" for index, value in indices.items()])
         index_window = tk.Toplevel(self.root)
         index_window.title("Indexy čitateľnosti")
@@ -658,12 +743,10 @@ class SplashWindow:
         self.root.geometry("600x400")
         screen_width = self.root.winfo_screenwidth()
         screen_height = self.root.winfo_screenheight()
-        size = tuple(int(_) for _ in self.root.geometry().split('+')[0].split('x'))
-        x = screen_width/2 - size[0]/2
-        y = screen_height/2 - size[1]/2
+        x = screen_width/2 - 300
+        y = screen_height/2 - 200
 
         self.root.geometry("+%d+%d" % (x, y))
-        self.root.eval('tk::PlaceWindow . center')
         self.root.overrideredirect(True)
         # MAIN FRAME
         self.main_frame = tk.Frame(self.root, background=PRIMARY_BLUE)
@@ -686,7 +769,7 @@ class SplashWindow:
 initialized = False
 
 
-root = tk.Tk()
+root = ThemedTk(theme="clam")
 root.title("Hector")
 photo = tk.PhotoImage(file='images/hector-icon.png')
 root.wm_iconphoto(False, photo)
@@ -704,9 +787,7 @@ main_window.start_main_loop()
 # TODO LEVEL 0 (knowm bugs)
 
 # TODO LEVEL A (must have for "production"):
-# Redesign to have nice and intuitive UI
-# Optimize text processing algo. Currently we pass text for every functionality. On longer text,
-#   or after adding more functionality, this can be litlle clunky
+# Redesign to have nice and intuitive UI - basic things should be done
 
 # TODO LEVEL B (nice to have features): Consider adding:
 # Heatmap?
