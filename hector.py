@@ -120,6 +120,15 @@ class Service:
     @staticmethod
     def evaluate_readability(doc, statistics: Statistics):
         # TODO: Allow to run on part of text
+        if statistics.total_chars <= 0:
+            return {
+                "Počet unikátnych slov": 0,
+                "Priemerná dĺžka slova": 0,
+                "Priemerný počet slov vo vete": 0,
+                "Index opakovania": 0,
+                "Mistríkov index": 0
+            }
+
         type_to_token_ratio = Service.lexical_diversity(statistics)
         average_sentence_length = statistics.total_words / len(doc.sentences)
         average_word_length = statistics.total_chars / statistics.total_words / 2
@@ -505,12 +514,12 @@ class MainWindow:
         # GET TEXT FROM EDITOR
         text = self.text_editor.get(1.0, tk.END)
         # RUN ANALYSIS
-        doc = nlp(text, processors='tokenize')
+        self.doc = nlp(text, processors='tokenize')
         self.statistics.words = {}
         self.statistics.total_words = 0
         self.statistics.total_chars = len(text)
         self.statistics.total_pages = round(self.statistics.total_chars / 1800, 2)
-        for sentence in doc.sentences:
+        for sentence in self.doc.sentences:
             for token in sentence.tokens:
                 if re.match('\\w', token.text):
                     self.statistics.total_words += 1
@@ -525,7 +534,7 @@ class MainWindow:
         # RUN ANALYSIS FUNCTIONS
         self.display_word_frequencies(self.statistics)
         self.display_size_info(self.statistics)
-        self.highlight_long_sentences(doc)
+        self.highlight_long_sentences(self.doc)
         self.highlight_close_words(self.statistics)
         self.highlight_multiple_issues(text)
         self.text_editor.tag_raise("sel")
@@ -727,7 +736,7 @@ class MainWindow:
 
     # CALCULATE AND SHOW VARIOUS READABILITY INDECES WITH EXPLANATIONS
     def show_readability_indices(self):
-        indices = Service.evaluate_readability(self.text_editor.get(1.0, tk.END))
+        indices = Service.evaluate_readability(self.doc, self.statistics)
         results = "\n".join([f"{index}: {value}" for index, value in indices.items()])
         index_window = tk.Toplevel(self.root)
         index_window.title("Indexy čitateľnosti")
