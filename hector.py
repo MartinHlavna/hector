@@ -10,6 +10,10 @@ from ttkthemes import ThemedTk
 import stanza
 from PIL import ImageTk, Image
 
+MULTIPLE_PUNCTUATION_TAG_NAME = "multiple_punctuation"
+TRAILING_SPACES_TAG_NAME = "trailing_spaces"
+MULTIPLE_SPACES_TAG_NAME = "multiple_spaces"
+
 EDITOR_LOGO_HEIGHT = 300
 
 EDITOR_LOGO_WIDTH = 300
@@ -195,6 +199,7 @@ class MainWindow:
                         'sticky': 'ns'})])
         # TIMER FOR DEBOUNCING EDITOR CHANGE EVENT
         self.analyze_text_debounce_timer = None
+        self.tooltip = None
         self.doc = nlp('', processors='tokenize')
         # WE NEED TO COMPUTE SOME MORE INFORMATION
         self.statistics = Statistics()
@@ -219,7 +224,7 @@ class MainWindow:
         self.main_frame.pack(expand=1, fill=tk.BOTH, side=tk.LEFT)
 
         # TEXT EDITOR WINDOW
-        text_editor_frame = tk.Frame(self.main_frame, background=TEXT_EDITOR_BG)
+        text_editor_frame = tk.Frame(self.main_frame, background=TEXT_EDITOR_BG, borderwidth=0)
         text_editor_frame.pack(expand=1, fill=tk.BOTH)
 
         text_editor_scroll_frame = tk.Frame(text_editor_frame, width=10, relief=tk.FLAT, background=PRIMARY_BLUE)
@@ -227,7 +232,7 @@ class MainWindow:
         text_editor_scroll = AutoScrollbar(text_editor_scroll_frame, orient='vertical', style='arrowless.Vertical.TScrollbar', takefocus=False)
         text_editor_scroll.pack(side=tk.RIGHT, fill=tk.Y)
 
-        self.text_editor = tk.Text(text_editor_frame, wrap=tk.WORD, relief=tk.FLAT, yscrollcommand=text_editor_scroll.set, background=TEXT_EDITOR_BG)
+        self.text_editor = tk.Text(text_editor_frame, wrap=tk.WORD, relief=tk.FLAT, yscrollcommand=text_editor_scroll.set, background=TEXT_EDITOR_BG, borderwidth=0)
         self.text_editor.config(font=(HELVETICA_FONT_NAME, self.text_size))
         self.text_editor.pack(expand=1, fill=tk.BOTH, padx=5)
 
@@ -402,27 +407,40 @@ class MainWindow:
 
     # HIGHLIGH MULTIPLE SPACE, MULTIPLE PUNCTATION, AND TRAILING SPACES
     def highlight_multiple_issues(self, text):
-        self.text_editor.tag_remove("multiple_issues", "1.0", tk.END)
+        self.text_editor.tag_remove(MULTIPLE_SPACES_TAG_NAME, "1.0", tk.END)
         if self.config["enable_multiple_spaces"]:
             matches = re.finditer(r' {2,}', text)
             for match in matches:
                 start_index = f"1.0 + {match.start()} chars"
                 end_index = f"1.0 + {match.end()} chars"
-                self.text_editor.tag_add("multiple_issues", start_index, end_index)
+                self.text_editor.tag_add(MULTIPLE_SPACES_TAG_NAME, start_index, end_index)
+                # ON MOUSE OVER, SHOW TOOLTIP
+                self.text_editor.tag_bind(MULTIPLE_SPACES_TAG_NAME, "<Enter>", lambda e: self.show_tooltip(e, 'Viacnásobná medzera'))
+                self.text_editor.tag_bind(MULTIPLE_SPACES_TAG_NAME, "<Leave>", lambda e: self.hide_tooltip(e))
+
         if self.config["enable_multiple_punctuation"]:
             matches = re.finditer(r'([!?.,:;]){2,}', text)
             for match in matches:
                 if match.group() not in ["?!"]:
                     start_index = f"1.0 + {match.start()} chars"
                     end_index = f"1.0 + {match.end()} chars"
-                    self.text_editor.tag_add("multiple_issues", start_index, end_index)
+                    self.text_editor.tag_add(MULTIPLE_PUNCTUATION_TAG_NAME, start_index, end_index)
+                    # ON MOUSE OVER, SHOW TOOLTIP
+                    self.text_editor.tag_bind(MULTIPLE_PUNCTUATION_TAG_NAME, "<Enter>", lambda e: self.show_tooltip(e, 'Viacnásobná interpunkcia'))
+                    self.text_editor.tag_bind(MULTIPLE_PUNCTUATION_TAG_NAME, "<Leave>", lambda e: self.hide_tooltip(e))
         if self.config["enable_trailing_spaces"]:
             matches = re.finditer(r' +$', text, re.MULTILINE)
             for match in matches:
                 start_index = f"1.0 + {match.start()} chars"
                 end_index = f"1.0 + {match.end()} chars"
-                self.text_editor.tag_add("multiple_issues", start_index, end_index)
-        self.text_editor.tag_config("multiple_issues", background="red")
+                self.text_editor.tag_add(TRAILING_SPACES_TAG_NAME, start_index, end_index)
+                # ON MOUSE OVER, SHOW TOOLTIP
+                self.text_editor.tag_bind(TRAILING_SPACES_TAG_NAME, "<Enter>", lambda e: self.show_tooltip(e, 'Zbytočná medzera na konci odstavca'))
+                self.text_editor.tag_bind(TRAILING_SPACES_TAG_NAME, "<Leave>", lambda e: self.hide_tooltip(e))
+
+        self.text_editor.tag_config(TRAILING_SPACES_TAG_NAME, background="red")
+        self.text_editor.tag_config(MULTIPLE_PUNCTUATION_TAG_NAME, background="red")
+        self.text_editor.tag_config(MULTIPLE_SPACES_TAG_NAME, background="red")
 
     # HIGHLIGHT WORDS THAT REPEATS CLOSE TO EACH OTHER
     # TODO: Maybe we could provide list of "CLOSE WORDS" IN RIGHT PANEL AND HIGHLIGHT ON MOUSE OVER
@@ -472,22 +490,45 @@ class MainWindow:
                     self.text_editor.tag_config(tag_name, foreground=color,
                                            font=(HELVETICA_FONT_NAME, self.text_size + 2, BOLD_FONT))
                     # ON MOUSE OVER, HIGHLIGHT SAME WORDS
-                    self.text_editor.tag_bind(tag_name, "<Enter>", lambda e, w=word.text.lower(): self.highlight_same_word(w))
-                    self.text_editor.tag_bind(tag_name, "<Leave>", lambda e, w=word.text.lower(): self.unhighlight_same_word(w))
+                    self.text_editor.tag_bind(tag_name, "<Enter>", lambda e, w=word.text.lower(): self.highlight_same_word(e,w))
+                    self.text_editor.tag_bind(tag_name, "<Leave>", lambda e, w=word.text.lower(): self.unhighlight_same_word(e, w))
 
     # HIGHLIGHT SAME WORD ON MOUSE OVER
-    def highlight_same_word(self, word):
+    def highlight_same_word(self, event, word):
+        self.show_tooltip(event,  'Toto slovo sa opakuje viackrát na krátkom úseku')
         for tag in self.text_editor.tag_names():
             if tag.startswith(f"{CLOSE_WORD_PREFIX}{word}"):
                 self.text_editor.tag_config(tag, background="black", foreground="white")
 
     # REMOVE HIGHLIGHTING FROM SAME WORD ON MOUSE OVER END
-    def unhighlight_same_word(self, word):
+    def unhighlight_same_word(self, event, word):
+        self.hide_tooltip(event)
         for tag in self.text_editor.tag_names():
             if tag.startswith(f"{CLOSE_WORD_PREFIX}{word}"):
                 original_color = self.close_word_colors.get(tag, "")
                 self.text_editor.tag_config(tag, background="", foreground=original_color)
 
+    def show_tooltip(self, event, text):
+        if self.tooltip:
+            self.tooltip.destroy()
+
+        # Get the position of the mouse
+        x = event.x_root + 10
+        y = event.y_root + 10
+
+        # Create a Toplevel window
+        self.tooltip = tk.Toplevel(self.root)
+        self.tooltip.wm_overrideredirect(True)
+        self.tooltip.wm_geometry(f"+{x}+{y}")
+
+        # Add content to the tooltip
+        label = tk.Label(self.tooltip, text=f"{text}", background=LIGHT_BLUE, relief="solid", borderwidth=1, justify="left", padx=5, pady=5)
+        label.pack()
+
+    def hide_tooltip(self, event):
+        if self.tooltip:
+            self.tooltip.destroy()
+            self.tooltip = None
 
     # LOAD TEXT FILE
     # TODO: Maybe we could extract text from MS WORD?
