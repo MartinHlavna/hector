@@ -14,7 +14,12 @@ EDITOR_LOGO_HEIGHT = 300
 
 EDITOR_LOGO_WIDTH = 300
 
+TEXT_SIZE_SECTION_HEADER = 12
+TEXT_SIZE_MENU = 10
+TEXT_SIZE_BOTTOM_BAR = 10
+
 TEXT_COLOR_WHITE = "#ffffff"
+TEXT_EDITOR_BG = "#E0E0E0"
 
 # COLORS
 PRIMARY_BLUE = "#42659d"
@@ -214,7 +219,7 @@ class MainWindow:
         self.main_frame.pack(expand=1, fill=tk.BOTH, side=tk.LEFT)
 
         # TEXT EDITOR WINDOW
-        text_editor_frame = tk.Frame(self.main_frame)
+        text_editor_frame = tk.Frame(self.main_frame, background=TEXT_EDITOR_BG)
         text_editor_frame.pack(expand=1, fill=tk.BOTH)
 
         text_editor_scroll_frame = tk.Frame(text_editor_frame, width=10, relief=tk.FLAT, background=PRIMARY_BLUE)
@@ -222,14 +227,14 @@ class MainWindow:
         text_editor_scroll = AutoScrollbar(text_editor_scroll_frame, orient='vertical', style='arrowless.Vertical.TScrollbar', takefocus=False)
         text_editor_scroll.pack(side=tk.RIGHT, fill=tk.Y)
 
-        self.text_editor = tk.Text(text_editor_frame, wrap=tk.WORD, relief=tk.FLAT, yscrollcommand=text_editor_scroll.set)
+        self.text_editor = tk.Text(text_editor_frame, wrap=tk.WORD, relief=tk.FLAT, yscrollcommand=text_editor_scroll.set, background=TEXT_EDITOR_BG)
         self.text_editor.config(font=(HELVETICA_FONT_NAME, self.text_size))
-        self.text_editor.pack(expand=1, fill=tk.BOTH)
+        self.text_editor.pack(expand=1, fill=tk.BOTH, padx=5)
 
         image = Image.open("images/hector-logo.png")
         logo = ImageTk.PhotoImage(image.resize((EDITOR_LOGO_WIDTH, EDITOR_LOGO_HEIGHT), Image.ANTIALIAS))
 
-        self.logo_holder = tk.Label(text_editor_frame, image=logo, background=TEXT_COLOR_WHITE)
+        self.logo_holder = tk.Label(text_editor_frame, image=logo, background=TEXT_EDITOR_BG)
         self.logo_holder.image = logo
 
 
@@ -248,14 +253,34 @@ class MainWindow:
         self.root.bind("<Button-4>", self.change_text_size)
         self.root.bind("<Button-5>", self.change_text_size)
 
+        # BOTTOM PANEL WITH TEXT SIZE
+        # TODO: Add text size input to change editor text size without mouse
+        self.bottom_panel = tk.Frame(text_editor_frame, background=MID_BLUE, height=20)
+        self.bottom_panel.pack(fill=tk.BOTH, side=tk.BOTTOM)
+
+        char_count_info_label = tk.Label(self.bottom_panel, text="Počet znakov s medzerami:", anchor='sw', justify='left', background=MID_BLUE, foreground=TEXT_COLOR_WHITE, font=(HELVETICA_FONT_NAME, TEXT_SIZE_BOTTOM_BAR))
+        char_count_info_label.pack(side=tk.LEFT, padx=(5,0), pady=5)
+
+        self.char_count_info_value = tk.Label(self.bottom_panel, text="0", anchor='sw', justify='left', background=MID_BLUE, foreground=TEXT_COLOR_WHITE, font=(HELVETICA_FONT_NAME, TEXT_SIZE_BOTTOM_BAR))
+        self.char_count_info_value.pack(side=tk.LEFT, padx=0, pady=5)
+
+        word_count_info_label = tk.Label(self.bottom_panel, text="Počet slov:", anchor='sw', justify='left', background=MID_BLUE, foreground=TEXT_COLOR_WHITE, font=(HELVETICA_FONT_NAME, TEXT_SIZE_BOTTOM_BAR))
+        word_count_info_label.pack(side=tk.LEFT, padx=(5,0), pady=5)
+
+        self.word_count_info_value = tk.Label(self.bottom_panel, text="0", anchor='sw', justify='left', background=MID_BLUE, foreground=TEXT_COLOR_WHITE, font=(HELVETICA_FONT_NAME, TEXT_SIZE_BOTTOM_BAR))
+        self.word_count_info_value.pack(side=tk.LEFT, padx=0, pady=5)
+
+        page_count_info_label = tk.Label(self.bottom_panel, text="Počet normostrán:", anchor='sw', justify='left', background=MID_BLUE, foreground=TEXT_COLOR_WHITE, font=(HELVETICA_FONT_NAME, TEXT_SIZE_BOTTOM_BAR))
+        page_count_info_label.pack(side=tk.LEFT, padx=(5,0), pady=5)
+
+        self.page_count_info_value = tk.Label(self.bottom_panel, text="0", anchor='sw', justify='left', background=MID_BLUE, foreground=TEXT_COLOR_WHITE, font=(HELVETICA_FONT_NAME, TEXT_SIZE_BOTTOM_BAR))
+        self.page_count_info_value.pack(side=tk.LEFT, padx=0, pady=5)
+
         # RIGHT SCROLLABLE SIDE PANEL WITH FREQUENT WORDS
         side_panel = tk.Frame(self.root, width=200, relief=tk.FLAT, borderwidth=1, background=PRIMARY_BLUE)
         side_panel.pack(fill=tk.BOTH, side=tk.RIGHT)
 
-        separator = ttk.Separator(side_panel, orient='horizontal')
-        separator.pack(fill=tk.X, padx=10)
-
-        word_freq_title = tk.Label(side_panel, pady=10,  background=PRIMARY_BLUE, foreground=TEXT_COLOR_WHITE, text="Často použité slová", font=(HELVETICA_FONT_NAME, 12), anchor='n',
+        word_freq_title = tk.Label(side_panel, pady=10,  background=PRIMARY_BLUE, foreground=TEXT_COLOR_WHITE, text="Často použité slová", font=(HELVETICA_FONT_NAME, TEXT_SIZE_SECTION_HEADER), anchor='n',
                                    justify='left')
         word_freq_title.pack()
 
@@ -272,53 +297,31 @@ class MainWindow:
 
         side_frame_scroll.config(command=self.word_freq_text.yview)
 
-        # BOTTOM PANEL WITH TEXT SIZE
-        # TODO: Add text size input to change editor text size without mouse
-        self.bottom_panel = tk.Frame(self.main_frame, background=PRIMARY_BLUE)
-        self.bottom_panel.pack(fill=tk.BOTH, side=tk.BOTTOM)
-
-        char_count_info_label = tk.Label(self.bottom_panel, text="Počet znakov s medzerami:", anchor='sw', justify='left', background=PRIMARY_BLUE, foreground=TEXT_COLOR_WHITE)
-        char_count_info_label.pack(side=tk.LEFT, padx=(20,0), pady=20)
-
-        self.char_count_info_value = tk.Label(self.bottom_panel, text="0", anchor='sw', justify='left', background=PRIMARY_BLUE, foreground=TEXT_COLOR_WHITE)
-        self.char_count_info_value.pack(side=tk.LEFT, padx=0, pady=20)
-
-        word_count_info_label = tk.Label(self.bottom_panel, text="Počet slov:", anchor='sw', justify='left', background=PRIMARY_BLUE, foreground=TEXT_COLOR_WHITE)
-        word_count_info_label.pack(side=tk.LEFT, padx=(5,0), pady=20)
-
-        self.word_count_info_value = tk.Label(self.bottom_panel, text="0", anchor='sw', justify='left', background=PRIMARY_BLUE, foreground=TEXT_COLOR_WHITE)
-        self.word_count_info_value.pack(side=tk.LEFT, padx=0, pady=20)
-
-        page_count_info_label = tk.Label(self.bottom_panel, text="Počet normostrán:", anchor='sw', justify='left', background=PRIMARY_BLUE, foreground=TEXT_COLOR_WHITE)
-        page_count_info_label.pack(side=tk.LEFT, padx=(5,0), pady=20)
-
-        self.page_count_info_value = tk.Label(self.bottom_panel, text="0", anchor='sw', justify='left', background=PRIMARY_BLUE, foreground=TEXT_COLOR_WHITE)
-        self.page_count_info_value.pack(side=tk.LEFT, padx=0, pady=20)
         # TOP MENU
-        self.menu_bar = tk.Menu(self.root, background=PRIMARY_BLUE, foreground=TEXT_COLOR_WHITE, border=0)
+        self.menu_bar = tk.Menu(self.root, background=PRIMARY_BLUE, foreground=TEXT_COLOR_WHITE, border=1)
         self.root.config(menu=self.menu_bar)
 
         # FILE MENU
         # TODO: Maybe add a way to import MS word or other document type
-        self.file_menu = tk.Menu(self.menu_bar, tearoff=0, background=PRIMARY_BLUE, foreground=TEXT_COLOR_WHITE,)
+        self.file_menu = tk.Menu(self.menu_bar, tearoff=0, background=PRIMARY_BLUE, foreground=TEXT_COLOR_WHITE, font=(HELVETICA_FONT_NAME, TEXT_SIZE_MENU))
         self.file_menu.add_command(label="Načítať súbor", command=self.load_file)
         self.file_menu.add_command(label="Uložiť súbor", command=self.save_file)
         self.menu_bar.add_cascade(label="Súbor", menu=self.file_menu)
 
         # ANALYZE MENU
         # TODO: We need to think of more things we can analyze... because everything can be and should be analyzed xD
-        self.analyze_menu = tk.Menu(self.menu_bar, tearoff=0, background=PRIMARY_BLUE, foreground=TEXT_COLOR_WHITE,)
+        self.analyze_menu = tk.Menu(self.menu_bar, tearoff=0, background=PRIMARY_BLUE, foreground=TEXT_COLOR_WHITE, font=(HELVETICA_FONT_NAME, TEXT_SIZE_MENU))
         self.analyze_menu.add_command(label="Indexy čitateľnosti", command=self.show_readability_indices)
         self.menu_bar.add_cascade(label="Analýza", menu=self.analyze_menu)
 
         # SETTINGS MENU
-        self.settings_menu = tk.Menu(self.menu_bar, tearoff=0, background=PRIMARY_BLUE, foreground=TEXT_COLOR_WHITE,)
+        self.settings_menu = tk.Menu(self.menu_bar, tearoff=0, background=PRIMARY_BLUE, foreground=TEXT_COLOR_WHITE, font=(HELVETICA_FONT_NAME, TEXT_SIZE_MENU))
         self.settings_menu.add_command(label="Parametre analýzy", command=self.show_settings)
         self.menu_bar.add_cascade(label="Nastavenia", menu=self.settings_menu)
 
         # HELP MENU
         # TODO: Add link to documentation
-        self.help_menu = tk.Menu(self.menu_bar, tearoff=0, background=PRIMARY_BLUE, foreground=TEXT_COLOR_WHITE,)
+        self.help_menu = tk.Menu(self.menu_bar, tearoff=0, background=PRIMARY_BLUE, foreground=TEXT_COLOR_WHITE, font=(HELVETICA_FONT_NAME, TEXT_SIZE_MENU))
         self.help_menu.add_command(label="O programe", command=self.show_about)
         self.menu_bar.add_cascade(label="Pomoc", menu=self.help_menu)
         root.after(100, self.evaluate_logo_placement)
