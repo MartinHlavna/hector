@@ -9,6 +9,8 @@ from ttkthemes import ThemedTk
 
 import stanza
 from PIL import ImageTk, Image
+import functools
+fp = functools.partial
 
 MULTIPLE_PUNCTUATION_TAG_NAME = "multiple_punctuation"
 TRAILING_SPACES_TAG_NAME = "trailing_spaces"
@@ -161,6 +163,90 @@ class Service:
         # UNIQUE WORDS / TOTAL WORDS
         return len(statistics.words) / statistics.total_words
 
+
+class VerticalScrolledFrame(ttk.Frame):
+    """
+    A pure Tkinter scrollable frame that actually works!
+    * Use the 'interior' attribute to place widgets inside the scrollable frame
+    * Construct and pack/place/grid normally
+    * This frame only allows vertical scrolling
+    * -- NOTE: You will need to comment / uncomment code the differently for windows or linux
+    * -- or write your own 'os' type check.
+    * This comes from a different naming of the the scrollwheel 'button', on different systems.
+    """
+    def __init__(self, parent, background, *args, **kw):
+
+        # track changes to the canvas and frame width and sync them,
+        # also updating the scrollbar
+        def _configure_interior(event):
+            # update the scrollbars to match the size of the inner frame
+            size = (interior.winfo_reqwidth(), interior.winfo_reqheight())
+            canvas.config(scrollregion="0 0 %s %s" % size)
+            if interior.winfo_reqwidth() != canvas.winfo_width():
+                # update the canvas's width to fit the inner frame
+                canvas.config(width=interior.winfo_reqwidth())
+
+        def _configure_canvas(event):
+            if interior.winfo_reqwidth() != canvas.winfo_width():
+                # update the inner frame's width to fill the canvas
+                canvas.itemconfigure(interior_id, width=canvas.winfo_width())
+
+        # TODO: Add platform check
+        """
+        This is linux code for scrolling the window, 
+        It has different buttons for scrolling the windows
+        """
+        def _on_mousewheel(event, scroll):
+            canvas.yview_scroll(int(scroll), "units")
+
+        def _bind_to_mousewheel(event):
+            canvas.bind_all("<Button-4>", fp(_on_mousewheel, scroll=-1))
+            canvas.bind_all("<Button-5>", fp(_on_mousewheel, scroll=1))
+
+        def _unbind_from_mousewheel(event):
+            canvas.unbind_all("<Button-4>")
+            canvas.unbind_all("<Button-5>")
+
+
+        """
+        This is windows code for scrolling the Frame
+        def _on_mousewheel(event):
+            canvas.yview_scroll(int(-1*(event.delta/120)), "units")
+        def _bind_to_mousewheel(event):
+            canvas.bind_all("<MouseWheel>", _on_mousewheel)
+        def _unbind_from_mousewheel(event):
+            canvas.unbind_all("<MouseWheel>")
+        """
+
+        ttk.Frame.__init__(self, parent, *args, **kw)
+
+        # create a canvas object and a vertical scrollbar for scrolling it
+        vscrollbar = AutoScrollbar(self, orient=tk.VERTICAL,  style='arrowless.Vertical.TScrollbar',)
+        vscrollbar.pack(fill=tk.Y, side=tk.RIGHT, expand=tk.FALSE)
+        canvas = tk.Canvas(self, bd=0, highlightthickness=0,
+                           yscrollcommand=vscrollbar.set, background=background, borderwidth=0,)
+        canvas.pack(side=tk.LEFT, fill=tk.BOTH, expand=tk.TRUE)
+        vscrollbar.config(command=canvas.yview)
+
+        # reset the view
+        canvas.xview_moveto(0)
+        canvas.yview_moveto(0)
+
+        # create a frame inside the canvas which will be scrolled with it
+        self.interior = interior = ttk.Frame(canvas, borderwidth=0, )
+        interior_id = canvas.create_window(0, 0, window=interior,
+                                           anchor=tk.NW)
+
+        interior.bind('<Configure>', _configure_interior)
+        canvas.bind('<Configure>', _configure_canvas)
+        canvas.bind('<Enter>', _bind_to_mousewheel)
+        canvas.bind('<Leave>', _unbind_from_mousewheel)
+
+    def clear_interior(self):
+        for child in self.interior.winfo_children():
+            child.destroy()
+
+
 class AutoScrollbar(ttk.Scrollbar):
     """Create a scrollbar that hides itself if it's not needed. Only
     works if you use the pack geometry manager from tkinter.
@@ -251,15 +337,8 @@ class MainWindow:
         separator = ttk.Separator(left_side_panel, orient='horizontal')
         separator.pack(fill=tk.X, padx=10)
 
-        left_side_panel_scroll_frame = tk.Frame(left_side_panel, width=10, relief=tk.FLAT, background=PRIMARY_BLUE)
-        left_side_panel_scroll_frame.pack(side=tk.RIGHT, fill=tk.Y)
-        left_side_frame_scroll = AutoScrollbar(left_side_panel_scroll_frame, orient='vertical', style='arrowless.Vertical.TScrollbar', takefocus=False)
-        left_side_frame_scroll.pack(side=tk.RIGHT, fill=tk.Y)
-
-        self.word_freq_text = tk.Text(left_side_panel, highlightthickness=0, bd=0, wrap=tk.WORD, state=tk.DISABLED, width=20, background=PRIMARY_BLUE, foreground=TEXT_COLOR_WHITE, yscrollcommand=left_side_frame_scroll.set)
-        self.word_freq_text.pack(fill=tk.BOTH, expand=1, pady=10, padx=10)
-
-        left_side_frame_scroll.config(command=self.word_freq_text.yview)
+        self.close_words_wrapper = VerticalScrolledFrame(left_side_panel, background=PRIMARY_BLUE, borderwidth=0)
+        self.close_words_wrapper.pack(fill=tk.BOTH, expand=1, pady=10, padx=10)
 
         self.text_editor = tk.Text(text_editor_frame, wrap=tk.WORD, relief=tk.FLAT, yscrollcommand=text_editor_scroll.set, background=TEXT_EDITOR_BG, borderwidth=0)
         self.text_editor.config(font=(HELVETICA_FONT_NAME, self.text_size))
@@ -467,11 +546,11 @@ class MainWindow:
         self.text_editor.tag_config(MULTIPLE_SPACES_TAG_NAME, background="red")
 
     # HIGHLIGHT WORDS THAT REPEATS CLOSE TO EACH OTHER
-    # TODO: Maybe we could provide list of "CLOSE WORDS" IN RIGHT PANEL AND HIGHLIGHT ON MOUSE OVER
     def highlight_close_words(self, statistics: Statistics):
         if self.config["enable_close_words"]:
             self.text_editor.tag_remove("close_word", "1.0", tk.END)
             clusters = []
+            close_words_counts = {}
             words_nlp = {k: v for (k, v) in statistics.words.items() if len(k) >= self.config["close_words_min_word_length"]}
             for unique_word in words_nlp.values():
                 # IF WORD DOES NOT OCCOUR ENOUGH TIMES WE DONT NEED TO CHECK IF ITS OCCOURENCES ARE CLOSE
@@ -492,12 +571,27 @@ class MainWindow:
                         # CLUSTER IS BROKEN, START NEW
                         if len(current_cluster) > self.config["close_words_min_frequency"]:
                             clusters.append(current_cluster)
+                            if word_occource.text.lower() not in close_words_counts:
+                                close_words_counts[word_occource.text.lower()] = len(current_cluster)
+                            else:
+                                close_words_counts[word_occource.text.lower()] += len(current_cluster)
                         current_cluster = set()
                         # MOVE REFERENCE TO NEXT WORD
                         reference = word_occource
                 # PUSH REMAINING CLUSTER
                 if len(current_cluster) >= self.config["close_words_min_frequency"]:
                     clusters.append(current_cluster)
+                    word_occource = next(iter(current_cluster))
+                    if word_occource.text.lower() not in close_words_counts:
+                        close_words_counts[word_occource.text.lower()] = len(current_cluster)
+                    else:
+                        close_words_counts[word_occource.text.lower()] += len(current_cluster)
+            close_words_counts = dict(sorted(close_words_counts.items(), key=lambda item: item[1], reverse=True))
+            for word in close_words_counts:
+                word_frame = tk.Frame(self.close_words_wrapper.interior, background=PRIMARY_BLUE)
+                word_frame.pack(fill=tk.X)
+                tk.Label(word_frame, text=word.lower(), justify='left', background=PRIMARY_BLUE, foreground=TEXT_COLOR_WHITE).pack(side=tk.LEFT)
+                tk.Label(word_frame, text="%sx" % (close_words_counts[word]), justify='right', background=PRIMARY_BLUE, foreground=TEXT_COLOR_WHITE).pack(side=tk.RIGHT)
 
             for cluster in clusters:
                 color = random.choice(dark_colors)
@@ -573,12 +667,12 @@ class MainWindow:
                 text = self.text_editor.get(1.0, tk.END)
                 file.write(text)
 
-
     # ANALYZE TEXT
     def analyze_text(self, event=None):
-        self.evaluate_logo_placement()
         # CLEAR DEBOUNCE TIMER IF ANY
         self.analyze_text_debounce_timer = None
+        self.evaluate_logo_placement()
+        self.close_words_wrapper.clear_interior()
         # GET TEXT FROM EDITOR
         text = self.text_editor.get(1.0, tk.END)
         # RUN ANALYSIS
