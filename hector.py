@@ -10,6 +10,7 @@ from ttkthemes import ThemedTk
 import stanza
 from PIL import ImageTk, Image
 import functools
+
 fp = functools.partial
 
 MULTIPLE_PUNCTUATION_TAG_NAME = "multiple_punctuation"
@@ -87,6 +88,7 @@ default_config = {
     "enable_close_words": True,
 }
 
+
 # CLASS DEFINITIONS
 # TEXT STATISTICS
 class Statistics:
@@ -106,6 +108,7 @@ class UniqueWord:
         self.text = text
         self.occourences = []
 
+
 class Service:
     # FUNCTION THAT LOADS CONFIG FROM FILE
     @staticmethod
@@ -121,6 +124,7 @@ class Service:
                 return c
         else:
             return default_config
+
     # FUNCTION THAT SAVES CONFIG TO FILE
     @staticmethod
     def save_config(c):
@@ -164,93 +168,11 @@ class Service:
         return len(statistics.words) / statistics.total_words
 
 
-class VerticalScrolledFrame(ttk.Frame):
-    """
-    A pure Tkinter scrollable frame that actually works!
-    * Use the 'interior' attribute to place widgets inside the scrollable frame
-    * Construct and pack/place/grid normally
-    * This frame only allows vertical scrolling
-    * -- NOTE: You will need to comment / uncomment code the differently for windows or linux
-    * -- or write your own 'os' type check.
-    * This comes from a different naming of the the scrollwheel 'button', on different systems.
-    """
-    def __init__(self, parent, background, *args, **kw):
-
-        # track changes to the canvas and frame width and sync them,
-        # also updating the scrollbar
-        def _configure_interior(event):
-            # update the scrollbars to match the size of the inner frame
-            size = (interior.winfo_reqwidth(), interior.winfo_reqheight())
-            canvas.config(scrollregion="0 0 %s %s" % size)
-            if interior.winfo_reqwidth() != canvas.winfo_width():
-                # update the canvas's width to fit the inner frame
-                canvas.config(width=interior.winfo_reqwidth())
-
-        def _configure_canvas(event):
-            if interior.winfo_reqwidth() != canvas.winfo_width():
-                # update the inner frame's width to fill the canvas
-                canvas.itemconfigure(interior_id, width=canvas.winfo_width())
-
-        # TODO: Add platform check
-        """
-        This is linux code for scrolling the window, 
-        It has different buttons for scrolling the windows
-        """
-        def _on_mousewheel(event, scroll):
-            canvas.yview_scroll(int(scroll), "units")
-
-        def _bind_to_mousewheel(event):
-            canvas.bind_all("<Button-4>", fp(_on_mousewheel, scroll=-1))
-            canvas.bind_all("<Button-5>", fp(_on_mousewheel, scroll=1))
-
-        def _unbind_from_mousewheel(event):
-            canvas.unbind_all("<Button-4>")
-            canvas.unbind_all("<Button-5>")
-
-
-        """
-        This is windows code for scrolling the Frame
-        def _on_mousewheel(event):
-            canvas.yview_scroll(int(-1*(event.delta/120)), "units")
-        def _bind_to_mousewheel(event):
-            canvas.bind_all("<MouseWheel>", _on_mousewheel)
-        def _unbind_from_mousewheel(event):
-            canvas.unbind_all("<MouseWheel>")
-        """
-
-        ttk.Frame.__init__(self, parent, *args, **kw)
-
-        # create a canvas object and a vertical scrollbar for scrolling it
-        vscrollbar = AutoScrollbar(self, orient=tk.VERTICAL,  style='arrowless.Vertical.TScrollbar',)
-        vscrollbar.pack(fill=tk.Y, side=tk.RIGHT, expand=tk.FALSE)
-        canvas = tk.Canvas(self, bd=0, highlightthickness=0,
-                           yscrollcommand=vscrollbar.set, background=background, borderwidth=0,)
-        canvas.pack(side=tk.LEFT, fill=tk.BOTH, expand=tk.TRUE)
-        vscrollbar.config(command=canvas.yview)
-
-        # reset the view
-        canvas.xview_moveto(0)
-        canvas.yview_moveto(0)
-
-        # create a frame inside the canvas which will be scrolled with it
-        self.interior = interior = ttk.Frame(canvas, borderwidth=0, )
-        interior_id = canvas.create_window(0, 0, window=interior,
-                                           anchor=tk.NW)
-
-        interior.bind('<Configure>', _configure_interior)
-        canvas.bind('<Configure>', _configure_canvas)
-        canvas.bind('<Enter>', _bind_to_mousewheel)
-        canvas.bind('<Leave>', _unbind_from_mousewheel)
-
-    def clear_interior(self):
-        for child in self.interior.winfo_children():
-            child.destroy()
-
-
 class AutoScrollbar(ttk.Scrollbar):
     """Create a scrollbar that hides itself if it's not needed. Only
     works if you use the pack geometry manager from tkinter.
     """
+
     def set(self, lo, hi):
         if float(lo) <= 0.0 and float(hi) >= 1.0:
             self.pack_forget()
@@ -260,10 +182,13 @@ class AutoScrollbar(ttk.Scrollbar):
             else:
                 self.pack(fill=tk.Y, side=tk.RIGHT)
         tk.Scrollbar.set(self, lo, hi)
+
     def grid(self, **kw):
         raise tk.TclError("cannot use grid with this widget")
+
     def place(self, **kw):
         raise tk.TclError("cannot use place with this widget")
+
 
 # MAIN GUI WINDOW
 class MainWindow:
@@ -275,7 +200,8 @@ class MainWindow:
         r.overrideredirect(False)
         style = ttk.Style(self.root)
         print(style.element_options("Vertical.TScrollbar.trough"))
-        style.configure("Vertical.TScrollbar", gripcount=0, troughcolor=PRIMARY_BLUE, bordercolor=PRIMARY_BLUE, background=LIGHT_BLUE, lightcolor=LIGHT_BLUE, darkcolor=MID_BLUE)
+        style.configure("Vertical.TScrollbar", gripcount=0, troughcolor=PRIMARY_BLUE, bordercolor=PRIMARY_BLUE,
+                        background=LIGHT_BLUE, lightcolor=LIGHT_BLUE, darkcolor=MID_BLUE)
 
         # create new scrollbar layout
         style.layout('arrowless.Vertical.TScrollbar',
@@ -323,24 +249,38 @@ class MainWindow:
 
         text_editor_scroll_frame = tk.Frame(text_editor_frame, width=10, relief=tk.FLAT, background=PRIMARY_BLUE)
         text_editor_scroll_frame.pack(side=tk.RIGHT, fill=tk.Y)
-        text_editor_scroll = AutoScrollbar(text_editor_scroll_frame, orient='vertical', style='arrowless.Vertical.TScrollbar', takefocus=False)
+        text_editor_scroll = AutoScrollbar(text_editor_scroll_frame, orient='vertical',
+                                           style='arrowless.Vertical.TScrollbar', takefocus=False)
         text_editor_scroll.pack(side=tk.RIGHT, fill=tk.Y)
 
         # BOTTOM PANEL WITH TEXT SIZE
         # TODO: Add text size input to change editor text size without mouse
         self.bottom_panel = tk.Frame(text_editor_frame, background=MID_BLUE, height=20)
         self.bottom_panel.pack(fill=tk.BOTH, side=tk.BOTTOM)
-        close_words_title = tk.Label(left_side_panel, pady=10,  background=PRIMARY_BLUE, foreground=TEXT_COLOR_WHITE, text="Často sa opakujúce slová", font=(HELVETICA_FONT_NAME, TEXT_SIZE_SECTION_HEADER), anchor='n',
+        close_words_title = tk.Label(left_side_panel, pady=10, background=PRIMARY_BLUE, foreground=TEXT_COLOR_WHITE,
+                                     text="Často sa opakujúce slová",
+                                     font=(HELVETICA_FONT_NAME, TEXT_SIZE_SECTION_HEADER), anchor='n',
                                      justify='left')
         close_words_title.pack()
 
         separator = ttk.Separator(left_side_panel, orient='horizontal')
         separator.pack(fill=tk.X, padx=10)
 
-        self.close_words_wrapper = VerticalScrolledFrame(left_side_panel, background=PRIMARY_BLUE, borderwidth=0)
-        self.close_words_wrapper.pack(fill=tk.BOTH, expand=1, pady=10, padx=10)
+        left_side_panel_scroll_frame = tk.Frame(left_side_panel, width=10, relief=tk.FLAT, background=PRIMARY_BLUE)
+        left_side_panel_scroll_frame.pack(side=tk.RIGHT, fill=tk.Y)
+        left_side_frame_scroll = AutoScrollbar(left_side_panel_scroll_frame, orient='vertical',
+                                               style='arrowless.Vertical.TScrollbar', takefocus=False)
+        left_side_frame_scroll.pack(side=tk.RIGHT, fill=tk.Y)
 
-        self.text_editor = tk.Text(text_editor_frame, wrap=tk.WORD, relief=tk.FLAT, yscrollcommand=text_editor_scroll.set, background=TEXT_EDITOR_BG, borderwidth=0)
+        self.close_words_text = tk.Text(left_side_panel, highlightthickness=0, bd=0, wrap=tk.WORD, state=tk.DISABLED,
+                                        width=20, background=PRIMARY_BLUE, foreground=TEXT_COLOR_WHITE,
+                                        yscrollcommand=left_side_frame_scroll.set)
+        self.close_words_text.pack(fill=tk.BOTH, expand=1, pady=10, padx=10)
+
+        left_side_frame_scroll.config(command=self.close_words_text.yview)
+
+        self.text_editor = tk.Text(text_editor_frame, wrap=tk.WORD, relief=tk.FLAT,
+                                   yscrollcommand=text_editor_scroll.set, background=TEXT_EDITOR_BG, borderwidth=0)
         self.text_editor.config(font=(HELVETICA_FONT_NAME, self.text_size))
         self.text_editor.pack(expand=1, fill=tk.BOTH, padx=5)
 
@@ -349,7 +289,6 @@ class MainWindow:
 
         self.logo_holder = tk.Label(text_editor_frame, image=logo, background=TEXT_EDITOR_BG)
         self.logo_holder.image = logo
-
 
         text_editor_scroll.config(command=self.text_editor.yview)
 
@@ -366,9 +305,9 @@ class MainWindow:
         self.root.bind("<Button-4>", self.change_text_size)
         self.root.bind("<Button-5>", self.change_text_size)
 
-
-
-        word_freq_title = tk.Label(right_side_panel, pady=10,  background=PRIMARY_BLUE, foreground=TEXT_COLOR_WHITE, text="Často použité slová", font=(HELVETICA_FONT_NAME, TEXT_SIZE_SECTION_HEADER), anchor='n',
+        word_freq_title = tk.Label(right_side_panel, pady=10, background=PRIMARY_BLUE, foreground=TEXT_COLOR_WHITE,
+                                   text="Často použité slová", font=(HELVETICA_FONT_NAME, TEXT_SIZE_SECTION_HEADER),
+                                   anchor='n',
                                    justify='left')
         word_freq_title.pack()
 
@@ -377,33 +316,46 @@ class MainWindow:
 
         right_side_panel_scroll_frame = tk.Frame(right_side_panel, width=10, relief=tk.FLAT, background=PRIMARY_BLUE)
         right_side_panel_scroll_frame.pack(side=tk.RIGHT, fill=tk.Y)
-        right_side_frame_scroll = AutoScrollbar(right_side_panel_scroll_frame, orient='vertical', style='arrowless.Vertical.TScrollbar', takefocus=False)
+        right_side_frame_scroll = AutoScrollbar(right_side_panel_scroll_frame, orient='vertical',
+                                                style='arrowless.Vertical.TScrollbar', takefocus=False)
         right_side_frame_scroll.pack(side=tk.RIGHT, fill=tk.Y)
 
-        self.word_freq_text = tk.Text(right_side_panel, highlightthickness=0, bd=0, wrap=tk.WORD, state=tk.DISABLED, width=20, background=PRIMARY_BLUE, foreground=TEXT_COLOR_WHITE, yscrollcommand=right_side_frame_scroll.set)
+        self.word_freq_text = tk.Text(right_side_panel, highlightthickness=0, bd=0, wrap=tk.WORD, state=tk.DISABLED,
+                                      width=20, background=PRIMARY_BLUE, foreground=TEXT_COLOR_WHITE,
+                                      yscrollcommand=right_side_frame_scroll.set)
         self.word_freq_text.pack(fill=tk.BOTH, expand=1, pady=10, padx=10)
 
         right_side_frame_scroll.config(command=self.word_freq_text.yview)
 
+        char_count_info_label = tk.Label(self.bottom_panel, text="Počet znakov s medzerami:", anchor='sw',
+                                         justify='left', background=MID_BLUE, foreground=TEXT_COLOR_WHITE,
+                                         font=(HELVETICA_FONT_NAME, TEXT_SIZE_BOTTOM_BAR))
+        char_count_info_label.pack(side=tk.LEFT, padx=(5, 0), pady=5)
 
-        char_count_info_label = tk.Label(self.bottom_panel, text="Počet znakov s medzerami:", anchor='sw', justify='left', background=MID_BLUE, foreground=TEXT_COLOR_WHITE, font=(HELVETICA_FONT_NAME, TEXT_SIZE_BOTTOM_BAR))
-        char_count_info_label.pack(side=tk.LEFT, padx=(5,0), pady=5)
-
-        self.char_count_info_value = tk.Label(self.bottom_panel, text="0", anchor='sw', justify='left', background=MID_BLUE, foreground=TEXT_COLOR_WHITE, font=(HELVETICA_FONT_NAME, TEXT_SIZE_BOTTOM_BAR))
+        self.char_count_info_value = tk.Label(self.bottom_panel, text="0", anchor='sw', justify='left',
+                                              background=MID_BLUE, foreground=TEXT_COLOR_WHITE,
+                                              font=(HELVETICA_FONT_NAME, TEXT_SIZE_BOTTOM_BAR))
         self.char_count_info_value.pack(side=tk.LEFT, padx=0, pady=5)
 
-        word_count_info_label = tk.Label(self.bottom_panel, text="Počet slov:", anchor='sw', justify='left', background=MID_BLUE, foreground=TEXT_COLOR_WHITE, font=(HELVETICA_FONT_NAME, TEXT_SIZE_BOTTOM_BAR))
-        word_count_info_label.pack(side=tk.LEFT, padx=(5,0), pady=5)
+        word_count_info_label = tk.Label(self.bottom_panel, text="Počet slov:", anchor='sw', justify='left',
+                                         background=MID_BLUE, foreground=TEXT_COLOR_WHITE,
+                                         font=(HELVETICA_FONT_NAME, TEXT_SIZE_BOTTOM_BAR))
+        word_count_info_label.pack(side=tk.LEFT, padx=(5, 0), pady=5)
 
-        self.word_count_info_value = tk.Label(self.bottom_panel, text="0", anchor='sw', justify='left', background=MID_BLUE, foreground=TEXT_COLOR_WHITE, font=(HELVETICA_FONT_NAME, TEXT_SIZE_BOTTOM_BAR))
+        self.word_count_info_value = tk.Label(self.bottom_panel, text="0", anchor='sw', justify='left',
+                                              background=MID_BLUE, foreground=TEXT_COLOR_WHITE,
+                                              font=(HELVETICA_FONT_NAME, TEXT_SIZE_BOTTOM_BAR))
         self.word_count_info_value.pack(side=tk.LEFT, padx=0, pady=5)
 
-        page_count_info_label = tk.Label(self.bottom_panel, text="Počet normostrán:", anchor='sw', justify='left', background=MID_BLUE, foreground=TEXT_COLOR_WHITE, font=(HELVETICA_FONT_NAME, TEXT_SIZE_BOTTOM_BAR))
-        page_count_info_label.pack(side=tk.LEFT, padx=(5,0), pady=5)
+        page_count_info_label = tk.Label(self.bottom_panel, text="Počet normostrán:", anchor='sw', justify='left',
+                                         background=MID_BLUE, foreground=TEXT_COLOR_WHITE,
+                                         font=(HELVETICA_FONT_NAME, TEXT_SIZE_BOTTOM_BAR))
+        page_count_info_label.pack(side=tk.LEFT, padx=(5, 0), pady=5)
 
-        self.page_count_info_value = tk.Label(self.bottom_panel, text="0", anchor='sw', justify='left', background=MID_BLUE, foreground=TEXT_COLOR_WHITE, font=(HELVETICA_FONT_NAME, TEXT_SIZE_BOTTOM_BAR))
+        self.page_count_info_value = tk.Label(self.bottom_panel, text="0", anchor='sw', justify='left',
+                                              background=MID_BLUE, foreground=TEXT_COLOR_WHITE,
+                                              font=(HELVETICA_FONT_NAME, TEXT_SIZE_BOTTOM_BAR))
         self.page_count_info_value.pack(side=tk.LEFT, padx=0, pady=5)
-
 
         # TOP MENU
         self.menu_bar = tk.Menu(self.root, background=PRIMARY_BLUE, foreground=TEXT_COLOR_WHITE, border=1)
@@ -411,33 +363,38 @@ class MainWindow:
 
         # FILE MENU
         # TODO: Maybe add a way to import MS word or other document type
-        self.file_menu = tk.Menu(self.menu_bar, tearoff=0, background=PRIMARY_BLUE, foreground=TEXT_COLOR_WHITE, font=(HELVETICA_FONT_NAME, TEXT_SIZE_MENU))
+        self.file_menu = tk.Menu(self.menu_bar, tearoff=0, background=PRIMARY_BLUE, foreground=TEXT_COLOR_WHITE,
+                                 font=(HELVETICA_FONT_NAME, TEXT_SIZE_MENU))
         self.file_menu.add_command(label="Načítať súbor", command=self.load_file)
         self.file_menu.add_command(label="Uložiť súbor", command=self.save_file)
         self.menu_bar.add_cascade(label="Súbor", menu=self.file_menu)
 
         # ANALYZE MENU
         # TODO: We need to think of more things we can analyze... because everything can be and should be analyzed xD
-        self.analyze_menu = tk.Menu(self.menu_bar, tearoff=0, background=PRIMARY_BLUE, foreground=TEXT_COLOR_WHITE, font=(HELVETICA_FONT_NAME, TEXT_SIZE_MENU))
+        self.analyze_menu = tk.Menu(self.menu_bar, tearoff=0, background=PRIMARY_BLUE, foreground=TEXT_COLOR_WHITE,
+                                    font=(HELVETICA_FONT_NAME, TEXT_SIZE_MENU))
         self.analyze_menu.add_command(label="Indexy čitateľnosti", command=self.show_readability_indices)
         self.menu_bar.add_cascade(label="Analýza", menu=self.analyze_menu)
 
         # SETTINGS MENU
-        self.settings_menu = tk.Menu(self.menu_bar, tearoff=0, background=PRIMARY_BLUE, foreground=TEXT_COLOR_WHITE, font=(HELVETICA_FONT_NAME, TEXT_SIZE_MENU))
+        self.settings_menu = tk.Menu(self.menu_bar, tearoff=0, background=PRIMARY_BLUE, foreground=TEXT_COLOR_WHITE,
+                                     font=(HELVETICA_FONT_NAME, TEXT_SIZE_MENU))
         self.settings_menu.add_command(label="Parametre analýzy", command=self.show_settings)
         self.menu_bar.add_cascade(label="Nastavenia", menu=self.settings_menu)
 
         # HELP MENU
         # TODO: Add link to documentation
-        self.help_menu = tk.Menu(self.menu_bar, tearoff=0, background=PRIMARY_BLUE, foreground=TEXT_COLOR_WHITE, font=(HELVETICA_FONT_NAME, TEXT_SIZE_MENU))
+        self.help_menu = tk.Menu(self.menu_bar, tearoff=0, background=PRIMARY_BLUE, foreground=TEXT_COLOR_WHITE,
+                                 font=(HELVETICA_FONT_NAME, TEXT_SIZE_MENU))
         self.help_menu.add_command(label="O programe", command=self.show_about)
         self.menu_bar.add_cascade(label="Pomoc", menu=self.help_menu)
         root.after(100, self.evaluate_logo_placement)
 
-    #START MAIN LOOP
+    # START MAIN LOOP
     def start_main_loop(self):
         # START MAIN LOOP TO SHOW ROOT WINDOW
         self.root.mainloop()
+
     # CHANGE TEXT SIZE WHEN USER SCROLL MOUSEWHEEL WITH CTRL PRESSED
     # TODO: MAYBE ADD ANOTHER WAY OF CHANGING TEXT SIZE
     def change_text_size(self, event):
@@ -459,7 +416,9 @@ class MainWindow:
             # CLOSE WORDS ARE ALWAYS HIGHLIGHTED WITH BIGGER FONT. WE NEED TO UPDATE TAGS
             for tag in self.text_editor.tag_names():
                 if tag.startswith(CLOSE_WORD_PREFIX):
-                    self.text_editor.tag_configure(tagName=tag, font=(HELVETICA_FONT_NAME, self.text_size + 2, BOLD_FONT))
+                    self.text_editor.tag_configure(tagName=tag,
+                                                   font=(HELVETICA_FONT_NAME, self.text_size + 2, BOLD_FONT))
+
     # DISPLAY INFORMATIONS ABOUT TEXT SIZE
     def display_size_info(self, statistics: Statistics):
         self.char_count_info_value.config(text=f"{statistics.total_chars}")
@@ -502,7 +461,8 @@ class MainWindow:
 
             words = [word for word in sentence.words if
                      len(word.text) >= self.config["long_sentence_min_word_length"]]
-            if len(words) > self.config["long_sentence_words"] or len(sentence.text) > self.config["long_sentence_char_count"]:
+            if len(words) > self.config["long_sentence_words"] or len(sentence.text) > self.config[
+                "long_sentence_char_count"]:
                 start_index = f"1.0 + {highlight_start} chars"
                 end_index = f"1.0 + {highlight_end} chars"
                 self.text_editor.tag_add("long_sentence", start_index, end_index)
@@ -518,7 +478,8 @@ class MainWindow:
                 end_index = f"1.0 + {match.end()} chars"
                 self.text_editor.tag_add(MULTIPLE_SPACES_TAG_NAME, start_index, end_index)
                 # ON MOUSE OVER, SHOW TOOLTIP
-                self.text_editor.tag_bind(MULTIPLE_SPACES_TAG_NAME, "<Enter>", lambda e: self.show_tooltip(e, 'Viacnásobná medzera'))
+                self.text_editor.tag_bind(MULTIPLE_SPACES_TAG_NAME, "<Enter>",
+                                          lambda e: self.show_tooltip(e, 'Viacnásobná medzera'))
                 self.text_editor.tag_bind(MULTIPLE_SPACES_TAG_NAME, "<Leave>", lambda e: self.hide_tooltip(e))
 
         if self.config["enable_multiple_punctuation"]:
@@ -529,7 +490,8 @@ class MainWindow:
                     end_index = f"1.0 + {match.end()} chars"
                     self.text_editor.tag_add(MULTIPLE_PUNCTUATION_TAG_NAME, start_index, end_index)
                     # ON MOUSE OVER, SHOW TOOLTIP
-                    self.text_editor.tag_bind(MULTIPLE_PUNCTUATION_TAG_NAME, "<Enter>", lambda e: self.show_tooltip(e, 'Viacnásobná interpunkcia'))
+                    self.text_editor.tag_bind(MULTIPLE_PUNCTUATION_TAG_NAME, "<Enter>",
+                                              lambda e: self.show_tooltip(e, 'Viacnásobná interpunkcia'))
                     self.text_editor.tag_bind(MULTIPLE_PUNCTUATION_TAG_NAME, "<Leave>", lambda e: self.hide_tooltip(e))
         if self.config["enable_trailing_spaces"]:
             matches = re.finditer(r' +$', text, re.MULTILINE)
@@ -538,7 +500,8 @@ class MainWindow:
                 end_index = f"1.0 + {match.end()} chars"
                 self.text_editor.tag_add(TRAILING_SPACES_TAG_NAME, start_index, end_index)
                 # ON MOUSE OVER, SHOW TOOLTIP
-                self.text_editor.tag_bind(TRAILING_SPACES_TAG_NAME, "<Enter>", lambda e: self.show_tooltip(e, 'Zbytočná medzera na konci odstavca'))
+                self.text_editor.tag_bind(TRAILING_SPACES_TAG_NAME, "<Enter>",
+                                          lambda e: self.show_tooltip(e, 'Zbytočná medzera na konci odstavca'))
                 self.text_editor.tag_bind(TRAILING_SPACES_TAG_NAME, "<Leave>", lambda e: self.hide_tooltip(e))
 
         self.text_editor.tag_config(TRAILING_SPACES_TAG_NAME, background="red")
@@ -551,7 +514,8 @@ class MainWindow:
             self.text_editor.tag_remove("close_word", "1.0", tk.END)
             clusters = []
             close_words_counts = {}
-            words_nlp = {k: v for (k, v) in statistics.words.items() if len(k) >= self.config["close_words_min_word_length"]}
+            words_nlp = {k: v for (k, v) in statistics.words.items() if
+                         len(k) >= self.config["close_words_min_word_length"]}
             for unique_word in words_nlp.values():
                 # IF WORD DOES NOT OCCOUR ENOUGH TIMES WE DONT NEED TO CHECK IF ITS OCCOURENCES ARE CLOSE
                 if len(unique_word.occourences) < self.config["close_words_min_frequency"]:
@@ -563,7 +527,8 @@ class MainWindow:
                     if reference is None:
                         reference = word_occource
                         continue
-                    if word_occource.start_char - reference.start_char < self.config["close_words_min_distance_between_words"]:
+                    if word_occource.start_char - reference.start_char < self.config[
+                        "close_words_min_distance_between_words"]:
                         # IF OCCOURENCE IS TOO CLOSE TO REFERENCE ADD TO CURRENT CLUSTER
                         current_cluster.add(reference)
                         current_cluster.add(word_occource)
@@ -587,11 +552,20 @@ class MainWindow:
                     else:
                         close_words_counts[word_occource.text.lower()] += len(current_cluster)
             close_words_counts = dict(sorted(close_words_counts.items(), key=lambda item: item[1], reverse=True))
-            for word in close_words_counts:
-                word_frame = tk.Frame(self.close_words_wrapper.interior, background=PRIMARY_BLUE)
-                word_frame.pack(fill=tk.X)
-                tk.Label(word_frame, text=word.lower(), justify='left', background=PRIMARY_BLUE, foreground=TEXT_COLOR_WHITE).pack(side=tk.LEFT)
-                tk.Label(word_frame, text="%sx" % (close_words_counts[word]), justify='right', background=PRIMARY_BLUE, foreground=TEXT_COLOR_WHITE).pack(side=tk.RIGHT)
+
+            # NOTE
+            # In tk, there is problem with scrolling so we default to using on big text to dispaly frequencies
+            # There is way of making canvas with scrollregion but this is more performant
+            close_words_value_text = "\n".join(
+                [f"{word.lower()}\t\t{close_words_counts[word]}x" for word in close_words_counts]
+            )
+
+            # WE NEED TO ENBLE TEXT, DELETE CONTENT AND INSERT NEW TEXT
+            self.close_words_text.config(state=tk.NORMAL)
+            self.close_words_text.delete(1.0, tk.END)
+            self.close_words_text.insert(tk.END, close_words_value_text)
+            # DISABLING AGAIN
+            self.close_words_text.config(state=tk.DISABLED)
 
             for cluster in clusters:
                 color = random.choice(dark_colors)
@@ -606,14 +580,16 @@ class MainWindow:
                         self.close_word_colors[tag_name] = color
                     self.text_editor.tag_add(tag_name, start_index, end_index)
                     self.text_editor.tag_config(tag_name, foreground=color,
-                                           font=(HELVETICA_FONT_NAME, self.text_size + 2, BOLD_FONT))
+                                                font=(HELVETICA_FONT_NAME, self.text_size + 2, BOLD_FONT))
                     # ON MOUSE OVER, HIGHLIGHT SAME WORDS
-                    self.text_editor.tag_bind(tag_name, "<Enter>", lambda e, w=word.text.lower(): self.highlight_same_word(e,w))
-                    self.text_editor.tag_bind(tag_name, "<Leave>", lambda e, w=word.text.lower(): self.unhighlight_same_word(e, w))
+                    self.text_editor.tag_bind(tag_name, "<Enter>",
+                                              lambda e, w=word.text.lower(): self.highlight_same_word(e, w))
+                    self.text_editor.tag_bind(tag_name, "<Leave>",
+                                              lambda e, w=word.text.lower(): self.unhighlight_same_word(e, w))
 
     # HIGHLIGHT SAME WORD ON MOUSE OVER
     def highlight_same_word(self, event, word):
-        self.show_tooltip(event,  'Toto slovo sa opakuje viackrát na krátkom úseku')
+        self.show_tooltip(event, 'Toto slovo sa opakuje viackrát na krátkom úseku')
         for tag in self.text_editor.tag_names():
             if tag.startswith(f"{CLOSE_WORD_PREFIX}{word}"):
                 self.text_editor.tag_config(tag, background="black", foreground="white")
@@ -640,7 +616,8 @@ class MainWindow:
         self.tooltip.wm_geometry(f"+{x}+{y}")
 
         # Add content to the tooltip
-        label = tk.Label(self.tooltip, text=f"{text}", background=LIGHT_BLUE, relief="solid", borderwidth=1, justify="left", padx=5, pady=5)
+        label = tk.Label(self.tooltip, text=f"{text}", background=LIGHT_BLUE, relief="solid", borderwidth=1,
+                         justify="left", padx=5, pady=5)
         label.pack()
 
     def hide_tooltip(self, event):
@@ -672,7 +649,6 @@ class MainWindow:
         # CLEAR DEBOUNCE TIMER IF ANY
         self.analyze_text_debounce_timer = None
         self.evaluate_logo_placement()
-        self.close_words_wrapper.clear_interior()
         # GET TEXT FROM EDITOR
         text = self.text_editor.get(1.0, tk.END)
         # RUN ANALYSIS
@@ -715,14 +691,14 @@ class MainWindow:
         else:
             screen_width = self.text_editor.winfo_width()
             screen_height = self.text_editor.winfo_height()
-            x = screen_width/2 - (EDITOR_LOGO_WIDTH / 2)
-            y = screen_height/2 - (EDITOR_LOGO_HEIGHT / 2)
-            self.logo_holder.place(x=x,y=y)
+            x = screen_width / 2 - (EDITOR_LOGO_WIDTH / 2)
+            y = screen_height / 2 - (EDITOR_LOGO_HEIGHT / 2)
+            self.logo_holder.place(x=x, y=y)
+
     # SELECT ALL TEXT
     def select_all(self, event=None):
         self.text_editor.tag_add(tk.SEL, "1.0", tk.END)
         return "break"
-
 
     # SHOW SETTINGS WINDOW
     def show_settings(self):
@@ -742,7 +718,8 @@ class MainWindow:
             self.config["enable_multiple_punctuation"] = multiple_punctuation_var.get()
             self.config["enable_trailing_spaces"] = trailing_spaces_var.get()
             self.config["close_words_min_word_length"] = int(close_words_min_word_length_entry.get())
-            self.config["close_words_min_distance_between_words"] = int(close_words_min_distance_between_words_entry.get())
+            self.config["close_words_min_distance_between_words"] = int(
+                close_words_min_distance_between_words_entry.get())
             self.config["close_words_min_frequency"] = int(close_words_min_frequency_entry.get())
             self.config["enable_close_words"] = close_words_var.get()
             Service.save_config(self.config)
@@ -758,7 +735,8 @@ class MainWindow:
                                                                                                                       10,
                                                                                                                       2),
                                                                                                                   sticky='w')
-        tk.Label(settings_window, text="Minimálna dĺžka slova v znakoch", anchor='w').grid(row=1, column=0, padx=10, pady=2,
+        tk.Label(settings_window, text="Minimálna dĺžka slova v znakoch", anchor='w').grid(row=1, column=0, padx=10,
+                                                                                           pady=2,
                                                                                            sticky='w')
         repeated_words_min_word_length_entry = tk.Entry(settings_window)
         repeated_words_min_word_length_entry.grid(row=1, column=1, padx=10, pady=2)
@@ -783,7 +761,8 @@ class MainWindow:
                                                                                                                 columnspan=2,
                                                                                                                 padx=10,
                                                                                                                 pady=(
-                                                                                                                    10, 2),
+                                                                                                                    10,
+                                                                                                                    2),
                                                                                                                 sticky='w')
         tk.Label(settings_window, text="Zvýrazniť vety, ktoré majú väčší počet slov", anchor='w').grid(row=6, column=0,
                                                                                                        padx=10, pady=2,
@@ -792,7 +771,8 @@ class MainWindow:
         long_sentence_words_entry.grid(row=6, column=1, padx=10, pady=2)
         long_sentence_words_entry.insert(0, str(self.config["long_sentence_words"]))
 
-        tk.Label(settings_window, text="Zvýrazniť vety, ktoré majú viac znakov", anchor='w').grid(row=7, column=0, padx=10,
+        tk.Label(settings_window, text="Zvýrazniť vety, ktoré majú viac znakov", anchor='w').grid(row=7, column=0,
+                                                                                                  padx=10,
                                                                                                   pady=2, sticky='w')
         long_sentence_char_count_entry = tk.Entry(settings_window)
         long_sentence_char_count_entry.grid(row=7, column=1, padx=10, pady=2)
@@ -812,7 +792,8 @@ class MainWindow:
         tk.Label(settings_window, text="", anchor='w').grid(row=10, column=0, padx=10, pady=5, sticky='w')
 
         # Multiple spaces settings
-        tk.Label(settings_window, text="Viacnásobné medzery", font=(HELVETICA_FONT_NAME, 14, BOLD_FONT), anchor='w').grid(
+        tk.Label(settings_window, text="Viacnásobné medzery", font=(HELVETICA_FONT_NAME, 14, BOLD_FONT),
+                 anchor='w').grid(
             row=11,
             column=0,
             columnspan=2,
@@ -836,7 +817,8 @@ class MainWindow:
                                       10, 2),
                                   sticky='w')
         multiple_punctuation_var = tk.BooleanVar(value=self.config["enable_multiple_punctuation"])
-        multiple_punctuation_checkbox = tk.Checkbutton(settings_window, text="Povolené", variable=multiple_punctuation_var)
+        multiple_punctuation_checkbox = tk.Checkbutton(settings_window, text="Povolené",
+                                                       variable=multiple_punctuation_var)
         multiple_punctuation_checkbox.grid(row=15, column=1, padx=10, pady=2, sticky='w')
 
         # Spacer
@@ -869,12 +851,15 @@ class MainWindow:
         close_words_min_word_length_entry.grid(row=21, column=1, padx=10, pady=2)
         close_words_min_word_length_entry.insert(0, str(self.config["close_words_min_word_length"]))
 
-        tk.Label(settings_window, text="Povolená medzera medzi opakujúcimi sa slovami", anchor='w').grid(row=22, column=0,
-                                                                                                         padx=10, pady=2,
+        tk.Label(settings_window, text="Povolená medzera medzi opakujúcimi sa slovami", anchor='w').grid(row=22,
+                                                                                                         column=0,
+                                                                                                         padx=10,
+                                                                                                         pady=2,
                                                                                                          sticky='w')
         close_words_min_distance_between_words_entry = tk.Entry(settings_window)
         close_words_min_distance_between_words_entry.grid(row=22, column=1, padx=10, pady=2)
-        close_words_min_distance_between_words_entry.insert(0, str(self.config["close_words_min_distance_between_words"]))
+        close_words_min_distance_between_words_entry.insert(0,
+                                                            str(self.config["close_words_min_distance_between_words"]))
 
         tk.Label(settings_window, text="Minimálna početnosť opakujúceho sa slova", anchor='w').grid(row=23, column=0,
                                                                                                     padx=10, pady=2,
@@ -895,7 +880,6 @@ class MainWindow:
     def show_about(self):
         messagebox.showinfo("O programe", "Hector - Analyzátor textu\nVerzia 1.0")
 
-
     # CALCULATE AND SHOW VARIOUS READABILITY INDECES WITH EXPLANATIONS
     def show_readability_indices(self):
         indices = Service.evaluate_readability(self.doc, self.statistics)
@@ -907,6 +891,7 @@ class MainWindow:
         index_text.config(state=tk.DISABLED)
         index_text.pack(expand=1, fill=tk.BOTH)
 
+
 # SPLASH SCREEN TO SHOW WHILE INITIALIZING MAIN APP
 class SplashWindow:
     def __init__(self, r):
@@ -914,8 +899,8 @@ class SplashWindow:
         self.root.geometry("600x400")
         screen_width = self.root.winfo_screenwidth()
         screen_height = self.root.winfo_screenheight()
-        x = screen_width/2 - 300
-        y = screen_height/2 - 200
+        x = screen_width / 2 - 300
+        y = screen_height / 2 - 200
 
         self.root.geometry("+%d+%d" % (x, y))
         self.root.overrideredirect(True)
@@ -928,17 +913,21 @@ class SplashWindow:
         logo_holder = tk.Label(self.main_frame, image=logo, background=PRIMARY_BLUE)
         logo_holder.image = logo
         logo_holder.pack()
-        self.status = tk.Label(self.main_frame, text="inicializujem...", background=PRIMARY_BLUE, font=(HELVETICA_FONT_NAME, 10), foreground="#ffffff")
+        self.status = tk.Label(self.main_frame, text="inicializujem...", background=PRIMARY_BLUE,
+                               font=(HELVETICA_FONT_NAME, 10), foreground="#ffffff")
         self.status.pack()
-        ## required to make window show before the program gets to the mainloop
+        # required to make window show before the program gets to the mainloop
         self.root.update()
+
     def close(self):
         self.main_frame.destroy()
+
     def update_status(self, text):
         self.status.config(text=text)
         self.root.update()
-initialized = False
 
+
+initialized = False
 
 root = ThemedTk(theme="clam")
 root.title("Hector")
@@ -954,11 +943,10 @@ splash.close()
 main_window = MainWindow(root, nlp)
 main_window.start_main_loop()
 
-
 # TODO LEVEL 0 (knowm bugs)
 
 # TODO LEVEL A (must have for "production"):
-# Redesign to have nice and intuitive UI - basic things should be done
+# Redesign to have nice and intuitive UI - basic things should be done, only top menu items remains
 
 # TODO LEVEL B (nice to have features): Consider adding:
 # Heatmap?
