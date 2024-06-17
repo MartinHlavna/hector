@@ -475,11 +475,11 @@ class MainWindow:
                      "repeated_words_min_word_frequency"]}
         sorted_word_counts = sorted(words.values(), key=lambda x: len(x.occourences), reverse=True)
 
-        # TODO
+        # NOTE
         # In tk, there is problem with scrolling so we default to using on big text to dispaly frequencies
-        # ugly but it works for now
+        # There is way of making canvas with scrollregion but this is more performant
         frequent_words_text = "\n".join(
-            [f"{word.text}: {len(word.occourences)}x" for word in sorted_word_counts]
+            [f"{word.text}\t\t{len(word.occourences)}x" for word in sorted_word_counts]
         )
 
         # WE NEED TO ENBLE TEXT, DELETE CONTENT AND INSERT NEW TEXT
