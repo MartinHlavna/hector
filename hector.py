@@ -951,5 +951,4 @@ main_window.start_main_loop()
 # TODO LEVEL B (nice to have features): Consider adding:
 # Heatmap?
 # Commas analysis based on some NLP apporach?
-# Left side panel with list of close words. On mouse over word, highlight words in editor
-# Highlighting words selected in right panel
+# On mouse over in left/ride panel word, highlight words in editor
