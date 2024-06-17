@@ -9,9 +9,6 @@ from ttkthemes import ThemedTk
 
 import stanza
 from PIL import ImageTk, Image
-import functools
-
-fp = functools.partial
 
 MULTIPLE_PUNCTUATION_TAG_NAME = "multiple_punctuation"
 TRAILING_SPACES_TAG_NAME = "trailing_spaces"
