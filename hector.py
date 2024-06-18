@@ -236,7 +236,6 @@ class MainWindow:
         text_editor_scroll.pack(side=tk.RIGHT, fill=tk.Y)
 
         # BOTTOM PANEL WITH TEXT SIZE
-        # TODO: Add text size input to change editor text size without mouse
         self.bottom_panel = tk.Frame(text_editor_frame, background=MID_BLUE, height=20)
         self.bottom_panel.pack(fill=tk.BOTH, side=tk.BOTTOM)
         close_words_title = tk.Label(left_side_panel, pady=10, background=PRIMARY_BLUE, foreground=TEXT_COLOR_WHITE,
@@ -347,10 +346,23 @@ class MainWindow:
             side=tk.LEFT, padx=(5, 0), pady=5
         )
 
-        self.readability_value = tk.Label(self.bottom_panel, text=f"0 / {READABILITY_MAX_VALUE}", anchor='sw', justify='left',
+        self.readability_value = tk.Label(self.bottom_panel, text=f"0 / {READABILITY_MAX_VALUE}", anchor='sw',
+                                          justify='left',
                                           background=MID_BLUE, foreground=TEXT_COLOR_WHITE,
                                           font=(HELVETICA_FONT_NAME, TEXT_SIZE_BOTTOM_BAR))
         self.readability_value.pack(side=tk.LEFT, padx=0, pady=5)
+
+        self.editor_text_size_input = ttk.Spinbox(self.bottom_panel, from_=1, to=30, width=10,
+                                                  font=(HELVETICA_FONT_NAME, TEXT_SIZE_BOTTOM_BAR),
+                                                  style='info.TSpinbox', takefocus=False, command=lambda: self.set_text_size(self.editor_text_size_input.get()))
+        self.editor_text_size_input.set(self.text_size)
+        self.editor_text_size_input.bind("<Return>", lambda e: self.set_text_size(self.editor_text_size_input.get()))
+        self.editor_text_size_input.pack(side=tk.RIGHT)
+        tk.Label(self.bottom_panel, text="Veľkosť textu v editore:", anchor='sw', justify='left',
+                 background=MID_BLUE, foreground=TEXT_COLOR_WHITE,
+                 font=(HELVETICA_FONT_NAME, TEXT_SIZE_BOTTOM_BAR)).pack(
+            side=tk.RIGHT, padx=(5, 0), pady=5
+        )
 
         # TOP MENU
         self.menu_bar = tk.Menu(self.root, background=PRIMARY_BLUE, foreground=TEXT_COLOR_WHITE, border=1)
@@ -383,6 +395,18 @@ class MainWindow:
         # START MAIN LOOP TO SHOW ROOT WINDOW
         self.root.mainloop()
 
+    def set_text_size(self, text_size):
+        self.text_size = min(30, max(1, int(text_size)))
+        self.editor_text_size_input.set(self.text_size)
+        self.editor_text_size_input.select_clear()
+        # CHANGE FONT SIZE IN EDITOR
+        self.text_editor.config(font=(HELVETICA_FONT_NAME, self.text_size))
+        # CLOSE WORDS ARE ALWAYS HIGHLIGHTED WITH BIGGER FONT. WE NEED TO UPDATE TAGS
+        for tag in self.text_editor.tag_names():
+            if tag.startswith(CLOSE_WORD_PREFIX):
+                self.text_editor.tag_configure(tagName=tag,
+                                               font=(HELVETICA_FONT_NAME, self.text_size + 2, BOLD_FONT))
+
     # CHANGE TEXT SIZE WHEN USER SCROLL MOUSEWHEEL WITH CTRL PRESSED
     def change_text_size(self, event):
         # CHECK IF CTRL IS PRESSED
@@ -390,19 +414,11 @@ class MainWindow:
             # ON WINDOWS IF USER SCROLLS "UP" event.delta IS POSITIVE
             # ON LINUX IF USER SCROLLS "UP" event.num IS 4
             if event.delta > 0 or event.num == 4:
-                self.text_size += 1
+                self.set_text_size(self.text_size + 1)
             # ON WINDOWS IF USER SCROLLS "DOWN" event.delta IS NEGATIVE
             # ON LINUX IF USER SCROLLS "DOWN" event.num IS 5
             elif event.delta < 0 or event.num == 5:
-                self.text_size -= 1
-
-            # CHANGE FONT SIZE IN EDITOR
-            self.text_editor.config(font=(HELVETICA_FONT_NAME, self.text_size))
-            # CLOSE WORDS ARE ALWAYS HIGHLIGHTED WITH BIGGER FONT. WE NEED TO UPDATE TAGS
-            for tag in self.text_editor.tag_names():
-                if tag.startswith(CLOSE_WORD_PREFIX):
-                    self.text_editor.tag_configure(tagName=tag,
-                                                   font=(HELVETICA_FONT_NAME, self.text_size + 2, BOLD_FONT))
+                self.set_text_size(self.text_size - 1)
 
     # DISPLAY INFORMATIONS ABOUT TEXT SIZE
     def display_size_info(self, statistics: Statistics):
