@@ -260,10 +260,10 @@ class MainWindow:
 
         left_side_frame_scroll.config(command=self.close_words_text.yview)
 
-        self.text_editor = tk.Text(text_editor_frame, wrap=tk.WORD, relief=tk.FLAT,
+        self.text_editor = tk.Text(text_editor_frame, wrap=tk.WORD, relief=tk.FLAT, highlightthickness=0,
                                    yscrollcommand=text_editor_scroll.set, background=TEXT_EDITOR_BG, borderwidth=0)
         self.text_editor.config(font=(HELVETICA_FONT_NAME, self.text_size))
-        self.text_editor.pack(expand=1, fill=tk.BOTH, padx=5)
+        self.text_editor.pack(expand=1, fill=tk.BOTH, padx=5, pady=5)
 
         image = Image.open("images/hector-logo.png")
         logo = ImageTk.PhotoImage(image.resize((EDITOR_LOGO_WIDTH, EDITOR_LOGO_HEIGHT), Image.ANTIALIAS))
