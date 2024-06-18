@@ -11,6 +11,7 @@ from ttkthemes import ThemedTk
 import stanza
 from PIL import ImageTk, Image
 
+VERSION = "0.1.0 Alfa"
 DOCUMENTATION_LINK = "https://github.com/MartinHlavna/hector"
 
 MULTIPLE_PUNCTUATION_TAG_NAME = "multiple_punctuation"
@@ -134,7 +135,6 @@ class Service:
     # FUNCTION THAT CALCULATE READABILITY INDICES
     @staticmethod
     def evaluate_readability(doc, statistics: Statistics):
-        # TODO: Allow to run on part of text
         if statistics.total_chars <= 0:
             return {
                 "Počet unikátnych slov": 0,
@@ -369,7 +369,6 @@ class MainWindow:
         self.menu_bar.add_cascade(label="Súbor", menu=self.file_menu)
 
         # ANALYZE MENU
-        # TODO: We need to think of more things we can analyze... because everything can be and should be analyzed xD
         self.analyze_menu = tk.Menu(self.menu_bar, tearoff=0, background=PRIMARY_BLUE, foreground=TEXT_COLOR_WHITE,
                                     font=(HELVETICA_FONT_NAME, TEXT_SIZE_MENU))
         self.analyze_menu.add_command(label="Indexy čitateľnosti", command=self.show_readability_indices)
@@ -395,18 +394,15 @@ class MainWindow:
         self.root.mainloop()
 
     # CHANGE TEXT SIZE WHEN USER SCROLL MOUSEWHEEL WITH CTRL PRESSED
-    # TODO: MAYBE ADD ANOTHER WAY OF CHANGING TEXT SIZE
     def change_text_size(self, event):
         # CHECK IF CTRL IS PRESSED
         if event.state & 0x0004:
             # ON WINDOWS IF USER SCROLLS "UP" event.delta IS POSITIVE
             # ON LINUX IF USER SCROLLS "UP" event.num IS 4
-            # TODO What about mac os?
             if event.delta > 0 or event.num == 4:
                 self.text_size += 1
             # ON WINDOWS IF USER SCROLLS "DOWN" event.delta IS NEGATIVE
             # ON LINUX IF USER SCROLLS "DOWN" event.num IS 5
-            # TODO What about mac os?
             elif event.delta < 0 or event.num == 5:
                 self.text_size -= 1
 
@@ -874,9 +870,28 @@ class MainWindow:
         tk.Button(settings_window, text="Uložiť", command=save_settings).grid(row=25, column=0, columnspan=2, pady=10)
 
     # SHOW ABOUT DIALOG
-    # TODO: ADD BASIC INFO
     def show_about(self):
-        messagebox.showinfo("O programe", "Hector - Analyzátor textu\nVerzia 1.0")
+        about_window = tk.Toplevel(self.root)
+        about_window.title("O programe")
+        self.configure_modal(about_window)
+        about_text = tk.Label(about_window, font=(HELVETICA_FONT_NAME, 10), justify=tk.LEFT, wraplength=550, pady=10,
+                              text=f"Hector - Analyzátor textu\nVerzia {VERSION}\n\nHector je jednoduchý nástroj pre "
+                                   f"autorov textov, ktorého cieľom je poskytnúť základnú štylistickú podporu. Je to "
+                                   f"plne konfigurovateľný nástroj, ktorý automaticky analyzuje a vyhodnocuje text. "
+                                   f"Cieľom programu nie je dodať zoznam problémov, ktoré má autor určite opraviť, "
+                                   f"ale len zvýrazniť potenciálne problematické časti. Konečné rozhodnutie je vždy "
+                                   f"na autorovi.",
+                              )
+        about_text.pack()
+        link = tk.Label(about_window, text="Viac info", fg="blue", cursor="hand2", font=(HELVETICA_FONT_NAME, 10))
+        link.pack()
+        link.bind("<Button-1>", lambda e: webbrowser.open(DOCUMENTATION_LINK))
+
+    def configure_modal(self, about_window):
+        about_window.geometry("600x400")
+        about_window.resizable(False, False)
+        about_window.grab_set()
+        about_window.transient(self.root)
 
     # CALCULATE AND SHOW VARIOUS READABILITY INDECES WITH EXPLANATIONS
     def show_readability_indices(self):
@@ -884,6 +899,7 @@ class MainWindow:
         results = "\n".join([f"{index}: {value}" for index, value in indices.items()])
         index_window = tk.Toplevel(self.root)
         index_window.title("Indexy čitateľnosti")
+        self.configure_modal(index_window)
         index_text = tk.Text(index_window, wrap=tk.WORD, font=("Arial", 10))
         index_text.insert(tk.END, f"{results}")
         index_text.config(state=tk.DISABLED)
@@ -930,7 +946,7 @@ initialized = False
 root = ThemedTk(theme="clam")
 root.title("Hector")
 photo = tk.PhotoImage(file='images/hector-icon.png')
-root.wm_iconphoto(False, photo)
+root.wm_iconphoto(True, photo)
 splash = SplashWindow(root)
 splash.update_status("sťahujem a inicializujem jazykový model...")
 # INITIALIZE NLP ENGINE
@@ -950,3 +966,4 @@ main_window.start_main_loop()
 # Heatmap?
 # Commas analysis based on some NLP apporach?
 # On mouse over in left/ride panel word, highlight words in editor
+# Right click context menu with analysis options on selected text

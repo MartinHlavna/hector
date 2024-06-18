@@ -1,7 +1,7 @@
 # Hector
 ![hector logo](https://github.com/MartinHlavna/hector/blob/main/images/hector-logo.png?raw=true)
 ## O programe
-Hector je jednoduchý nástroj pre autorov textov, ktorého cieľom je poskytnúť základnú štylistickú podporu. Hector je plne konfigurovateľný nástroj, ktorý automaticky analyzuje a vyhodnocuje text. Cieľom programu nie je dodať zoznam problémov, ktoré má autor určite opraviť, ale len zvýrazniť potenciálne problematické časti. Konečné rozhodnutie je vždy na autorovi.
+Hector je jednoduchý nástroj pre autorov textov, ktorého cieľom je poskytnúť základnú štylistickú podporu. Je to plne konfigurovateľný nástroj, ktorý automaticky analyzuje a vyhodnocuje text. Cieľom programu nie je dodať zoznam problémov, ktoré má autor určite opraviť, ale len zvýrazniť potenciálne problematické časti. Konečné rozhodnutie je vždy na autorovi.
 ### Zvýraznenie dlhých viet
 Hector žltým podsvietením zvýrazňuje dlhé vety. Samotná dlhá veta problémom nie je, ale ak ich je veľa pokope, môže byť vhodné prerušiť to kratšou vetou. Rovnako však môže byť aj problémom aj to, ak je pokope priveľa krátkych viet bez prerušenia. 
 
