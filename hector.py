@@ -369,7 +369,6 @@ class MainWindow:
         self.root.config(menu=self.menu_bar)
 
         # FILE MENU
-        # TODO: Maybe add a way to import MS word or other document type
         self.file_menu = tk.Menu(self.menu_bar, tearoff=0, background=PRIMARY_BLUE, foreground=TEXT_COLOR_WHITE,
                                  font=(HELVETICA_FONT_NAME, TEXT_SIZE_MENU))
         self.file_menu.add_command(label="Načítať súbor", command=self.load_file)
@@ -627,7 +626,6 @@ class MainWindow:
             self.tooltip = None
 
     # LOAD TEXT FILE
-    # TODO: Maybe we could extract text from MS WORD?
     def load_file(self):
         file_path = filedialog.askopenfilename(filetypes=[("Textové súbory", "*.txt")])
         if file_path:
@@ -963,3 +961,4 @@ main_window.start_main_loop()
 # Commas analysis based on some NLP apporach?
 # On mouse over in left/ride panel word, highlight words in editor
 # Right click context menu with analysis options on selected text
+# Importing other document types like doc, docx, rtf, ...
