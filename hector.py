@@ -14,30 +14,26 @@ from PIL import ImageTk, Image
 VERSION = "0.1.0 Alfa"
 DOCUMENTATION_LINK = "https://github.com/MartinHlavna/hector"
 
-MULTIPLE_PUNCTUATION_TAG_NAME = "multiple_punctuation"
-TRAILING_SPACES_TAG_NAME = "trailing_spaces"
-MULTIPLE_SPACES_TAG_NAME = "multiple_spaces"
-
-EDITOR_LOGO_HEIGHT = 300
-
-EDITOR_LOGO_WIDTH = 300
-
-TEXT_SIZE_SECTION_HEADER = 12
-TEXT_SIZE_MENU = 10
-TEXT_SIZE_BOTTOM_BAR = 10
-
-TEXT_COLOR_WHITE = "#ffffff"
-TEXT_EDITOR_BG = "#E0E0E0"
-
 # COLORS
 PRIMARY_BLUE = "#42659d"
 LIGHT_BLUE = "#bfd5e3"
 MID_BLUE = "#7ea6d7"
 LIGHT_WHITE = "#d7e6e1"
+TEXT_COLOR_WHITE = "#ffffff"
+TEXT_EDITOR_BG = "#E0E0E0"
 
 # CONSTANTS
 # PREFIX FOR CLOSE WORD EDITOR TAGS
 CLOSE_WORD_PREFIX = "close_word_"
+MULTIPLE_PUNCTUATION_TAG_NAME = "multiple_punctuation"
+TRAILING_SPACES_TAG_NAME = "trailing_spaces"
+MULTIPLE_SPACES_TAG_NAME = "multiple_spaces"
+READABILITY_MAX_VALUE = 50
+EDITOR_LOGO_HEIGHT = 300
+EDITOR_LOGO_WIDTH = 300
+TEXT_SIZE_SECTION_HEADER = 12
+TEXT_SIZE_MENU = 10
+TEXT_SIZE_BOTTOM_BAR = 10
 
 # WE USE HELVETICA FONT
 HELVETICA_FONT_NAME = "Helvetica"
@@ -136,13 +132,7 @@ class Service:
     @staticmethod
     def evaluate_readability(doc, statistics: Statistics):
         if statistics.total_chars <= 0:
-            return {
-                "Počet unikátnych slov": 0,
-                "Priemerná dĺžka slova": 0,
-                "Priemerný počet slov vo vete": 0,
-                "Index opakovania": 0,
-                "Mistríkov index": 0
-            }
+            return 0
 
         type_to_token_ratio = Service.lexical_diversity(statistics)
         average_sentence_length = statistics.total_words / len(doc.sentences)
@@ -150,14 +140,7 @@ class Service:
         # NOTE lexical_diversity index is oposite of mistrik index of repetition.
         #  Therefore we need to use multiplication instead of division
         mistrik_index = 50 - (average_sentence_length * average_word_length * type_to_token_ratio)
-
-        return {
-            "Počet unikátnych slov": len(statistics.words),
-            "Priemerná dĺžka slova": round(average_word_length * 2, 1),
-            "Priemerný počet slov vo vete": round(average_sentence_length, 1),
-            "Index opakovania": max(0.0, round(type_to_token_ratio, 4)),
-            "Mistríkov index": max(0.0, round(mistrik_index, 0))
-        }
+        return 50 - max(0.0, round(mistrik_index, 0))
 
     # CALCULATE LEXICAL DIVERSITY (RATIO OF UNIQUE WORDS TO ALL WORDS)
     @staticmethod
@@ -336,25 +319,38 @@ class MainWindow:
                                               font=(HELVETICA_FONT_NAME, TEXT_SIZE_BOTTOM_BAR))
         self.char_count_info_value.pack(side=tk.LEFT, padx=0, pady=5)
 
-        word_count_info_label = tk.Label(self.bottom_panel, text="Počet slov:", anchor='sw', justify='left',
-                                         background=MID_BLUE, foreground=TEXT_COLOR_WHITE,
-                                         font=(HELVETICA_FONT_NAME, TEXT_SIZE_BOTTOM_BAR))
-        word_count_info_label.pack(side=tk.LEFT, padx=(5, 0), pady=5)
+        tk.Label(self.bottom_panel, text="Počet slov:", anchor='sw', justify='left',
+                 background=MID_BLUE, foreground=TEXT_COLOR_WHITE,
+                 font=(HELVETICA_FONT_NAME, TEXT_SIZE_BOTTOM_BAR)).pack(
+            side=tk.LEFT, padx=(5, 0), pady=5
+        )
 
         self.word_count_info_value = tk.Label(self.bottom_panel, text="0", anchor='sw', justify='left',
                                               background=MID_BLUE, foreground=TEXT_COLOR_WHITE,
                                               font=(HELVETICA_FONT_NAME, TEXT_SIZE_BOTTOM_BAR))
         self.word_count_info_value.pack(side=tk.LEFT, padx=0, pady=5)
 
-        page_count_info_label = tk.Label(self.bottom_panel, text="Počet normostrán:", anchor='sw', justify='left',
-                                         background=MID_BLUE, foreground=TEXT_COLOR_WHITE,
-                                         font=(HELVETICA_FONT_NAME, TEXT_SIZE_BOTTOM_BAR))
-        page_count_info_label.pack(side=tk.LEFT, padx=(5, 0), pady=5)
+        tk.Label(self.bottom_panel, text="Počet normostrán:", anchor='sw', justify='left',
+                 background=MID_BLUE, foreground=TEXT_COLOR_WHITE,
+                 font=(HELVETICA_FONT_NAME, TEXT_SIZE_BOTTOM_BAR)).pack(
+            side=tk.LEFT, padx=(5, 0), pady=5
+        )
 
         self.page_count_info_value = tk.Label(self.bottom_panel, text="0", anchor='sw', justify='left',
                                               background=MID_BLUE, foreground=TEXT_COLOR_WHITE,
                                               font=(HELVETICA_FONT_NAME, TEXT_SIZE_BOTTOM_BAR))
         self.page_count_info_value.pack(side=tk.LEFT, padx=0, pady=5)
+
+        tk.Label(self.bottom_panel, text="Štylistická zložitosť textu:", anchor='sw', justify='left',
+                 background=MID_BLUE, foreground=TEXT_COLOR_WHITE,
+                 font=(HELVETICA_FONT_NAME, TEXT_SIZE_BOTTOM_BAR)).pack(
+            side=tk.LEFT, padx=(5, 0), pady=5
+        )
+
+        self.readability_value = tk.Label(self.bottom_panel, text=f"0 / {READABILITY_MAX_VALUE}", anchor='sw', justify='left',
+                                          background=MID_BLUE, foreground=TEXT_COLOR_WHITE,
+                                          font=(HELVETICA_FONT_NAME, TEXT_SIZE_BOTTOM_BAR))
+        self.readability_value.pack(side=tk.LEFT, padx=0, pady=5)
 
         # TOP MENU
         self.menu_bar = tk.Menu(self.root, background=PRIMARY_BLUE, foreground=TEXT_COLOR_WHITE, border=1)
@@ -367,12 +363,6 @@ class MainWindow:
         self.file_menu.add_command(label="Načítať súbor", command=self.load_file)
         self.file_menu.add_command(label="Uložiť súbor", command=self.save_file)
         self.menu_bar.add_cascade(label="Súbor", menu=self.file_menu)
-
-        # ANALYZE MENU
-        self.analyze_menu = tk.Menu(self.menu_bar, tearoff=0, background=PRIMARY_BLUE, foreground=TEXT_COLOR_WHITE,
-                                    font=(HELVETICA_FONT_NAME, TEXT_SIZE_MENU))
-        self.analyze_menu.add_command(label="Indexy čitateľnosti", command=self.show_readability_indices)
-        self.menu_bar.add_cascade(label="Analýza", menu=self.analyze_menu)
 
         # SETTINGS MENU
         self.settings_menu = tk.Menu(self.menu_bar, tearoff=0, background=PRIMARY_BLUE, foreground=TEXT_COLOR_WHITE,
@@ -671,6 +661,8 @@ class MainWindow:
         self.highlight_close_words(self.statistics)
         self.highlight_multiple_issues(text)
         self.text_editor.tag_raise("sel")
+        readability = Service.evaluate_readability(self.doc, self.statistics)
+        self.readability_value.configure(text=f"{readability: .0f} / {READABILITY_MAX_VALUE}")
 
     # RUN ANALYSIS ONE SECOND AFTER LAST CHANGE
     def analyze_text_debounced(self, event=None):
@@ -892,18 +884,6 @@ class MainWindow:
         about_window.resizable(False, False)
         about_window.grab_set()
         about_window.transient(self.root)
-
-    # CALCULATE AND SHOW VARIOUS READABILITY INDECES WITH EXPLANATIONS
-    def show_readability_indices(self):
-        indices = Service.evaluate_readability(self.doc, self.statistics)
-        results = "\n".join([f"{index}: {value}" for index, value in indices.items()])
-        index_window = tk.Toplevel(self.root)
-        index_window.title("Indexy čitateľnosti")
-        self.configure_modal(index_window)
-        index_text = tk.Text(index_window, wrap=tk.WORD, font=("Arial", 10))
-        index_text.insert(tk.END, f"{results}")
-        index_text.config(state=tk.DISABLED)
-        index_text.pack(expand=1, fill=tk.BOTH)
 
 
 # SPLASH SCREEN TO SHOW WHILE INITIALIZING MAIN APP
