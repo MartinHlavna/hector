@@ -4,11 +4,14 @@ import platform
 import random
 import re
 import tkinter as tk
+import webbrowser
 from tkinter import filedialog, messagebox, ttk
 from ttkthemes import ThemedTk
 
 import stanza
 from PIL import ImageTk, Image
+
+DOCUMENTATION_LINK = "https://github.com/MartinHlavna/hector"
 
 MULTIPLE_PUNCTUATION_TAG_NAME = "multiple_punctuation"
 TRAILING_SPACES_TAG_NAME = "trailing_spaces"
@@ -196,7 +199,6 @@ class MainWindow:
         self.root = r
         r.overrideredirect(False)
         style = ttk.Style(self.root)
-        print(style.element_options("Vertical.TScrollbar.trough"))
         style.configure("Vertical.TScrollbar", gripcount=0, troughcolor=PRIMARY_BLUE, bordercolor=PRIMARY_BLUE,
                         background=LIGHT_BLUE, lightcolor=LIGHT_BLUE, darkcolor=MID_BLUE)
 
@@ -380,10 +382,10 @@ class MainWindow:
         self.menu_bar.add_cascade(label="Nastavenia", menu=self.settings_menu)
 
         # HELP MENU
-        # TODO: Add link to documentation
         self.help_menu = tk.Menu(self.menu_bar, tearoff=0, background=PRIMARY_BLUE, foreground=TEXT_COLOR_WHITE,
                                  font=(HELVETICA_FONT_NAME, TEXT_SIZE_MENU))
         self.help_menu.add_command(label="O programe", command=self.show_about)
+        self.help_menu.add_command(label="Dokumentácia", command=lambda: webbrowser.open(DOCUMENTATION_LINK))
         self.menu_bar.add_cascade(label="Pomoc", menu=self.help_menu)
         root.after(100, self.evaluate_logo_placement)
 
@@ -873,7 +875,6 @@ class MainWindow:
 
     # SHOW ABOUT DIALOG
     # TODO: ADD BASIC INFO
-    # TODO: Maybe add documentation
     def show_about(self):
         messagebox.showinfo("O programe", "Hector - Analyzátor textu\nVerzia 1.0")
 
