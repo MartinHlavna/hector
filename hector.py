@@ -3,9 +3,10 @@ import os
 import platform
 import random
 import re
+import sys
 import tkinter as tk
 import webbrowser
-from tkinter import filedialog, messagebox, ttk
+from tkinter import filedialog, ttk
 from ttkthemes import ThemedTk
 
 import stanza
@@ -38,9 +39,9 @@ TEXT_SIZE_BOTTOM_BAR = 10
 # WE USE HELVETICA FONT
 HELVETICA_FONT_NAME = "Helvetica"
 BOLD_FONT = "bold"
-
 # LOCATION OF CONFIG
-CONFIG_FILE = 'config.json'
+dir_path = os.path.dirname(os.path.realpath(__file__))
+CONFIG_FILE = f'{dir_path}/config.json'
 
 # COLOR PALLETE FOR CLOSE WORDS
 dark_colors = [
@@ -85,6 +86,14 @@ default_config = {
     "enable_close_words": True,
 }
 
+
+def resource_path(relative_path):
+    try:
+        base_path = sys._MEIPASS
+    except Exception:
+        base_path = os.path.abspath(".")
+
+    return os.path.join(base_path, relative_path)
 
 # CLASS DEFINITIONS
 # TEXT STATISTICS
@@ -265,10 +274,10 @@ class MainWindow:
         self.text_editor.config(font=(HELVETICA_FONT_NAME, self.text_size))
         self.text_editor.pack(expand=1, fill=tk.BOTH, padx=5, pady=5)
 
-        image = Image.open("images/hector-logo.png")
-        logo = ImageTk.PhotoImage(image.resize((EDITOR_LOGO_WIDTH, EDITOR_LOGO_HEIGHT), Image.ANTIALIAS))
+        image = Image.open(resource_path("images/hector-logo.png"))
+        logo = ImageTk.PhotoImage(image.resize((EDITOR_LOGO_WIDTH, EDITOR_LOGO_HEIGHT)))
 
-        self.logo_holder = tk.Label(text_editor_frame, image=logo, background=TEXT_EDITOR_BG)
+        self.logo_holder = ttk.Label(text_editor_frame, image=logo, background=TEXT_EDITOR_BG)
         self.logo_holder.image = logo
 
         text_editor_scroll.config(command=self.text_editor.yview)
@@ -890,10 +899,10 @@ class SplashWindow:
         # MAIN FRAME
         self.main_frame = tk.Frame(self.root, background=PRIMARY_BLUE)
         self.main_frame.pack(expand=1, fill=tk.BOTH, side=tk.LEFT)
-        image = Image.open("images/hector-logo.png")
-        logo = ImageTk.PhotoImage(image.resize((300, 300), Image.ANTIALIAS))
+        image = Image.open(resource_path("images/hector-logo.png"))
+        logo = ImageTk.PhotoImage(image.resize((300, 300)))
 
-        logo_holder = tk.Label(self.main_frame, image=logo, background=PRIMARY_BLUE)
+        logo_holder = ttk.Label(self.main_frame, image=logo, background=PRIMARY_BLUE)
         logo_holder.image = logo
         logo_holder.pack()
         self.status = tk.Label(self.main_frame, text="inicializujem...", background=PRIMARY_BLUE,
@@ -914,7 +923,7 @@ initialized = False
 
 root = ThemedTk(theme="clam")
 root.title("Hector")
-photo = tk.PhotoImage(file='images/hector-icon.png')
+photo = tk.PhotoImage(file=resource_path('images/hector-icon.png'))
 root.wm_iconphoto(True, photo)
 splash = SplashWindow(root)
 splash.update_status("sťahujem a inicializujem jazykový model...")
