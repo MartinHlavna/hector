@@ -131,7 +131,7 @@ class Service:
     # FUNCTION THAT CALCULATE READABILITY INDICES
     @staticmethod
     def evaluate_readability(doc, statistics: Statistics):
-        if statistics.total_chars <= 0:
+        if statistics.total_chars <= 1:
             return 0
 
         type_to_token_ratio = Service.lexical_diversity(statistics)
@@ -354,7 +354,8 @@ class MainWindow:
 
         self.editor_text_size_input = ttk.Spinbox(self.bottom_panel, from_=1, to=30, width=10,
                                                   font=(HELVETICA_FONT_NAME, TEXT_SIZE_BOTTOM_BAR),
-                                                  style='info.TSpinbox', takefocus=False, command=lambda: self.set_text_size(self.editor_text_size_input.get()))
+                                                  style='info.TSpinbox', takefocus=False,
+                                                  command=lambda: self.set_text_size(self.editor_text_size_input.get()))
         self.editor_text_size_input.set(self.text_size)
         self.editor_text_size_input.bind("<Return>", lambda e: self.set_text_size(self.editor_text_size_input.get()))
         self.editor_text_size_input.pack(side=tk.RIGHT)
@@ -705,6 +706,8 @@ class MainWindow:
     def show_settings(self):
         settings_window = tk.Toplevel(self.root)
         settings_window.title("Nastavenia")
+        self.configure_modal(settings_window)
+        settings_window.geometry("600x500")
 
         # SAVE SETTINGS
         def save_settings():
@@ -728,152 +731,124 @@ class MainWindow:
             settings_window.destroy()
 
         # Frequent words settings
-        tk.Label(settings_window, text="Časté slová", font=(HELVETICA_FONT_NAME, 14, BOLD_FONT), anchor='w').grid(row=0,
-                                                                                                                  column=0,
-                                                                                                                  columnspan=2,
-                                                                                                                  padx=10,
-                                                                                                                  pady=(
-                                                                                                                      10,
-                                                                                                                      2),
-                                                                                                                  sticky='w')
-        tk.Label(settings_window, text="Minimálna dĺžka slova v znakoch", anchor='w').grid(row=1, column=0, padx=10,
-                                                                                           pady=2,
-                                                                                           sticky='w')
-        repeated_words_min_word_length_entry = tk.Entry(settings_window)
-        repeated_words_min_word_length_entry.grid(row=1, column=1, padx=10, pady=2)
-        repeated_words_min_word_length_entry.insert(0, str(self.config["repeated_words_min_word_length"]))
-
-        tk.Label(settings_window, text="Minimálna početnosť slova", anchor='w').grid(row=2, column=0, padx=10, pady=2,
-                                                                                     sticky='w')
-        repeated_words_min_word_frequency_entry = tk.Entry(settings_window)
-        repeated_words_min_word_frequency_entry.grid(row=2, column=1, padx=10, pady=2)
-        repeated_words_min_word_frequency_entry.insert(0, str(self.config["repeated_words_min_word_frequency"]))
-
-        frequent_words_var = tk.BooleanVar(value=self.config["enable_frequent_words"])
-        frequent_words_checkbox = tk.Checkbutton(settings_window, text="Povolené", variable=frequent_words_var)
-        frequent_words_checkbox.grid(row=3, column=1, padx=10, pady=2, sticky='w')
-
-        # Spacer
-        tk.Label(settings_window, text="", anchor='w').grid(row=4, column=0, padx=10, pady=5, sticky='w')
-
-        # Long sentences settings
-        tk.Label(settings_window, text="Dlhé vety", font=(HELVETICA_FONT_NAME, 14, BOLD_FONT), anchor='w').grid(row=5,
-                                                                                                                column=0,
-                                                                                                                columnspan=2,
-                                                                                                                padx=10,
-                                                                                                                pady=(
-                                                                                                                    10,
-                                                                                                                    2),
-                                                                                                                sticky='w')
-        tk.Label(settings_window, text="Zvýrazniť vety, ktoré majú väčší počet slov", anchor='w').grid(row=6, column=0,
-                                                                                                       padx=10, pady=2,
-                                                                                                       sticky='w')
-        long_sentence_words_entry = tk.Entry(settings_window)
-        long_sentence_words_entry.grid(row=6, column=1, padx=10, pady=2)
-        long_sentence_words_entry.insert(0, str(self.config["long_sentence_words"]))
-
-        tk.Label(settings_window, text="Zvýrazniť vety, ktoré majú viac znakov", anchor='w').grid(row=7, column=0,
-                                                                                                  padx=10,
-                                                                                                  pady=2, sticky='w')
-        long_sentence_char_count_entry = tk.Entry(settings_window)
-        long_sentence_char_count_entry.grid(row=7, column=1, padx=10, pady=2)
-        long_sentence_char_count_entry.insert(0, str(self.config["long_sentence_char_count"]))
-
-        tk.Label(settings_window, text="Nepočítať slová kratšie ako", anchor='w').grid(row=8, column=0, padx=10, pady=2,
-                                                                                       sticky='w')
-        long_sentence_min_word_length_entry = tk.Entry(settings_window)
-        long_sentence_min_word_length_entry.grid(row=8, column=1, padx=10, pady=2)
-        long_sentence_min_word_length_entry.insert(0, str(self.config["long_sentence_min_word_length"]))
-
-        long_sentences_var = tk.BooleanVar(value=self.config["enable_long_sentences"])
-        long_sentences_checkbox = tk.Checkbutton(settings_window, text="Povolené", variable=long_sentences_var)
-        long_sentences_checkbox.grid(row=9, column=1, padx=10, pady=2, sticky='w')
-
-        # Spacer
-        tk.Label(settings_window, text="", anchor='w').grid(row=10, column=0, padx=10, pady=5, sticky='w')
-
-        # Multiple spaces settings
-        tk.Label(settings_window, text="Viacnásobné medzery", font=(HELVETICA_FONT_NAME, 14, BOLD_FONT),
+        tk.Label(settings_window, text="Často použité slová", font=(HELVETICA_FONT_NAME, 12, BOLD_FONT),
                  anchor='w').grid(
-            row=11,
-            column=0,
-            columnspan=2,
-            padx=10,
-            pady=(10, 2),
-            sticky='w')
+            row=0, column=0, columnspan=1, padx=(10, 80), pady=(10, 2), sticky='w'
+        )
+        frequent_words_var = tk.BooleanVar(value=self.config["enable_frequent_words"])
+        frequent_words_checkbox = ttk.Checkbutton(settings_window, text="Zapnuté", variable=frequent_words_var)
+        frequent_words_checkbox.grid(row=0, column=1, padx=(6, 10), pady=2, sticky='w')
+        tk.Label(settings_window, text="Minimálna dĺžka slova", anchor='w').grid(
+            row=1, column=0, padx=10, pady=2, sticky='w'
+        )
+        repeated_words_min_word_length_entry = ttk.Spinbox(settings_window, from_=1, to=100, width=6, justify=tk.LEFT)
+        repeated_words_min_word_length_entry.grid(row=1, column=1, padx=10, pady=2, sticky='w')
+        repeated_words_min_word_length_entry.set(self.config["repeated_words_min_word_length"])
+        tk.Label(settings_window, text="znakov", anchor='w').grid(
+            row=1, column=2, padx=10, pady=2, sticky='w'
+        )
+        tk.Label(settings_window, text="Minimálny počet opakovaní", anchor='w').grid(
+            row=2, column=0, padx=10, pady=2, sticky='w'
+        )
+        repeated_words_min_word_frequency_entry = ttk.Spinbox(settings_window, from_=1, to=100, width=6)
+        repeated_words_min_word_frequency_entry.grid(row=2, column=1, padx=10, pady=2, sticky='w')
+        repeated_words_min_word_frequency_entry.set(self.config["repeated_words_min_word_frequency"])
+        # Long sentences settings
+        tk.Label(settings_window, text="Zvýrazňovanie dlhých viet", font=(HELVETICA_FONT_NAME, 12, BOLD_FONT),
+                 anchor='w').grid(
+            row=5, column=0, columnspan=1, padx=(10, 80), pady=(10, 2), sticky='w'
+        )
+        long_sentences_var = tk.BooleanVar(value=self.config["enable_long_sentences"])
+        long_sentences_checkbox = ttk.Checkbutton(settings_window, text="Zapnuté", variable=long_sentences_var)
+        long_sentences_checkbox.grid(row=5, column=1, padx=(6, 10), pady=2, sticky='w')
+        tk.Label(settings_window, text="Veta je dlhá, ak obsahuje aspoň", anchor='w').grid(
+            row=6, column=0, padx=10, pady=2, sticky='w'
+        )
+        long_sentence_words_entry = ttk.Spinbox(settings_window, from_=1, to=100, width=6)
+        long_sentence_words_entry.grid(row=6, column=1, padx=10, pady=2, sticky='w')
+        long_sentence_words_entry.set(self.config["long_sentence_words"])
+        tk.Label(settings_window, text="slov", anchor='w').grid(
+            row=6, column=2, padx=10, pady=2, sticky='w'
+        )
+        tk.Label(settings_window, text="Veta je dlhá, ak obsahuje aspoň", anchor='w').grid(
+            row=7, column=0, padx=10, pady=2, sticky='w'
+        )
+        long_sentence_char_count_entry = ttk.Spinbox(settings_window, from_=1, to=9999, width=6)
+        long_sentence_char_count_entry.grid(row=7, column=1, padx=10, pady=2, sticky='w')
+        long_sentence_char_count_entry.set(self.config["long_sentence_char_count"])
+        tk.Label(settings_window, text="znakov", anchor='w').grid(
+            row=7, column=2, padx=10, pady=2, sticky='w'
+        )
+        tk.Label(settings_window, text="Nepočítať slová kratšie ako", anchor='w').grid(
+            row=8, column=0, padx=10, pady=2, sticky='w'
+        )
+        long_sentence_min_word_length_entry = ttk.Spinbox(settings_window, from_=1, to=100, width=6)
+        long_sentence_min_word_length_entry.grid(row=8, column=1, padx=10, pady=2, sticky='w')
+        long_sentence_min_word_length_entry.set(self.config["long_sentence_min_word_length"])
+        tk.Label(settings_window, text="znakov", anchor='w').grid(
+            row=8, column=2, padx=10, pady=2, sticky='w'
+        )
+        # Multiple spaces settings
+        tk.Label(settings_window, text="Zvýraňovanie viacnásobných medzier ", font=(HELVETICA_FONT_NAME, 12, BOLD_FONT),
+                 anchor='w').grid(
+            row=11, column=0, columnspan=1, padx=(10, 80), pady=(10, 2), sticky='w'
+        )
         multiple_spaces_var = tk.BooleanVar(value=self.config["enable_multiple_spaces"])
-        multiple_spaces_checkbox = tk.Checkbutton(settings_window, text="Povolené", variable=multiple_spaces_var)
-        multiple_spaces_checkbox.grid(row=12, column=1, padx=10, pady=2, sticky='w')
-
-        # Spacer
-        tk.Label(settings_window, text="", anchor='w').grid(row=13, column=0, padx=10, pady=5, sticky='w')
-
+        multiple_spaces_checkbox = ttk.Checkbutton(settings_window, text="Zapnuté", variable=multiple_spaces_var)
+        multiple_spaces_checkbox.grid(row=11, column=1, padx=(6, 10), pady=2, sticky='w')
         # Multiple punctuation settings
-        tk.Label(settings_window, text="Viacnásobná interpunkcia", font=(HELVETICA_FONT_NAME, 14, BOLD_FONT),
-                 anchor='w').grid(row=14,
-                                  column=0,
-                                  columnspan=2,
-                                  padx=10,
-                                  pady=(
-                                      10, 2),
-                                  sticky='w')
+        tk.Label(settings_window, text="Zvýrazňovanie viacnásobnej interpunkcie",
+                 font=(HELVETICA_FONT_NAME, 12, BOLD_FONT),
+                 anchor='w').grid(
+            row=14, column=0, columnspan=1, padx=(10, 80), pady=(10, 2), sticky='w'
+        )
         multiple_punctuation_var = tk.BooleanVar(value=self.config["enable_multiple_punctuation"])
-        multiple_punctuation_checkbox = tk.Checkbutton(settings_window, text="Povolené",
+        multiple_punctuation_checkbox = ttk.Checkbutton(settings_window, text="Zapnuté",
                                                        variable=multiple_punctuation_var)
-        multiple_punctuation_checkbox.grid(row=15, column=1, padx=10, pady=2, sticky='w')
-
-        # Spacer
-        tk.Label(settings_window, text="", anchor='w').grid(row=16, column=0, padx=10, pady=5, sticky='w')
-
+        multiple_punctuation_checkbox.grid(row=14, column=1, padx=(6, 10), pady=2, sticky='w')
         # Trailing spaces settings
-        tk.Label(settings_window, text="Medzery na konci odstavca", font=(HELVETICA_FONT_NAME, 14, BOLD_FONT),
-                 anchor='w').grid(row=17,
-                                  column=0,
-                                  columnspan=2,
-                                  padx=10,
-                                  pady=(
-                                      10, 2),
-                                  sticky='w')
+        tk.Label(settings_window, text="Zvýrazňovanie medzier na konci odstavca",
+                 font=(HELVETICA_FONT_NAME, 12, BOLD_FONT), anchor='w').grid(
+            row=17, column=0, columnspan=1, padx=(10, 80), pady=(10, 2), sticky='w'
+        )
         trailing_spaces_var = tk.BooleanVar(value=self.config["enable_trailing_spaces"])
-        trailing_spaces_checkbox = tk.Checkbutton(settings_window, text="Povolené", variable=trailing_spaces_var)
-        trailing_spaces_checkbox.grid(row=18, column=1, padx=10, pady=2, sticky='w')
-
+        trailing_spaces_checkbox = ttk.Checkbutton(settings_window, text="Zapnuté", variable=trailing_spaces_var)
+        trailing_spaces_checkbox.grid(row=17, column=1, padx=(6, 10), pady=2, sticky='w')
         # Close words settings
-        tk.Label(settings_window, text="Slová blízko seba", font=(HELVETICA_FONT_NAME, 14, BOLD_FONT), anchor='w').grid(
-            row=20,
-            column=0,
-            columnspan=2,
-            padx=10,
-            pady=(10, 2),
-            sticky='w')
-        tk.Label(settings_window, text="Minimálna dlžka slova", anchor='w').grid(row=21, column=0, padx=10, pady=2,
-                                                                                 sticky='w')
-        close_words_min_word_length_entry = tk.Entry(settings_window)
-        close_words_min_word_length_entry.grid(row=21, column=1, padx=10, pady=2)
-        close_words_min_word_length_entry.insert(0, str(self.config["close_words_min_word_length"]))
-
-        tk.Label(settings_window, text="Povolená medzera medzi opakujúcimi sa slovami", anchor='w').grid(row=22,
-                                                                                                         column=0,
-                                                                                                         padx=10,
-                                                                                                         pady=2,
-                                                                                                         sticky='w')
-        close_words_min_distance_between_words_entry = tk.Entry(settings_window)
-        close_words_min_distance_between_words_entry.grid(row=22, column=1, padx=10, pady=2)
-        close_words_min_distance_between_words_entry.insert(0,
-                                                            str(self.config["close_words_min_distance_between_words"]))
-
-        tk.Label(settings_window, text="Minimálna početnosť opakujúceho sa slova", anchor='w').grid(row=23, column=0,
-                                                                                                    padx=10, pady=2,
-                                                                                                    sticky='w')
-        close_words_min_frequency_entry = tk.Entry(settings_window)
-        close_words_min_frequency_entry.grid(row=23, column=1, padx=10, pady=2)
-        close_words_min_frequency_entry.insert(0, str(self.config["close_words_min_frequency"]))
-
+        tk.Label(settings_window, text="Slová blízko seba", font=(HELVETICA_FONT_NAME, 12, BOLD_FONT), anchor='w').grid(
+            row=20, column=0, columnspan=1, padx=(10, 80), pady=(10, 2), sticky='w'
+        )
         close_words_var = tk.BooleanVar(value=self.config["enable_close_words"])
-        close_words_checkbox = tk.Checkbutton(settings_window, text="Povolené", variable=close_words_var)
-        close_words_checkbox.grid(row=24, column=1, padx=10, pady=2, sticky='w')
-
-        tk.Button(settings_window, text="Uložiť", command=save_settings).grid(row=25, column=0, columnspan=2, pady=10)
+        close_words_checkbox = ttk.Checkbutton(settings_window, text="Zapnuté", variable=close_words_var)
+        close_words_checkbox.grid(row=20, column=1, padx=(6, 10), pady=2, sticky='w')
+        tk.Label(settings_window, text="Minimálna dlžka slova", anchor='w').grid(
+            row=21, column=0, padx=10, pady=2, sticky='w'
+        )
+        close_words_min_word_length_entry = ttk.Spinbox(settings_window, from_=1, to=100, width=6)
+        close_words_min_word_length_entry.grid(row=21, column=1, padx=10, pady=2, sticky='w')
+        close_words_min_word_length_entry.insert(0, str(self.config["close_words_min_word_length"]))
+        tk.Label(settings_window, text="znakov", anchor='w').grid(
+            row=21, column=2, padx=10, pady=2, sticky='w'
+        )
+        tk.Label(settings_window, text="Minimálna vzdialenosť slov", anchor='w').grid(
+            row=22, column=0, padx=10, pady=2, sticky='w'
+        )
+        close_words_min_distance_between_words_entry = ttk.Spinbox(settings_window, from_=1, to=9999, width=6)
+        close_words_min_distance_between_words_entry.grid(row=22, column=1, padx=10, pady=2, sticky='w')
+        close_words_min_distance_between_words_entry.set(self.config["close_words_min_distance_between_words"])
+        tk.Label(settings_window, text="znakov", anchor='w').grid(
+            row=22, column=2, padx=10, pady=2, sticky='w'
+        )
+        tk.Label(settings_window, text="Minimálny počet opakovaní", anchor='w').grid(
+            row=23, column=0, padx=10, pady=2, sticky='w'
+        )
+        close_words_min_frequency_entry = ttk.Spinbox(settings_window, from_=1, to=100, width=6)
+        close_words_min_frequency_entry.grid(row=23, column=1, padx=10, pady=2, sticky='w')
+        close_words_min_frequency_entry.set(self.config["close_words_min_frequency"])
+        # SAVE BUTTON
+        ttk.Button(settings_window, text="Uložiť", command=save_settings).grid(
+            row=25, column=1, columnspan=2, padx=10, pady=10, sticky='w'
+        )
 
     # SHOW ABOUT DIALOG
     def show_about(self):
@@ -954,7 +929,6 @@ main_window.start_main_loop()
 # TODO LEVEL 0 (knowm bugs)
 
 # TODO LEVEL A (must have for "production"):
-# Redesign to have nice and intuitive UI - basic things should be done, only top menu items remains
 
 # TODO LEVEL B (nice to have features): Consider adding:
 # Heatmap?
