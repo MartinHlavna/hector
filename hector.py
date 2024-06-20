@@ -1,5 +1,13 @@
 import json
 import os
+# WE CAN MOVE OVER TO PYTHON SPLASH INSTEAD OF IMAGE NOW
+nativeSplashOpened = False
+try:
+    import pyi_splash
+    pyi_splash.update_text('inicializujem ...')
+    nativeSplashOpened = True
+except:
+    pass
 import platform
 import random
 import re
@@ -919,14 +927,15 @@ class SplashWindow:
         self.root.update()
 
 
-initialized = False
-
 root = ThemedTk(theme="clam")
 root.title("Hector")
 photo = tk.PhotoImage(file=resource_path('images/hector-icon.png'))
 root.wm_iconphoto(True, photo)
 splash = SplashWindow(root)
 splash.update_status("sťahujem a inicializujem jazykový model...")
+# WE CAN MOVE OVER TO PYTHON SPLASH INSTEAD OF IMAGE NOW
+if nativeSplashOpened:
+    pyi_splash.close()
 # INITIALIZE NLP ENGINE
 stanza.download('sk')
 splash.update_status("inicializujem textový processor...")
