@@ -27,3 +27,16 @@ Riešenie: Odstrániť viacnásobnú interpunkciu.
 Medzery na konci odstavcov sú štandardne považované za zbytočné. Hector ich automaticky zvýrazní načerveno.
 
 Riešenie: Odstrániť medzery na konci odstavcov.
+## Spustenie zo zdrojového kódu
+Kód bol testovaný s použitím python interpretera verzie 3.10.
+### Linux
+```
+# STIAHNUTIE ZDROJOVÝCH KÓDOV
+git clone https://github.com/MartinHlavna/hector
+# PRESUN DO NOVÉHO PRIEČINKA 
+cd hector
+# NAINŠTALOVANIE KNIŽNÍC
+pip install -r requirements.txt
+# SPUSTENIE PROGRAMU
+python3 -m hector.py
+```
