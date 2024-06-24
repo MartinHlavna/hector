@@ -725,8 +725,7 @@ class MainWindow:
     def show_settings(self):
         settings_window = tk.Toplevel(self.root)
         settings_window.title("Nastavenia")
-        self.configure_modal(settings_window)
-        settings_window.geometry("600x500")
+        self.configure_modal(settings_window, height=500)
 
         # SAVE SETTINGS
         def save_settings():
@@ -887,11 +886,17 @@ class MainWindow:
         link.pack()
         link.bind("<Button-1>", lambda e: webbrowser.open(DOCUMENTATION_LINK))
 
-    def configure_modal(self, about_window):
-        about_window.geometry("600x400")
-        about_window.resizable(False, False)
-        about_window.grab_set()
-        about_window.transient(self.root)
+    def configure_modal(self, modal, width=600, height=400):
+        modal.geometry("%dx%d" % (width, height))
+        modal.resizable(False, False)
+        screen_width = self.root.winfo_screenwidth()
+        screen_height = self.root.winfo_screenheight()
+        x = screen_width / 2 - (width / 2)
+        y = screen_height / 2 - (height / 2)
+
+        self.root.geometry("+%d+%d" % (x, y))
+        modal.grab_set()
+        modal.transient(self.root)
 
 
 # SPLASH SCREEN TO SHOW WHILE INITIALIZING MAIN APP
@@ -947,10 +952,6 @@ nlp.add_pipe('sentencizer', config={
 splash.close()
 main_window = MainWindow(root, nlp)
 main_window.start_main_loop()
-
-# TODO LEVEL 0 (knowm bugs)
-
-# TODO LEVEL A (must have for "production"):
 
 # TODO LEVEL B (nice to have features): Consider adding:
 # Heatmap?
