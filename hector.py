@@ -1,13 +1,5 @@
 import json
 import os
-# WE CAN MOVE OVER TO PYTHON SPLASH INSTEAD OF IMAGE NOW
-nativeSplashOpened = False
-try:
-    import pyi_splash
-    pyi_splash.update_text('inicializujem ...')
-    nativeSplashOpened = True
-except:
-    pass
 import platform
 import random
 import re
@@ -15,12 +7,25 @@ import sys
 import tkinter as tk
 import webbrowser
 from tkinter import filedialog, ttk
-from ttkthemes import ThemedTk
 
-import stanza
+from spacy.tokens import Doc
+from spacy.pipeline.sentencizer import Sentencizer
+from ttkthemes import ThemedTk
+import spacy
 from PIL import ImageTk, Image
 
-VERSION = "0.1.0 Alfa"
+# WE CAN MOVE OVER TO PYTHON SPLASH INSTEAD OF IMAGE NOW
+nativeSplashOpened = False
+# noinspection PyBroadException
+try:
+    import pyi_splash
+
+    pyi_splash.update_text('inicializujem ...')
+    nativeSplashOpened = True
+except:
+    pass
+
+VERSION = "0.2.0 Alfa"
 DOCUMENTATION_LINK = "https://github.com/MartinHlavna/hector"
 
 # COLORS
@@ -100,8 +105,8 @@ def resource_path(relative_path):
         base_path = sys._MEIPASS
     except Exception:
         base_path = os.path.abspath(".")
-
     return os.path.join(base_path, relative_path)
+
 
 # CLASS DEFINITIONS
 # TEXT STATISTICS
@@ -147,12 +152,12 @@ class Service:
 
     # FUNCTION THAT CALCULATE READABILITY INDICES
     @staticmethod
-    def evaluate_readability(doc, statistics: Statistics):
+    def evaluate_readability(doc: Doc, statistics: Statistics):
         if statistics.total_chars <= 1:
             return 0
 
         type_to_token_ratio = Service.lexical_diversity(statistics)
-        average_sentence_length = statistics.total_words / len(doc.sentences)
+        average_sentence_length = statistics.total_words / sum(1 for _ in doc.sents)
         average_word_length = statistics.total_chars / statistics.total_words / 2
         # NOTE lexical_diversity index is oposite of mistrik index of repetition.
         #  Therefore we need to use multiplication instead of division
@@ -192,9 +197,9 @@ class AutoScrollbar(ttk.Scrollbar):
 
 # MAIN GUI WINDOW
 class MainWindow:
-    nlp: stanza.Pipeline = None
+    nlp: spacy = None
 
-    def __init__(self, r, _nlp: stanza.Pipeline):
+    def __init__(self, r, _nlp: spacy):
         self.nlp = _nlp
         self.root = r
         r.overrideredirect(False)
@@ -211,7 +216,7 @@ class MainWindow:
         # TIMER FOR DEBOUNCING EDITOR CHANGE EVENT
         self.analyze_text_debounce_timer = None
         self.tooltip = None
-        self.doc = nlp('', processors='tokenize')
+        self.doc = nlp('')
         # WE NEED TO COMPUTE SOME MORE INFORMATION
         self.statistics = Statistics()
         # EDITOR TEXT SIZE
@@ -467,17 +472,15 @@ class MainWindow:
         self.word_freq_text.config(state=tk.DISABLED)
 
     # HIGHLIGHT LONG SENTENCES
-    def highlight_long_sentences(self, doc):
+    def highlight_long_sentences(self, doc: Doc):
         self.text_editor.tag_remove("long_sentence", "1.0", tk.END)
         if not self.config["enable_long_sentences"]:
             return
-        for sentence in doc.sentences:
-            first_token = sentence.tokens[0]
-            last_token = sentence.tokens[len(sentence.tokens) - 1]
-            highlight_start = first_token.start_char
-            highlight_end = last_token.end_char
+        for sentence in doc.sents:
+            highlight_start = sentence.start_char
+            highlight_end = sentence.end_char
 
-            words = [word for word in sentence.words if
+            words = [word for word in sentence if
                      len(word.text) >= self.config["long_sentence_min_word_length"]]
             if len(words) > self.config["long_sentence_words"] or len(sentence.text) > self.config[
                 "long_sentence_char_count"]:
@@ -545,7 +548,7 @@ class MainWindow:
                     if reference is None:
                         reference = word_occource
                         continue
-                    if word_occource.start_char - reference.start_char < self.config[
+                    if word_occource.idx - reference.idx < self.config[
                         "close_words_min_distance_between_words"]:
                         # IF OCCOURENCE IS TOO CLOSE TO REFERENCE ADD TO CURRENT CLUSTER
                         current_cluster.add(reference)
@@ -588,8 +591,8 @@ class MainWindow:
             for cluster in clusters:
                 color = random.choice(dark_colors)
                 for word in cluster:
-                    start_index = f"1.0 + {word.start_char} chars"
-                    end_index = f"1.0 + {word.end_char} chars"
+                    start_index = f"1.0 + {word.idx} chars"
+                    end_index = f"1.0 + {word.idx + len(word)} chars"
                     tag_name = f"{CLOSE_WORD_PREFIX}{word.text.lower()}"
                     original_color = self.close_word_colors.get(tag_name, "")
                     if original_color != "":
@@ -669,20 +672,19 @@ class MainWindow:
         # GET TEXT FROM EDITOR
         text = self.text_editor.get(1.0, tk.END)
         # RUN ANALYSIS
-        self.doc = nlp(text, processors='tokenize')
+        self.doc = nlp(text).doc
         self.statistics.words = {}
         self.statistics.total_words = 0
         self.statistics.total_chars = len(text)
         self.statistics.total_pages = round(self.statistics.total_chars / 1800, 2)
-        for sentence in self.doc.sentences:
-            for token in sentence.tokens:
-                if re.match('\\w', token.text):
-                    self.statistics.total_words += 1
-                    word = self.statistics.words.get(token.text.lower())
-                    if word is None:
-                        word = UniqueWord(token.text.lower())
-                        self.statistics.words[token.text.lower()] = word
-                    word.occourences.append(token)
+        for token in self.doc:
+            if re.match('\\w', token.text):
+                self.statistics.total_words += 1
+                word = self.statistics.words.get(token.text.lower())
+                if word is None:
+                    word = UniqueWord(token.text.lower())
+                    self.statistics.words[token.text.lower()] = word
+                word.occourences.append(token)
         # CLEAR TAGS
         for tag in self.text_editor.tag_names():
             self.text_editor.tag_delete(tag)
@@ -821,7 +823,7 @@ class MainWindow:
         )
         multiple_punctuation_var = tk.BooleanVar(value=self.config["enable_multiple_punctuation"])
         multiple_punctuation_checkbox = ttk.Checkbutton(settings_window, text="Zapnuté",
-                                                       variable=multiple_punctuation_var)
+                                                        variable=multiple_punctuation_var)
         multiple_punctuation_checkbox.grid(row=14, column=1, padx=(6, 10), pady=2, sticky='w')
         # Trailing spaces settings
         tk.Label(settings_window, text="Zvýrazňovanie medzier na konci odstavca",
@@ -937,9 +939,11 @@ splash.update_status("sťahujem a inicializujem jazykový model...")
 if nativeSplashOpened:
     pyi_splash.close()
 # INITIALIZE NLP ENGINE
-stanza.download('sk')
+nlp = spacy.blank('sk')
 splash.update_status("inicializujem textový processor...")
-nlp = stanza.Pipeline('sk', processors='tokenize')
+nlp.add_pipe('sentencizer', config={
+    "punct_chars": Sentencizer.default_punct_chars + ['...', '?!', '…',]
+})
 splash.close()
 main_window = MainWindow(root, nlp)
 main_window.start_main_loop()
