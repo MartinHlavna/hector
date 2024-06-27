@@ -59,7 +59,13 @@ TEXT_SIZE_BOTTOM_BAR = 10
 HELVETICA_FONT_NAME = "Helvetica"
 BOLD_FONT = "bold"
 # LOCATION OF CONFIG
-WORKING_DIRECTORY = os.path.dirname(os.path.realpath(__file__))
+if getattr(sys, 'frozen', False):
+    # If the application is run as a bundle, the PyInstaller bootloader
+    # extends the sys module by a flag frozen=True
+    WORKING_DIRECTORY = os.path.dirname(sys.executable)
+else:
+    WORKING_DIRECTORY = os.path.dirname(os.path.abspath(__file__))
+
 DATA_DIRECTORY = os.path.join(WORKING_DIRECTORY, "data")
 SPACY_MODELS_DIR = os.path.join(DATA_DIRECTORY, "spacy-models")
 SK_SPACY_MODEL_DIR = os.path.join(SPACY_MODELS_DIR, "sk")
