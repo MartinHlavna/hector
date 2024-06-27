@@ -3,13 +3,15 @@ import os
 import platform
 import random
 import re
+import shutil
 import sys
+import tarfile
 import tkinter as tk
+import urllib
 import webbrowser
 from tkinter import filedialog, ttk
 
 from spacy.tokens import Doc
-from spacy.pipeline.sentencizer import Sentencizer
 from ttkthemes import ThemedTk
 import spacy
 from PIL import ImageTk, Image
@@ -26,7 +28,11 @@ except:
     pass
 
 VERSION = "0.2.0 Alfa"
+SPACY_MODEL_NAME = "sk_ud_sk_snk"
+SPACY_MODEL_VERSION = "1.0.0"
+SPACY_MODEL_NAME_WITH_VERSION=f"{SPACY_MODEL_NAME}-{SPACY_MODEL_VERSION}"
 DOCUMENTATION_LINK = "https://github.com/MartinHlavna/hector"
+SPACY_MODEL_LINK = f"https://github.com/MartinHlavna/hector-spacy-model/releases/download/v.{SPACY_MODEL_VERSION}/{SPACY_MODEL_NAME_WITH_VERSION}.tar.gz"
 
 # COLORS
 PRIMARY_BLUE = "#42659d"
@@ -53,8 +59,17 @@ TEXT_SIZE_BOTTOM_BAR = 10
 HELVETICA_FONT_NAME = "Helvetica"
 BOLD_FONT = "bold"
 # LOCATION OF CONFIG
-dir_path = os.path.dirname(os.path.realpath(__file__))
-CONFIG_FILE = f'{dir_path}/config.json'
+if getattr(sys, 'frozen', False):
+    # If the application is run as a bundle, the PyInstaller bootloader
+    # extends the sys module by a flag frozen=True
+    WORKING_DIRECTORY = os.path.dirname(sys.executable)
+else:
+    WORKING_DIRECTORY = os.path.dirname(os.path.abspath(__file__))
+
+DATA_DIRECTORY = os.path.join(WORKING_DIRECTORY, "data")
+SPACY_MODELS_DIR = os.path.join(DATA_DIRECTORY, "spacy-models")
+SK_SPACY_MODEL_DIR = os.path.join(SPACY_MODELS_DIR, "sk")
+CONFIG_FILE = os.path.join(DATA_DIRECTORY, "config.json")
 
 # COLOR PALLETE FOR CLOSE WORDS
 dark_colors = [
@@ -940,15 +955,31 @@ photo = tk.PhotoImage(file=resource_path('images/hector-icon.png'))
 root.wm_iconphoto(True, photo)
 splash = SplashWindow(root)
 splash.update_status("sťahujem a inicializujem jazykový model...")
+# FIXME: Check if model exists on drive. If not, download from repo and unpack to spacy-models/hector-model
 # WE CAN MOVE OVER TO PYTHON SPLASH INSTEAD OF IMAGE NOW
 if nativeSplashOpened:
     pyi_splash.close()
 # INITIALIZE NLP ENGINE
-nlp = spacy.blank('sk')
+spacy.util.set_data_path = resource_path('lib/site-packages/spacy/data')
+if not os.path.isdir(DATA_DIRECTORY):
+    os.mkdir(DATA_DIRECTORY)
+if not os.path.isdir(SPACY_MODELS_DIR):
+    os.mkdir(SPACY_MODELS_DIR)
+if not os.path.isdir(SK_SPACY_MODEL_DIR):
+    os.mkdir(SK_SPACY_MODEL_DIR)
+    archive_file_name = os.path.join(SPACY_MODELS_DIR, f'{SPACY_MODEL_NAME_WITH_VERSION}.tar.gz')
+    with urllib.request.urlopen(SPACY_MODEL_LINK) as response, open(archive_file_name, 'wb') as out_file:
+        shutil.copyfileobj(response, out_file)
+    with tarfile.open(archive_file_name) as tar_file:
+        tar_file.extractall(SK_SPACY_MODEL_DIR)
+    os.remove(archive_file_name)
+nlp = spacy.load(os.path.join(
+    SK_SPACY_MODEL_DIR,
+    SPACY_MODEL_NAME_WITH_VERSION,
+    SPACY_MODEL_NAME,
+    SPACY_MODEL_NAME_WITH_VERSION)
+)
 splash.update_status("inicializujem textový processor...")
-nlp.add_pipe('sentencizer', config={
-    "punct_chars": Sentencizer.default_punct_chars + ['...', '?!', '…',]
-})
 splash.close()
 main_window = MainWindow(root, nlp)
 main_window.start_main_loop()
