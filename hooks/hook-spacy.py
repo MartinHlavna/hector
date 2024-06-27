@@ -14,5 +14,4 @@ hiddenimports = ['cymem', 'cymem.cymem', 'murmurhash', 'murmurhash.mrmr',
                  'spacy.lang', 'spacy.lang.lex_attrs', 'spacy.lang.norm_exceptions',
                  'spacy.pipeline._parser_internals.transition_system', 'spacy.pipeline._parser_internals.stateclass',
                  'spacy.pipeline.transition_parser', 'spacy.pipeline._parser_internals._beam_utils',
-                 'spacy.pipeline._parser_internals.arc_eager', 'spacy.pipeline._parser_internals.ner', 'spacy.lang.sk',
-                 'spacy-transformers']
+                 'spacy.pipeline._parser_internals.arc_eager', 'spacy.pipeline._parser_internals.ner', 'spacy.lang.sk']
