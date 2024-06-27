@@ -940,15 +940,14 @@ photo = tk.PhotoImage(file=resource_path('images/hector-icon.png'))
 root.wm_iconphoto(True, photo)
 splash = SplashWindow(root)
 splash.update_status("sťahujem a inicializujem jazykový model...")
+# FIXME: Check if model exists on drive. If not, download from repo and unpack to spacy-models/hector-model
 # WE CAN MOVE OVER TO PYTHON SPLASH INSTEAD OF IMAGE NOW
 if nativeSplashOpened:
     pyi_splash.close()
 # INITIALIZE NLP ENGINE
-nlp = spacy.blank('sk')
+spacy.util.set_data_path = resource_path('lib/site-packages/spacy/data')
+nlp = spacy.load("spacy-models/hector-model")
 splash.update_status("inicializujem textový processor...")
-nlp.add_pipe('sentencizer', config={
-    "punct_chars": Sentencizer.default_punct_chars + ['...', '?!', '…',]
-})
 splash.close()
 main_window = MainWindow(root, nlp)
 main_window.start_main_loop()
