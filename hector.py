@@ -11,7 +11,9 @@ import urllib
 import webbrowser
 from tkinter import filedialog, ttk
 
+from spacy.matcher import Matcher
 from spacy.tokens import Doc
+from spacy.tokens.token import Token
 from ttkthemes import ThemedTk
 import spacy
 from PIL import ImageTk, Image
@@ -21,7 +23,6 @@ nativeSplashOpened = False
 # noinspection PyBroadException
 try:
     import pyi_splash
-
     pyi_splash.update_text('inicializujem ...')
     nativeSplashOpened = True
 except:
@@ -41,6 +42,7 @@ MID_BLUE = "#7ea6d7"
 LIGHT_WHITE = "#d7e6e1"
 TEXT_COLOR_WHITE = "#ffffff"
 TEXT_EDITOR_BG = "#E0E0E0"
+LONG_SENTENCE_HIGHLIGH_COLOR = "#ffe8a8"
 
 # CONSTANTS
 # PREFIX FOR CLOSE WORD EDITOR TAGS
@@ -48,6 +50,7 @@ CLOSE_WORD_PREFIX = "close_word_"
 MULTIPLE_PUNCTUATION_TAG_NAME = "multiple_punctuation"
 TRAILING_SPACES_TAG_NAME = "trailing_spaces"
 MULTIPLE_SPACES_TAG_NAME = "multiple_spaces"
+LONG_SENTENCE_TAG_NAME = "long_sentence"
 READABILITY_MAX_VALUE = 50
 EDITOR_LOGO_HEIGHT = 300
 EDITOR_LOGO_WIDTH = 300
@@ -123,19 +126,34 @@ def resource_path(relative_path):
     return os.path.join(base_path, relative_path)
 
 
-# CLASS DEFINITIONS
-# TEXT STATISTICS
-class Statistics:
-    # TOTAL CHARS IN DOCUMENT
-    total_chars = 0
-    # NUMBER OF TOTAL WORDS IN DOCUMENT. LOOKS LIKE STANZA COUNTS PUNCTATION AS WORDS
-    total_words = 0
-    # NUMBER OF NORM PAGES (1800 CHARS) IN DOCUMENT
-    total_pages = 0
-    # DICTIONARY OF ALL WORDS IN DOCUMENTS (UniqueWord)
+def get_doc_words(doc):
+    matcher = Matcher(nlp.vocab)
+    pattern = [{"_": {"is_word": True}}]
+    matcher.add("IS_WORD_PATTERN", [pattern])
+    words = []
+    matches = matcher(doc)
+    for match_id, start, end in matches:
+        words.append(doc[start])
+    return words
+
+
+def get_doc_unique_words(doc):
+    matcher = Matcher(nlp.vocab)
+    pattern = [{"_": {"is_word": True}}]
+    matcher.add("IS_WORD_PATTERN", [pattern])
     words = {}
+    matches = matcher(doc)
+    for match_id, start, end in matches:
+        token = doc[start]
+        unique_word = words.get(token.text.lower(), None)
+        if unique_word is None:
+            unique_word = UniqueWord(token.text.lower())
+            words[token.text.lower()] = unique_word
+        unique_word.occourences.append(token)
+    return words
 
 
+# CLASS DEFINITIONS
 # UNIQUE WORD WITH IT's OCCOURENCES
 class UniqueWord:
     def __init__(self, text):
@@ -167,25 +185,14 @@ class Service:
 
     # FUNCTION THAT CALCULATE READABILITY INDICES
     @staticmethod
-    def evaluate_readability(doc: Doc, statistics: Statistics):
-        if statistics.total_chars <= 1:
+    def evaluate_readability(doc: Doc):
+        if doc._.total_chars <= 1:
             return 0
-
-        type_to_token_ratio = Service.lexical_diversity(statistics)
-        average_sentence_length = statistics.total_words / sum(1 for _ in doc.sents)
-        average_word_length = statistics.total_chars / statistics.total_words / 2
-        # NOTE lexical_diversity index is oposite of mistrik index of repetition.
-        #  Therefore we need to use multiplication instead of division
-        mistrik_index = 50 - (average_sentence_length * average_word_length * type_to_token_ratio)
+        type_to_token_ratio = doc._.total_words / len(doc._.unique_words)
+        average_sentence_length = doc._.total_words / sum(1 for _ in doc.sents)
+        average_word_length = doc._.total_chars / doc._.total_words / 2
+        mistrik_index = 50 - ((average_sentence_length * average_word_length) / type_to_token_ratio)
         return 50 - max(0.0, round(mistrik_index, 0))
-
-    # CALCULATE LEXICAL DIVERSITY (RATIO OF UNIQUE WORDS TO ALL WORDS)
-    @staticmethod
-    def lexical_diversity(statistics: Statistics):
-        if statistics.total_words == 0:
-            return 0
-        # UNIQUE WORDS / TOTAL WORDS
-        return len(statistics.words) / statistics.total_words
 
 
 class AutoScrollbar(ttk.Scrollbar):
@@ -232,8 +239,6 @@ class MainWindow:
         self.analyze_text_debounce_timer = None
         self.tooltip = None
         self.doc = nlp('')
-        # WE NEED TO COMPUTE SOME MORE INFORMATION
-        self.statistics = Statistics()
         # EDITOR TEXT SIZE
         self.text_size = 10
         # DICTIONARY THAT HOLDS COLOR OF WORD TO PREVENT RECOLORING ON TYPING
@@ -432,6 +437,15 @@ class MainWindow:
         # START MAIN LOOP TO SHOW ROOT WINDOW
         self.root.mainloop()
 
+    # UTIL METHOD TO SET tk.TEXT WIDGET
+    # WE NEED TO ENBLE TEXT, DELETE CONTENT AND INSERT NEW TEXT
+    @staticmethod
+    def set_text(text: tk.Text, value):
+        text.config(state=tk.NORMAL)
+        text.delete(1.0, tk.END)
+        text.insert(tk.END, value)
+        text.config(state=tk.DISABLED)
+
     def set_text_size(self, text_size):
         self.text_size = min(30, max(1, int(text_size)))
         self.editor_text_size_input.set(self.text_size)
@@ -458,16 +472,16 @@ class MainWindow:
                 self.set_text_size(self.text_size - 1)
 
     # DISPLAY INFORMATIONS ABOUT TEXT SIZE
-    def display_size_info(self, statistics: Statistics):
-        self.char_count_info_value.config(text=f"{statistics.total_chars}")
-        self.word_count_info_value.config(text=f"{statistics.total_words}")
-        self.page_count_info_value.config(text=f"{statistics.total_pages}")
+    def display_size_info(self, doc: Doc):
+        self.char_count_info_value.config(text=f"{doc._.total_chars}")
+        self.word_count_info_value.config(text=f"{doc._.total_words}")
+        self.page_count_info_value.config(text=f"{doc._.total_pages}")
 
     # CALCULATE AND DISPLAY FREQUENT WORDS
-    def display_word_frequencies(self, statistics: Statistics):
+    def display_word_frequencies(self, doc: Doc):
         if not self.config["enable_frequent_words"]:
             return
-        words = {k: v for (k, v) in statistics.words.items() if
+        words = {k: v for (k, v) in doc._.unique_words.items() if
                  len(k) >= self.config["repeated_words_min_word_length"] and len(v.occourences) >= self.config[
                      "repeated_words_min_word_frequency"]}
         sorted_word_counts = sorted(words.values(), key=lambda x: len(x.occourences), reverse=True)
@@ -478,17 +492,11 @@ class MainWindow:
         frequent_words_text = "\n".join(
             [f"{word.text}\t\t{len(word.occourences)}x" for word in sorted_word_counts]
         )
-
-        # WE NEED TO ENBLE TEXT, DELETE CONTENT AND INSERT NEW TEXT
-        self.word_freq_text.config(state=tk.NORMAL)
-        self.word_freq_text.delete(1.0, tk.END)
-        self.word_freq_text.insert(tk.END, frequent_words_text)
-        # DISABLING AGAIN
-        self.word_freq_text.config(state=tk.DISABLED)
+        MainWindow.set_text(self.word_freq_text, frequent_words_text)
 
     # HIGHLIGHT LONG SENTENCES
     def highlight_long_sentences(self, doc: Doc):
-        self.text_editor.tag_remove("long_sentence", "1.0", tk.END)
+        self.text_editor.tag_remove(LONG_SENTENCE_TAG_NAME, "1.0", tk.END)
         if not self.config["enable_long_sentences"]:
             return
         for sentence in doc.sents:
@@ -496,13 +504,17 @@ class MainWindow:
             highlight_end = sentence.end_char
 
             words = [word for word in sentence if
-                     len(word.text) >= self.config["long_sentence_min_word_length"]]
+                     word._.is_word and len(word.text) >= self.config["long_sentence_min_word_length"]]
             if len(words) > self.config["long_sentence_words"] or len(sentence.text) > self.config[
                 "long_sentence_char_count"]:
                 start_index = f"1.0 + {highlight_start} chars"
                 end_index = f"1.0 + {highlight_end} chars"
-                self.text_editor.tag_add("long_sentence", start_index, end_index)
-        self.text_editor.tag_config("long_sentence", background="yellow")
+                self.text_editor.tag_add(LONG_SENTENCE_TAG_NAME, start_index, end_index)
+                # ON MOUSE OVER, SHOW TOOLTIP
+                self.text_editor.tag_bind(LONG_SENTENCE_TAG_NAME, "<Enter>",
+                                          lambda e: self.show_tooltip(e, f'Táto veta je dlhá.'))
+                self.text_editor.tag_bind(LONG_SENTENCE_TAG_NAME, "<Leave>", lambda e: self.hide_tooltip(e))
+        self.text_editor.tag_config(LONG_SENTENCE_TAG_NAME, background=LONG_SENTENCE_HIGHLIGH_COLOR)
 
     # HIGHLIGH MULTIPLE SPACE, MULTIPLE PUNCTATION, AND TRAILING SPACES
     def highlight_multiple_issues(self, text):
@@ -545,12 +557,12 @@ class MainWindow:
         self.text_editor.tag_config(MULTIPLE_SPACES_TAG_NAME, background="red")
 
     # HIGHLIGHT WORDS THAT REPEATS CLOSE TO EACH OTHER
-    def highlight_close_words(self, statistics: Statistics):
+    def highlight_close_words(self, doc: Doc):
         if self.config["enable_close_words"]:
             self.text_editor.tag_remove("close_word", "1.0", tk.END)
             clusters = []
             close_words_counts = {}
-            words_nlp = {k: v for (k, v) in statistics.words.items() if
+            words_nlp = {k: v for (k, v) in doc._.unique_words.items() if
                          len(k) >= self.config["close_words_min_word_length"]}
             for unique_word in words_nlp.values():
                 # IF WORD DOES NOT OCCOUR ENOUGH TIMES WE DONT NEED TO CHECK IF ITS OCCOURENCES ARE CLOSE
@@ -595,14 +607,7 @@ class MainWindow:
             close_words_value_text = "\n".join(
                 [f"{word.lower()}\t\t{close_words_counts[word]}x" for word in close_words_counts]
             )
-
-            # WE NEED TO ENBLE TEXT, DELETE CONTENT AND INSERT NEW TEXT
-            self.close_words_text.config(state=tk.NORMAL)
-            self.close_words_text.delete(1.0, tk.END)
-            self.close_words_text.insert(tk.END, close_words_value_text)
-            # DISABLING AGAIN
-            self.close_words_text.config(state=tk.DISABLED)
-
+            MainWindow.set_text(self.close_words_text, close_words_value_text)
             for cluster in clusters:
                 color = random.choice(dark_colors)
                 for word in cluster:
@@ -627,7 +632,7 @@ class MainWindow:
     def highlight_same_word(self, event, word):
         self.show_tooltip(event, 'Toto slovo sa opakuje viackrát na krátkom úseku')
         for tag in self.text_editor.tag_names():
-            if tag.startswith(f"{CLOSE_WORD_PREFIX}{word}"):
+            if tag == f"{CLOSE_WORD_PREFIX}{word}":
                 self.text_editor.tag_config(tag, background="black", foreground="white")
 
     # REMOVE HIGHLIGHTING FROM SAME WORD ON MOUSE OVER END
@@ -688,29 +693,17 @@ class MainWindow:
         text = self.text_editor.get(1.0, tk.END)
         # RUN ANALYSIS
         self.doc = nlp(text).doc
-        self.statistics.words = {}
-        self.statistics.total_words = 0
-        self.statistics.total_chars = len(text)
-        self.statistics.total_pages = round(self.statistics.total_chars / 1800, 2)
-        for token in self.doc:
-            if re.match('\\w', token.text):
-                self.statistics.total_words += 1
-                word = self.statistics.words.get(token.text.lower())
-                if word is None:
-                    word = UniqueWord(token.text.lower())
-                    self.statistics.words[token.text.lower()] = word
-                word.occourences.append(token)
         # CLEAR TAGS
         for tag in self.text_editor.tag_names():
             self.text_editor.tag_delete(tag)
         # RUN ANALYSIS FUNCTIONS
-        self.display_word_frequencies(self.statistics)
-        self.display_size_info(self.statistics)
+        self.display_word_frequencies(self.doc)
+        self.display_size_info(self.doc)
         self.highlight_long_sentences(self.doc)
-        self.highlight_close_words(self.statistics)
+        self.highlight_close_words(self.doc)
         self.highlight_multiple_issues(text)
         self.text_editor.tag_raise("sel")
-        readability = Service.evaluate_readability(self.doc, self.statistics)
+        readability = Service.evaluate_readability(self.doc)
         self.readability_value.configure(text=f"{readability: .0f} / {READABILITY_MAX_VALUE}")
 
     # RUN ANALYSIS ONE SECOND AFTER LAST CHANGE
@@ -979,6 +972,14 @@ nlp = spacy.load(os.path.join(
     SPACY_MODEL_NAME,
     SPACY_MODEL_NAME_WITH_VERSION)
 )
+# SPACY EXTENSIONS
+word_pattern = re.compile("\\w+")
+Token.set_extension("is_word", getter=lambda t: re.match(word_pattern, t.text.lower()) is not None)
+Doc.set_extension("words", getter=get_doc_words)
+Doc.set_extension("unique_words", getter=get_doc_unique_words)
+Doc.set_extension("total_chars", getter=lambda d: len(d.text))
+Doc.set_extension("total_words", getter=lambda d: len(d._.words))
+Doc.set_extension("total_pages", getter=lambda d: round(len(d.text) / 1800, 2))
 splash.update_status("inicializujem textový processor...")
 splash.close()
 main_window = MainWindow(root, nlp)
