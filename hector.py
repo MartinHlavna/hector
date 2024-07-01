@@ -11,9 +11,13 @@ import urllib
 import webbrowser
 from tkinter import filedialog, ttk
 
+from spacy.lang.char_classes import LIST_ELLIPSES, LIST_ICONS, ALPHA_LOWER, ALPHA_UPPER, ALPHA
+from spacy.lang.sl.punctuation import CONCAT_QUOTES
 from spacy.matcher import Matcher
+from spacy.tokenizer import Tokenizer
 from spacy.tokens import Doc
 from spacy.tokens.token import Token
+from spacy.util import compile_infix_regex
 from ttkthemes import ThemedTk
 import spacy
 from PIL import ImageTk, Image
@@ -971,6 +975,33 @@ nlp = spacy.load(os.path.join(
     SPACY_MODEL_NAME,
     SPACY_MODEL_NAME_WITH_VERSION)
 )
+
+
+def custom_tokenizer(nlp):
+    infixes = (
+            LIST_ELLIPSES
+            + LIST_ICONS
+            + [
+                r"(?<=[0-9])[+\-\*^](?=[0-9-])",
+                r"(?<=[{al}{q}])\.(?=[{au}{q}])".format(
+                    al=ALPHA_LOWER, au=ALPHA_UPPER, q=CONCAT_QUOTES
+                ),
+                r"(?<=[{a}]),(?=[{a}])".format(a=ALPHA),
+                #r"(?<=[{a}])(?:{h})(?=[{a}])".format(a=ALPHA, h=HYPHENS),
+                r"(?<=[{a}0-9])[:<>=/](?=[{a}])".format(a=ALPHA),
+            ]
+    )
+
+    infix_re = compile_infix_regex(infixes)
+
+    return Tokenizer(nlp.vocab, prefix_search=nlp.tokenizer.prefix_search,
+                     suffix_search=nlp.tokenizer.suffix_search,
+                     infix_finditer=infix_re.finditer,
+                     token_match=nlp.tokenizer.token_match,
+                     rules=nlp.Defaults.tokenizer_exceptions)
+
+nlp.tokenizer = custom_tokenizer(nlp)
+
 # SPACY EXTENSIONS
 word_pattern = re.compile("\\w+")
 Token.set_extension("is_word", getter=lambda t: re.match(word_pattern, t.text.lower()) is not None)
