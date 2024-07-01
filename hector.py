@@ -948,7 +948,6 @@ photo = tk.PhotoImage(file=resource_path('images/hector-icon.png'))
 root.wm_iconphoto(True, photo)
 splash = SplashWindow(root)
 splash.update_status("sťahujem a inicializujem jazykový model...")
-# FIXME: Check if model exists on drive. If not, download from repo and unpack to spacy-models/hector-model
 # WE CAN MOVE OVER TO PYTHON SPLASH INSTEAD OF IMAGE NOW
 if nativeSplashOpened:
     pyi_splash.close()
