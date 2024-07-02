@@ -50,6 +50,7 @@ TEXT_COLOR_WHITE = "#ffffff"
 TEXT_EDITOR_BG = "#E0E0E0"
 LONG_SENTENCE_HIGHLIGHT_COLOR = "#ffe8a8"
 SEARCH_RESULT_HIGHLIGHT_COLOR = "yellow"
+CURRENT_SEARCH_RESULT_HIGHLIGHT_COLOR = "orange"
 
 # CONSTANTS
 # PREFIX FOR CLOSE WORD EDITOR TAGS
@@ -59,6 +60,7 @@ TRAILING_SPACES_TAG_NAME = "trailing_spaces"
 MULTIPLE_SPACES_TAG_NAME = "multiple_spaces"
 LONG_SENTENCE_TAG_NAME = "long_sentence"
 SEARCH_RESULT_TAG_NAME = "search_result"
+CURRENT_SEARCH_RESULT_TAG_NAME = "current_search_result"
 READABILITY_MAX_VALUE = 50
 EDITOR_LOGO_HEIGHT = 300
 EDITOR_LOGO_WIDTH = 300
@@ -275,6 +277,9 @@ class MainWindow:
         # TIMER FOR DEBOUNCING EDITOR CHANGE EVENT
         self.analyze_text_debounce_timer = None
         self.search_debounce_timer = None
+        self.search_matches = []
+        self.last_search = ''
+        self.last_match_index = 0
         self.tooltip = None
         self.doc = nlp('')
         # EDITOR TEXT SIZE
@@ -358,6 +363,10 @@ class MainWindow:
         self.text_editor.bind("<Control-a>", self.select_all)
         self.text_editor.bind("<Control-A>", self.select_all)
         self.text_editor.bind("<Configure>", self.evaluate_logo_placement)
+        self.root.bind("<Control-F>", self.focus_search)
+        self.root.bind("<Control-f>", self.focus_search)
+        self.root.bind("<Control-e>", self.focus_editor)
+        self.root.bind("<Control-E>", self.focus_editor)
 
         # MOUSE WHEEL BINDING ON ROOT WINDOW
         # Windows OS
@@ -366,11 +375,14 @@ class MainWindow:
         self.root.bind("<Button-4>", self.change_text_size)
         self.root.bind("<Button-5>", self.change_text_size)
 
+
         tk.Label(right_side_panel, pady=10, background=PRIMARY_BLUE, foreground=TEXT_COLOR_WHITE,
                  text="Hľadať", font=(HELVETICA_FONT_NAME, TEXT_SIZE_SECTION_HEADER),
                  anchor='n', justify='left').pack(fill=tk.X)
-        self.search_field = tk.Text(right_side_panel, height=1, width=22, background=TEXT_EDITOR_BG)
+        self.search_field = ttk.Entry(right_side_panel, width=22, background=TEXT_EDITOR_BG)
         self.search_field.bind('<KeyRelease>', self.search_debounced)
+        self.search_field.bind('<Return>', self.next_search)
+        self.search_field.bind('<Shift-Return>', self.prev_search)
         self.search_field.pack(padx=0)
         tk.Label(right_side_panel, pady=10, background=PRIMARY_BLUE, foreground=TEXT_COLOR_WHITE,
                  text="Často použité slová", font=(HELVETICA_FONT_NAME, TEXT_SIZE_SECTION_HEADER),
@@ -727,12 +739,17 @@ class MainWindow:
     def analyze_text(self, event=None):
         # CLEAR DEBOUNCE TIMER IF ANY
         self.analyze_text_debounce_timer = None
+        text = self.text_editor.get(1.0, tk.END)
+        if self.doc.text == text:
+            return
         if self.search_debounce_timer is not None:
             self.root.after_cancel(self.search_debounce_timer)
         self.search_debounce_timer = None
+        self.search_matches.clear()
+        self.last_search = ''
+        self.last_match_index = 0
         self.evaluate_logo_placement()
         # GET TEXT FROM EDITOR
-        text = self.text_editor.get(1.0, tk.END)
         # RUN ANALYSIS
         self.doc = nlp(text).doc
         # CLEAR TAGS
@@ -755,16 +772,61 @@ class MainWindow:
             self.root.after_cancel(self.analyze_text_debounce_timer)
         self.analyze_text_debounce_timer = self.root.after(1000, self.analyze_text)
 
+    # FOCUS NEXT SEARCH RESULT
+    def next_search(self, event):
+        results_count = len(self.search_matches)
+        if results_count == 0:
+            return
+        self.last_match_index = (self.last_match_index + 1) % (results_count)
+        self.highlight_search()
+
+    # FOCUS PREVIOUS SEARCH RESULT
+    def prev_search(self, event):
+        results_count = len(self.search_matches)
+        if results_count == 0:
+            return
+        self.last_match_index = (self.last_match_index - 1) % (results_count)
+        self.highlight_search()
+
+    # HIGHLIGHT CURRENT FOCUSED SEARCH RESULT
+    def highlight_search(self):
+        self.text_editor.tag_remove(CURRENT_SEARCH_RESULT_TAG_NAME, "1.0", tk.END)
+        start, end = self.search_matches[self.last_match_index].span()
+        start_index = f"1.0 + {start} chars"
+        end_index = f"1.0 + {end} chars"
+        self.text_editor.tag_add(CURRENT_SEARCH_RESULT_TAG_NAME, start_index, end_index)
+        self.text_editor.see(start_index)
+        self.text_editor.mark_set(tk.INSERT, end_index)
+
+    # SEARCH IN TEXT EDITOR
     def search_text(self):
+        search_string = Service.remove_accents(self.search_field.get().replace("\n", "").lower())
+        if self.last_search == search_string:
+            return
+        self.last_search = search_string
+        self.last_match_index = 0
         self.text_editor.tag_remove(SEARCH_RESULT_TAG_NAME, "1.0", tk.END)
-        search_string = Service.remove_accents(self.search_field.get(1.0, tk.END).replace("\n", "").lower())
+        self.text_editor.tag_remove(CURRENT_SEARCH_RESULT_TAG_NAME, "1.0", tk.END)
         expression = rf"{search_string}"
-        for match in re.finditer(expression, Service.remove_accents(self.doc.text), flags=re.UNICODE):
+        self.search_matches = list(re.finditer(expression, Service.remove_accents(self.doc.text), flags=re.UNICODE))
+        if len(self.search_matches) == 0:
+            return
+        editor_counts = self.text_editor.count("1.0", self.text_editor.index(tk.INSERT), "chars")
+        carrent_position = 0
+        if editor_counts is not None:
+            carrent_position = self.text_editor.count("1.0", self.text_editor.index(tk.INSERT), "chars")[0]
+        first_match_highlighted = False
+        for i, match in enumerate(self.search_matches):
             start, end = match.span()
             start_index = f"1.0 + {start} chars"
             end_index = f"1.0 + {end} chars"
             self.text_editor.tag_add(SEARCH_RESULT_TAG_NAME, start_index, end_index)
+            if not first_match_highlighted and start > carrent_position:
+                self.last_match_index = i
+        self.highlight_search()
         self.text_editor.tag_config(SEARCH_RESULT_TAG_NAME, background=SEARCH_RESULT_HIGHLIGHT_COLOR)
+        self.text_editor.tag_config(CURRENT_SEARCH_RESULT_TAG_NAME, background=CURRENT_SEARCH_RESULT_HIGHLIGHT_COLOR)
+        self.text_editor.tag_raise(CURRENT_SEARCH_RESULT_TAG_NAME)
 
     # RUN SEARCH ONE SECOND AFTER LAST CHANGE
     def search_debounced(self, event=None):
@@ -786,7 +848,15 @@ class MainWindow:
     # SELECT ALL TEXT
     def select_all(self, event=None):
         self.text_editor.tag_add(tk.SEL, "1.0", tk.END)
-        return "break"
+        return
+
+    def focus_search(self, event=None):
+        self.search_field.focus()
+        return
+
+    def focus_editor(self, event=None):
+        self.text_editor.focus()
+        return
 
     # SHOW SETTINGS WINDOW
     def show_settings(self):
