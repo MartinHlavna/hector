@@ -615,8 +615,7 @@ class MainWindow:
                     if reference is None:
                         reference = word_occource
                         continue
-                    if word_occource.idx - reference.idx < self.config[
-                        "close_words_min_distance_between_words"]:
+                    if word_occource.i - reference.i < self.config["close_words_min_distance_between_words"]:
                         # IF OCCOURENCE IS TOO CLOSE TO REFERENCE ADD TO CURRENT CLUSTER
                         current_cluster.add(reference)
                         current_cluster.add(word_occource)
@@ -922,7 +921,7 @@ class MainWindow:
         close_words_min_distance_between_words_entry = ttk.Spinbox(settings_window, from_=1, to=9999, width=6)
         close_words_min_distance_between_words_entry.grid(row=22, column=1, padx=10, pady=2, sticky='w')
         close_words_min_distance_between_words_entry.set(self.config["close_words_min_distance_between_words"])
-        tk.Label(settings_window, text="znakov", anchor='w').grid(
+        tk.Label(settings_window, text="slov", anchor='w').grid(
             row=22, column=2, padx=10, pady=2, sticky='w'
         )
         tk.Label(settings_window, text="Minimálny počet opakovaní", anchor='w').grid(
