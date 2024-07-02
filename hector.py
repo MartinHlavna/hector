@@ -7,6 +7,7 @@ import shutil
 import sys
 import tarfile
 import tkinter as tk
+import unicodedata
 import urllib
 import webbrowser
 from tkinter import filedialog, ttk
@@ -27,6 +28,7 @@ nativeSplashOpened = False
 # noinspection PyBroadException
 try:
     import pyi_splash
+
     pyi_splash.update_text('inicializujem ...')
     nativeSplashOpened = True
 except:
@@ -35,7 +37,7 @@ except:
 VERSION = "0.3.0 Alfa"
 SPACY_MODEL_NAME = "sk_ud_sk_snk"
 SPACY_MODEL_VERSION = "1.0.0"
-SPACY_MODEL_NAME_WITH_VERSION=f"{SPACY_MODEL_NAME}-{SPACY_MODEL_VERSION}"
+SPACY_MODEL_NAME_WITH_VERSION = f"{SPACY_MODEL_NAME}-{SPACY_MODEL_VERSION}"
 DOCUMENTATION_LINK = "https://github.com/MartinHlavna/hector"
 SPACY_MODEL_LINK = f"https://github.com/MartinHlavna/hector-spacy-model/releases/download/v.{SPACY_MODEL_VERSION}/{SPACY_MODEL_NAME_WITH_VERSION}.tar.gz"
 
@@ -46,7 +48,8 @@ MID_BLUE = "#7ea6d7"
 LIGHT_WHITE = "#d7e6e1"
 TEXT_COLOR_WHITE = "#ffffff"
 TEXT_EDITOR_BG = "#E0E0E0"
-LONG_SENTENCE_HIGHLIGH_COLOR = "#ffe8a8"
+LONG_SENTENCE_HIGHLIGHT_COLOR = "#ffe8a8"
+SEARCH_RESULT_HIGHLIGHT_COLOR = "yellow"
 
 # CONSTANTS
 # PREFIX FOR CLOSE WORD EDITOR TAGS
@@ -55,6 +58,7 @@ MULTIPLE_PUNCTUATION_TAG_NAME = "multiple_punctuation"
 TRAILING_SPACES_TAG_NAME = "trailing_spaces"
 MULTIPLE_SPACES_TAG_NAME = "multiple_spaces"
 LONG_SENTENCE_TAG_NAME = "long_sentence"
+SEARCH_RESULT_TAG_NAME = "search_result"
 READABILITY_MAX_VALUE = 50
 EDITOR_LOGO_HEIGHT = 300
 EDITOR_LOGO_WIDTH = 300
@@ -157,6 +161,29 @@ def get_doc_unique_words(doc):
     return words
 
 
+# CUSTOM TOKENIZER THAT FOES NOT REMOVE HYPHENATED WORDS
+def custom_tokenizer(nlp_pipeline):
+    infixes = (
+            LIST_ELLIPSES
+            + LIST_ICONS
+            + [
+                r"(?<=[0-9])[+\-\*^](?=[0-9-])",
+                r"(?<=[{al}{q}])\.(?=[{au}{q}])".format(
+                    al=ALPHA_LOWER, au=ALPHA_UPPER, q=CONCAT_QUOTES
+                ),
+                r"(?<=[{a}]),(?=[{a}])".format(a=ALPHA),
+                #OVERRIDE: r"(?<=[{a}])(?:{h})(?=[{a}])".format(a=ALPHA, h=HYPHENS),
+                r"(?<=[{a}0-9])[:<>=/](?=[{a}])".format(a=ALPHA),
+            ]
+    )
+    infix_re = compile_infix_regex(infixes)
+    return Tokenizer(nlp_pipeline.vocab, prefix_search=nlp_pipeline.tokenizer.prefix_search,
+                     suffix_search=nlp_pipeline.tokenizer.suffix_search,
+                     infix_finditer=infix_re.finditer,
+                     token_match=nlp_pipeline.tokenizer.token_match,
+                     rules=nlp_pipeline.Defaults.tokenizer_exceptions)
+
+
 # CLASS DEFINITIONS
 # UNIQUE WORD WITH IT's OCCOURENCES
 class UniqueWord:
@@ -197,6 +224,12 @@ class Service:
         average_word_length = doc._.total_chars / doc._.total_words / 2
         mistrik_index = 50 - ((average_sentence_length * average_word_length) / type_to_token_ratio)
         return 50 - max(0.0, round(mistrik_index, 0))
+
+    # METHOD THAT REMOVES ACCENTS FROM STRING
+    @staticmethod
+    def remove_accents(text):
+        nfkd_form = unicodedata.normalize('NFD', text)
+        return ''.join([c for c in nfkd_form if not unicodedata.combining(c)])
 
 
 class AutoScrollbar(ttk.Scrollbar):
@@ -241,6 +274,7 @@ class MainWindow:
                         'sticky': 'ns'})])
         # TIMER FOR DEBOUNCING EDITOR CHANGE EVENT
         self.analyze_text_debounce_timer = None
+        self.search_debounce_timer = None
         self.tooltip = None
         self.doc = nlp('')
         # EDITOR TEXT SIZE
@@ -332,15 +366,17 @@ class MainWindow:
         self.root.bind("<Button-4>", self.change_text_size)
         self.root.bind("<Button-5>", self.change_text_size)
 
-        word_freq_title = tk.Label(right_side_panel, pady=10, background=PRIMARY_BLUE, foreground=TEXT_COLOR_WHITE,
-                                   text="Často použité slová", font=(HELVETICA_FONT_NAME, TEXT_SIZE_SECTION_HEADER),
-                                   anchor='n',
-                                   justify='left')
-        word_freq_title.pack()
+        tk.Label(right_side_panel, pady=10, background=PRIMARY_BLUE, foreground=TEXT_COLOR_WHITE,
+                 text="Hľadať", font=(HELVETICA_FONT_NAME, TEXT_SIZE_SECTION_HEADER),
+                 anchor='n', justify='left').pack(fill=tk.X)
+        self.search_field = tk.Text(right_side_panel, height=1, width=22, background=TEXT_EDITOR_BG)
+        self.search_field.bind('<KeyRelease>', self.search_debounced)
+        self.search_field.pack(padx=0)
+        tk.Label(right_side_panel, pady=10, background=PRIMARY_BLUE, foreground=TEXT_COLOR_WHITE,
+                 text="Často použité slová", font=(HELVETICA_FONT_NAME, TEXT_SIZE_SECTION_HEADER),
+                 anchor='n', justify='left').pack()
 
-        separator = ttk.Separator(right_side_panel, orient='horizontal')
-        separator.pack(fill=tk.X, padx=10)
-
+        ttk.Separator(right_side_panel, orient='horizontal').pack(fill=tk.X, padx=10)
         right_side_panel_scroll_frame = tk.Frame(right_side_panel, width=10, relief=tk.FLAT, background=PRIMARY_BLUE)
         right_side_panel_scroll_frame.pack(side=tk.RIGHT, fill=tk.Y)
         right_side_frame_scroll = AutoScrollbar(right_side_panel_scroll_frame, orient='vertical',
@@ -518,7 +554,7 @@ class MainWindow:
                 self.text_editor.tag_bind(LONG_SENTENCE_TAG_NAME, "<Enter>",
                                           lambda e: self.show_tooltip(e, f'Táto veta je dlhá.'))
                 self.text_editor.tag_bind(LONG_SENTENCE_TAG_NAME, "<Leave>", lambda e: self.hide_tooltip(e))
-        self.text_editor.tag_config(LONG_SENTENCE_TAG_NAME, background=LONG_SENTENCE_HIGHLIGH_COLOR)
+        self.text_editor.tag_config(LONG_SENTENCE_TAG_NAME, background=LONG_SENTENCE_HIGHLIGHT_COLOR)
 
     # HIGHLIGH MULTIPLE SPACE, MULTIPLE PUNCTATION, AND TRAILING SPACES
     def highlight_multiple_issues(self, text):
@@ -692,6 +728,9 @@ class MainWindow:
     def analyze_text(self, event=None):
         # CLEAR DEBOUNCE TIMER IF ANY
         self.analyze_text_debounce_timer = None
+        if self.search_debounce_timer is not None:
+            self.root.after_cancel(self.search_debounce_timer)
+        self.search_debounce_timer = None
         self.evaluate_logo_placement()
         # GET TEXT FROM EDITOR
         text = self.text_editor.get(1.0, tk.END)
@@ -716,6 +755,23 @@ class MainWindow:
         if self.analyze_text_debounce_timer is not None:
             self.root.after_cancel(self.analyze_text_debounce_timer)
         self.analyze_text_debounce_timer = self.root.after(1000, self.analyze_text)
+
+    def search_text(self):
+        self.text_editor.tag_remove(SEARCH_RESULT_TAG_NAME, "1.0", tk.END)
+        search_string = Service.remove_accents(self.search_field.get(1.0, tk.END).replace("\n", "").lower())
+        expression = rf"{search_string}"
+        for match in re.finditer(expression, Service.remove_accents(self.doc.text), flags=re.UNICODE):
+            start, end = match.span()
+            start_index = f"1.0 + {start} chars"
+            end_index = f"1.0 + {end} chars"
+            self.text_editor.tag_add(SEARCH_RESULT_TAG_NAME, start_index, end_index)
+        self.text_editor.tag_config(SEARCH_RESULT_TAG_NAME, background=SEARCH_RESULT_HIGHLIGHT_COLOR)
+
+    # RUN SEARCH ONE SECOND AFTER LAST CHANGE
+    def search_debounced(self, event=None):
+        if self.search_debounce_timer is not None:
+            self.root.after_cancel(self.search_debounce_timer)
+        self.search_debounce_timer = self.root.after(1000, self.search_text)
 
     def evaluate_logo_placement(self, event=None):
         text = self.text_editor.get(1.0, tk.END)
@@ -975,33 +1031,7 @@ nlp = spacy.load(os.path.join(
     SPACY_MODEL_NAME,
     SPACY_MODEL_NAME_WITH_VERSION)
 )
-
-
-def custom_tokenizer(nlp):
-    infixes = (
-            LIST_ELLIPSES
-            + LIST_ICONS
-            + [
-                r"(?<=[0-9])[+\-\*^](?=[0-9-])",
-                r"(?<=[{al}{q}])\.(?=[{au}{q}])".format(
-                    al=ALPHA_LOWER, au=ALPHA_UPPER, q=CONCAT_QUOTES
-                ),
-                r"(?<=[{a}]),(?=[{a}])".format(a=ALPHA),
-                #r"(?<=[{a}])(?:{h})(?=[{a}])".format(a=ALPHA, h=HYPHENS),
-                r"(?<=[{a}0-9])[:<>=/](?=[{a}])".format(a=ALPHA),
-            ]
-    )
-
-    infix_re = compile_infix_regex(infixes)
-
-    return Tokenizer(nlp.vocab, prefix_search=nlp.tokenizer.prefix_search,
-                     suffix_search=nlp.tokenizer.suffix_search,
-                     infix_finditer=infix_re.finditer,
-                     token_match=nlp.tokenizer.token_match,
-                     rules=nlp.Defaults.tokenizer_exceptions)
-
 nlp.tokenizer = custom_tokenizer(nlp)
-
 # SPACY EXTENSIONS
 word_pattern = re.compile("\\w+")
 Token.set_extension("is_word", getter=lambda t: re.match(word_pattern, t.text.lower()) is not None)
