@@ -68,6 +68,95 @@ TEXT_SIZE_SECTION_HEADER = 12
 TEXT_SIZE_MENU = 10
 TEXT_SIZE_BOTTOM_BAR = 10
 
+POS_TAG_TRANSLATIONS = {
+    "ADJ": "prídavné meno",
+    "ADP": "predložka",
+    "ADV": "príslovka",
+    "AUX": "pomocné sloveso",
+    "CCONJ": "priraďovacia spojka",
+    "DET": "zámeno",
+    "INTJ": "citoslovce",
+    "NOUN": "podstatné meno",
+    "NUM": "číslovka",
+    "PART": "častica",
+    "PRON": "zámeno",
+    "PROPN": "vlastné meno",
+    "PUNCT": "interpunkcia",
+    "SCONJ": "podraďovacia spojka",
+    "SYM": "symbol",
+    "VERB": "sloveso",
+    "X": "iné"
+}
+
+DEP_TAG_TRANSLATION = {
+    "acl": "modifikátor podstatného mena",
+    "acl:relcl": "modifikátor relatívnej vety",
+    "advcl": "modifikátor príslovkovej vety",
+    "advcl:relcl": "modifikátor relatívnej príslovkovej vety",
+    "advmod": "príslovkový modifikátor",
+    "advmod:emph": "zdôrazňujúce slovo",
+    "advmod:lmod": "príslovkový modifikátor",
+    "amod": "adjektívny modifikátor",
+    "appos": "apozitívny modifikátor",
+    "aux": "pomocné sloveso",
+    "aux:pass": "pomocné sloveso v pasíve",
+    "case": "markovanie pádu",
+    "cc": "priradzovacia spojka",
+    "cc:preconj": "predspojka",
+    "ccomp": "klauzálny doplnok",
+    "clf": "klasifikátor",
+    "compound": "zložený",
+    "compound:lvc": "zložené sloveso",
+    "compound:prt": "frázová slovesná častica",
+    "compound:redup": "reduplikovaná zloženina",
+    "compound:svc": "slovesné zloženina",
+    "conj": "spojka",
+    "cop": "kopula",
+    "csubj": "klauzálny podmet",
+    "csubj:outer": "klauzálny podmet vp vonkajšej klauzule",
+    "csubj:pass": "klauzálny pasívny podmet",
+    "dep": "nešpecifikovaná závislosť",
+    "det": "determiner (člen alebo zámeno)",
+    "det:numgov": "zámenový kvantifikátor určujúci pád podstatného mena",
+    "det:nummod": "zámenový kvantifikátor zhodujúci sa v páde s podstatným menom",
+    "det:poss": "privlastňovací determiner",
+    "discourse": "diskurzívny prvok",
+    "dislocated": "dislokované prvky",
+    "expl": "expletívum",
+    "expl:impers": "nepersónálne expletívum",
+    "expl:pass": "reflexívne zámeno použité v reflexívnom pasíve",
+    "expl:pv": "reflexívne clitikum s inherentne reflexívnym slovesom",
+    "fixed": "fixný viacslovný výraz",
+    "flat": "plochý výraz",
+    "flat:foreign": "cudzie slová",
+    "flat:name": "mená",
+    "goeswith": "patrí s",
+    "iobj": "nepriamy objekt",
+    "list": "zoznam",
+    "mark": "marker",
+    "nmod": "nominálny modifikátor",
+    "nmod:poss": "privlastňovací nominálny modifikátor",
+    "nmod:tmod": "časový modifikátor",
+    "nsubj": "nominálny podmet",
+    "nsubj:outer": "nominálny podmet vo vonkajšej klauzule",
+    "nsubj:pass": "pasívny nominálny podmet",
+    "nummod": "číselný modifikátor",
+    "nummod:gov": "číselný modifikátor určujúci pád podstatného mena",
+    "obj": "objekt",
+    "obl": "oblikačný nominál",
+    "obl:agent": "agentový modifikátor",
+    "obl:arg": "oblikačný argument",
+    "obl:lmod": "lokatívny modifikátor",
+    "obl:tmod": "časový modifikátor",
+    "orphan": "sirota",
+    "parataxis": "parataxis",
+    "punct": "interpunkcia",
+    "reparandum": "prekonaná dysfluentnosť",
+    "root": "koreň vety",
+    "vocative": "vokatív",
+    "xcomp": "otvorený klauzálny doplnok"
+}
+
 # WE USE HELVETICA FONT
 HELVETICA_FONT_NAME = "Helvetica"
 BOLD_FONT = "bold"
@@ -174,7 +263,7 @@ def custom_tokenizer(nlp_pipeline):
                     al=ALPHA_LOWER, au=ALPHA_UPPER, q=CONCAT_QUOTES
                 ),
                 r"(?<=[{a}]),(?=[{a}])".format(a=ALPHA),
-                #OVERRIDE: r"(?<=[{a}])(?:{h})(?=[{a}])".format(a=ALPHA, h=HYPHENS),
+                # OVERRIDE: r"(?<=[{a}])(?:{h})(?=[{a}])".format(a=ALPHA, h=HYPHENS),
                 r"(?<=[{a}0-9])[:<>=/](?=[{a}])".format(a=ALPHA),
             ]
     )
@@ -219,7 +308,7 @@ class Service:
     # FUNCTION THAT CALCULATE READABILITY INDICES
     @staticmethod
     def evaluate_readability(doc: Doc):
-        if doc._.total_chars <= 1:
+        if doc._.total_words <= 1:
             return 0
         type_to_token_ratio = doc._.total_words / len(doc._.unique_words)
         average_sentence_length = doc._.total_words / sum(1 for _ in doc.sents)
@@ -282,6 +371,7 @@ class MainWindow:
         self.last_match_index = 0
         self.tooltip = None
         self.doc = nlp('')
+        self.current_instrospection_token = None
         # EDITOR TEXT SIZE
         self.text_size = 10
         # DICTIONARY THAT HOLDS COLOR OF WORD TO PREVENT RECOLORING ON TYPING
@@ -303,8 +393,8 @@ class MainWindow:
         main_frame.pack(expand=1, fill=tk.BOTH, side=tk.LEFT)
 
         # LEFT SCROLLABLE SIDE PANEL WITH FREQUENT WORDS
-        left_side_panel = tk.Frame(main_frame, width=200, relief=tk.FLAT, borderwidth=1, background=PRIMARY_BLUE)
-        left_side_panel.pack(fill=tk.BOTH, side=tk.LEFT)
+        left_side_panel = tk.Frame(main_frame, width=300, relief=tk.FLAT, borderwidth=1, background=PRIMARY_BLUE)
+        left_side_panel.pack(fill=tk.BOTH, side=tk.LEFT, expand=0)
 
         # RIGHT SCROLLABLE SIDE PANEL WITH FREQUENT WORDS
         right_side_panel = tk.Frame(main_frame, width=200, relief=tk.FLAT, borderwidth=1, background=PRIMARY_BLUE)
@@ -323,12 +413,22 @@ class MainWindow:
         # BOTTOM PANEL WITH TEXT SIZE
         self.bottom_panel = tk.Frame(text_editor_frame, background=MID_BLUE, height=20)
         self.bottom_panel.pack(fill=tk.BOTH, side=tk.BOTTOM)
-        close_words_title = tk.Label(left_side_panel, pady=10, background=PRIMARY_BLUE, foreground=TEXT_COLOR_WHITE,
+
+        self.introspection_text = tk.Text(left_side_panel, highlightthickness=0, bd=0, wrap=tk.WORD, state=tk.DISABLED,
+                                          width=30, background=PRIMARY_BLUE, foreground=TEXT_COLOR_WHITE, height=5,
+                                          font=(HELVETICA_FONT_NAME, 9))
+        MainWindow.set_text(self.introspection_text, 'Kliknite na slovo v editore')
+        self.introspection_text.pack(fill=tk.X, pady=10, padx=10, side=tk.BOTTOM)
+        separator = ttk.Separator(left_side_panel, orient='horizontal')
+        separator.pack(fill=tk.X, padx=10, side=tk.BOTTOM)
+        tk.Label(left_side_panel, pady=10, background=PRIMARY_BLUE, foreground=TEXT_COLOR_WHITE,
+                 text="Introspekcia",
+                 font=(HELVETICA_FONT_NAME, TEXT_SIZE_SECTION_HEADER), anchor='n',
+                 justify='left').pack(side=tk.BOTTOM)
+        tk.Label(left_side_panel, pady=10, background=PRIMARY_BLUE, foreground=TEXT_COLOR_WHITE,
                                      text="Často sa opakujúce slová",
                                      font=(HELVETICA_FONT_NAME, TEXT_SIZE_SECTION_HEADER), anchor='n',
-                                     justify='left')
-        close_words_title.pack()
-
+                                     justify='left').pack()
         separator = ttk.Separator(left_side_panel, orient='horizontal')
         separator.pack(fill=tk.X, padx=10)
 
@@ -360,6 +460,7 @@ class MainWindow:
 
         # MOUSE AND KEYBOARD BINDINGS FOR TEXT EDITOR
         self.text_editor.bind("<KeyRelease>", self.analyze_text_debounced)
+        self.text_editor.bind("<Button-1>", lambda e: root.after(0, self.introspect))
         self.text_editor.bind("<Control-a>", self.select_all)
         self.text_editor.bind("<Control-A>", self.select_all)
         self.text_editor.bind("<Configure>", self.evaluate_logo_placement)
@@ -379,10 +480,12 @@ class MainWindow:
                  anchor='n', justify='left').pack(fill=tk.X)
         search_frame = tk.Frame(right_side_panel, relief=tk.FLAT, background=PRIMARY_BLUE)
         search_frame.pack(fill=tk.X, padx=0)
-        prev_search_button = tk.Label(search_frame, text="⮝", background=PRIMARY_BLUE, foreground=TEXT_COLOR_WHITE, cursor="hand2")
+        prev_search_button = tk.Label(search_frame, text="⮝", background=PRIMARY_BLUE, foreground=TEXT_COLOR_WHITE,
+                                      cursor="hand2")
         prev_search_button.pack(side=tk.RIGHT, padx=2)
         prev_search_button.bind("<Button-1>", self.prev_search)
-        next_search_button = tk.Label(search_frame, text="⮟", background=PRIMARY_BLUE, foreground=TEXT_COLOR_WHITE, cursor="hand2")
+        next_search_button = tk.Label(search_frame, text="⮟", background=PRIMARY_BLUE, foreground=TEXT_COLOR_WHITE,
+                                      cursor="hand2")
         next_search_button.pack(side=tk.RIGHT, padx=2)
         next_search_button.bind("<Button-1>", self.next_search)
         self.search_field = ttk.Entry(search_frame, width=22, background=TEXT_EDITOR_BG)
@@ -747,6 +850,7 @@ class MainWindow:
         self.analyze_text_debounce_timer = None
         text = self.text_editor.get(1.0, tk.END)
         if self.doc.text == text:
+            self.introspect(event)
             return
         if self.search_debounce_timer is not None:
             self.root.after_cancel(self.search_debounce_timer)
@@ -770,6 +874,7 @@ class MainWindow:
         self.text_editor.tag_raise("sel")
         readability = Service.evaluate_readability(self.doc)
         self.readability_value.configure(text=f"{readability: .0f} / {READABILITY_MAX_VALUE}")
+        self.introspect(event)
 
     # RUN ANALYSIS ONE SECOND AFTER LAST CHANGE
     def analyze_text_debounced(self, event=None):
@@ -777,6 +882,21 @@ class MainWindow:
         if self.analyze_text_debounce_timer is not None:
             self.root.after_cancel(self.analyze_text_debounce_timer)
         self.analyze_text_debounce_timer = self.root.after(1000, self.analyze_text)
+
+    def introspect(self, event=None):
+        possible_carret = self.text_editor.count("1.0", self.text_editor.index(tk.INSERT), "chars")
+        if possible_carret is None:
+            MainWindow.set_text(self.introspection_text, 'Kliknite na slovo v editore')
+            return
+        carret_position = possible_carret[0]
+        span = self.doc.char_span(carret_position, carret_position, alignment_mode='expand')
+        if span is not None and self.current_instrospection_token != span.root:
+            if span.root._.is_word:
+                self.current_instrospection_token = span.root
+                introspection_resut = f'Slovo: {self.current_instrospection_token}\n\n'\
+                                      f'Slovný druh: {POS_TAG_TRANSLATIONS[self.current_instrospection_token.pos_]}\n'\
+                                      f'Vetný člen: {DEP_TAG_TRANSLATION[self.current_instrospection_token.dep_.lower()]}'
+                MainWindow.set_text(self.introspection_text, introspection_resut)
 
     # FOCUS NEXT SEARCH RESULT
     def next_search(self, event):
@@ -814,7 +934,8 @@ class MainWindow:
         self.text_editor.tag_remove(SEARCH_RESULT_TAG_NAME, "1.0", tk.END)
         self.text_editor.tag_remove(CURRENT_SEARCH_RESULT_TAG_NAME, "1.0", tk.END)
         expression = rf"{search_string}"
-        self.search_matches = list(re.finditer(expression, Service.remove_accents(self.doc.text.lower()), flags=re.UNICODE))
+        self.search_matches = list(
+            re.finditer(expression, Service.remove_accents(self.doc.text.lower()), flags=re.UNICODE))
         if len(self.search_matches) == 0:
             return
         editor_counts = self.text_editor.count("1.0", self.text_editor.index(tk.INSERT), "chars")
@@ -1126,4 +1247,3 @@ main_window.start_main_loop()
 # On mouse over in left/ride panel word, highlight words in editor
 # Right click context menu with analysis options on selected text
 # Importing other document types like doc, docx, rtf, ...
-# Introspection of current word: print(self.doc.char_span(10, 10, alignment_mode='expand')).root will return token
