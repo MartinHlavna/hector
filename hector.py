@@ -374,12 +374,18 @@ class MainWindow:
         # Linux OS
         self.root.bind("<Button-4>", self.change_text_size)
         self.root.bind("<Button-5>", self.change_text_size)
-
-
         tk.Label(right_side_panel, pady=10, background=PRIMARY_BLUE, foreground=TEXT_COLOR_WHITE,
                  text="Hľadať", font=(HELVETICA_FONT_NAME, TEXT_SIZE_SECTION_HEADER),
                  anchor='n', justify='left').pack(fill=tk.X)
-        self.search_field = ttk.Entry(right_side_panel, width=22, background=TEXT_EDITOR_BG)
+        search_frame = tk.Frame(right_side_panel, relief=tk.FLAT, background=PRIMARY_BLUE)
+        search_frame.pack(fill=tk.X, padx=0)
+        prev_search_button = tk.Label(search_frame, text="⮝", background=PRIMARY_BLUE, foreground=TEXT_COLOR_WHITE, cursor="hand2")
+        prev_search_button.pack(side=tk.RIGHT, padx=2)
+        prev_search_button.bind("<Button-1>", self.prev_search)
+        next_search_button = tk.Label(search_frame, text="⮟", background=PRIMARY_BLUE, foreground=TEXT_COLOR_WHITE, cursor="hand2")
+        next_search_button.pack(side=tk.RIGHT, padx=2)
+        next_search_button.bind("<Button-1>", self.next_search)
+        self.search_field = ttk.Entry(search_frame, width=22, background=TEXT_EDITOR_BG)
         self.search_field.bind('<KeyRelease>', self.search_debounced)
         self.search_field.bind('<Return>', self.next_search)
         self.search_field.bind('<Shift-Return>', self.prev_search)
@@ -808,7 +814,7 @@ class MainWindow:
         self.text_editor.tag_remove(SEARCH_RESULT_TAG_NAME, "1.0", tk.END)
         self.text_editor.tag_remove(CURRENT_SEARCH_RESULT_TAG_NAME, "1.0", tk.END)
         expression = rf"{search_string}"
-        self.search_matches = list(re.finditer(expression, Service.remove_accents(self.doc.text), flags=re.UNICODE))
+        self.search_matches = list(re.finditer(expression, Service.remove_accents(self.doc.text.lower()), flags=re.UNICODE))
         if len(self.search_matches) == 0:
             return
         editor_counts = self.text_editor.count("1.0", self.text_editor.index(tk.INSERT), "chars")
