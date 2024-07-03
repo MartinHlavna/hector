@@ -1126,3 +1126,4 @@ main_window.start_main_loop()
 # On mouse over in left/ride panel word, highlight words in editor
 # Right click context menu with analysis options on selected text
 # Importing other document types like doc, docx, rtf, ...
+# Introspection of current word: print(self.doc.char_span(10, 10, alignment_mode='expand')).root will return token
