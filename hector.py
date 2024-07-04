@@ -190,10 +190,10 @@ default_config = {
     "repeated_words_min_word_length": 3,
     # MINIMAL NUMBER OF WORD REPETITIONS FOR IT TO APPEAR IN REPEATED WORDS SECTION
     "repeated_words_min_word_frequency": 2,
-    # SENTENCE IS CONSIDERED LONG IF IT HAS MORE WORDS THAN THIS CONFIG
-    "long_sentence_words": 8,
-    # SENTENCE IS CONSIDERED LONG IF IT HAS MORE CHARS THAN THIS CONFIG
-    "long_sentence_char_count": 200,
+    # SENTENCE IS CONSIDERED MID LONG IF IT HAS MORE WORDS THAN THIS CONFIG
+    "long_sentence_words_mid": 8,
+    # SENTENCE IS CONSIDERED HIGH LONG IF IT HAS MORE WORDS THAN THIS CONFIG
+    "long_sentence_words_high": 16,
     # WORD IS COUNTED TO SENTENCE LENGTH ONLY IF IT HAS MORE MORE CHARS THAN THIS CONFIG
     "long_sentence_min_word_length": 5,
     # MINIMAL LENGTH OF WORD FOR IT TO BE HIGHLIGHTED IF VIA CLOSE_WORDS FUNCTIONALITY
@@ -666,10 +666,10 @@ class MainWindow:
 
             words = [word for word in sentence if
                      word._.is_word and len(word.text) >= self.config["long_sentence_min_word_length"]]
-            if len(words) > self.config["long_sentence_words"] or len(sentence.text) > self.config[
-                "long_sentence_char_count"]:
+            if len(words) > self.config["long_sentence_words_mid"]:
                 start_index = f"1.0 + {highlight_start} chars"
                 end_index = f"1.0 + {highlight_end} chars"
+                # FIXME: determine long or mid long sentence (len(words) > self.config["long_sentence_words_mid"])
                 self.text_editor.tag_add(LONG_SENTENCE_TAG_NAME, start_index, end_index)
                 # ON MOUSE OVER, SHOW TOOLTIP
                 self.text_editor.tag_bind(LONG_SENTENCE_TAG_NAME, "<Enter>",
@@ -995,8 +995,8 @@ class MainWindow:
         def save_settings():
             self.config["repeated_words_min_word_length"] = int(repeated_words_min_word_length_entry.get())
             self.config["repeated_words_min_word_frequency"] = int(repeated_words_min_word_frequency_entry.get())
-            self.config["long_sentence_words"] = int(long_sentence_words_entry.get())
-            self.config["long_sentence_char_count"] = int(long_sentence_char_count_entry.get())
+            self.config["long_sentence_words_mid"] = int(long_sentence_words_mid_entry.get())
+            self.config["long_sentence_words_high"] = int(long_sentence_words_high_entry.get())
             self.config["long_sentence_min_word_length"] = int(long_sentence_min_word_length_entry.get())
             self.config["enable_frequent_words"] = frequent_words_var.get()
             self.config["enable_long_sentences"] = long_sentences_var.get()
@@ -1043,22 +1043,22 @@ class MainWindow:
         long_sentences_var = tk.BooleanVar(value=self.config["enable_long_sentences"])
         long_sentences_checkbox = ttk.Checkbutton(settings_window, text="Zapnuté", variable=long_sentences_var)
         long_sentences_checkbox.grid(row=5, column=1, padx=(6, 10), pady=2, sticky='w')
-        tk.Label(settings_window, text="Veta je dlhá, ak obsahuje aspoň", anchor='w').grid(
+        tk.Label(settings_window, text="Veta je stredne dlhá, ak obsahuje aspoň", anchor='w').grid(
             row=6, column=0, padx=10, pady=2, sticky='w'
         )
-        long_sentence_words_entry = ttk.Spinbox(settings_window, from_=1, to=100, width=6)
-        long_sentence_words_entry.grid(row=6, column=1, padx=10, pady=2, sticky='w')
-        long_sentence_words_entry.set(self.config["long_sentence_words"])
+        long_sentence_words_mid_entry = ttk.Spinbox(settings_window, from_=1, to=100, width=6)
+        long_sentence_words_mid_entry.grid(row=6, column=1, padx=10, pady=2, sticky='w')
+        long_sentence_words_mid_entry.set(self.config["long_sentence_words_mid"])
         tk.Label(settings_window, text="slov", anchor='w').grid(
             row=6, column=2, padx=10, pady=2, sticky='w'
         )
-        tk.Label(settings_window, text="Veta je dlhá, ak obsahuje aspoň", anchor='w').grid(
+        tk.Label(settings_window, text="Veta je veľmi dlhá, ak obsahuje aspoň", anchor='w').grid(
             row=7, column=0, padx=10, pady=2, sticky='w'
         )
-        long_sentence_char_count_entry = ttk.Spinbox(settings_window, from_=1, to=9999, width=6)
-        long_sentence_char_count_entry.grid(row=7, column=1, padx=10, pady=2, sticky='w')
-        long_sentence_char_count_entry.set(self.config["long_sentence_char_count"])
-        tk.Label(settings_window, text="znakov", anchor='w').grid(
+        long_sentence_words_high_entry = ttk.Spinbox(settings_window, from_=1, to=9999, width=6)
+        long_sentence_words_high_entry.grid(row=7, column=1, padx=10, pady=2, sticky='w')
+        long_sentence_words_high_entry.set(self.config["long_sentence_words_high"])
+        tk.Label(settings_window, text="slov", anchor='w').grid(
             row=7, column=2, padx=10, pady=2, sticky='w'
         )
         tk.Label(settings_window, text="Nepočítať slová kratšie ako", anchor='w').grid(
