@@ -2,6 +2,7 @@
 ![hector logo](https://github.com/MartinHlavna/hector/blob/main/images/hector-logo.png?raw=true)
 ## O programe
 Hector je jednoduchý nástroj pre autorov textov, ktorého cieľom je poskytnúť základnú štylistickú podporu. Je to plne konfigurovateľný nástroj, ktorý automaticky analyzuje a vyhodnocuje text. Cieľom programu nie je dodať zoznam problémov, ktoré má autor určite opraviť, ale len zvýrazniť potenciálne problematické časti. Konečné rozhodnutie je vždy na autorovi.
+## Funkcie programu
 ### Zvýraznenie dlhých viet
 Hector žltým podsvietením zvýrazňuje dlhé vety. Samotná dlhá veta problémom nie je, ale ak ich je veľa pokope, môže byť vhodné prerušiť to kratšou vetou. Rovnako však môže byť aj problémom aj to, ak je pokope priveľa krátkych viet bez prerušenia. 
 
@@ -14,6 +15,10 @@ Riešenie: Ak sa niektoré slovo opakuje výrazne veľakrát, autor môže zvá�
 Hector v ľavom paneli zobrazuje slová, ktorá sa opakujú „blízko seba“. Na rozdiel od pravého panelu sú v tomto zozname iba slová, ktorých výskyty sú bliźšie, ako definovaná hodnota (napr. ak sa slovo zopakuje aspoň dvakrát v rozmedzí 100 znakov). Takýmto spôsobom dokáže hector identifikovať zhluky opakujúcich sa slov. Tieto slová sú zároveň zvýraznené. Po prejdení myšou nad takéto slovo sa v texte zvýrazania všetky jeho výskyty.
 
 Riešenie: Nahradenie opakovaných slov synonymom, preformulovanie textu alebo doplnenie textu medzi jednotlivé výskyty.
+
+#### Slová spojené spojovníkom
+Slová spojené spojovníkom sú aktuálne považované za jeden token. Napr. tak a tik-tak berie momentálne ak dve rôzne slová. Bude treba v praxi overiť, čo je výhodnejšie.
+
 ### Zvýraznenie viacnásobnej medzery
 Viacnásobná medzera je štandardne považovaná za zbytočnú. Hector ju automaticky zvýrazní načerveno.
 
@@ -42,10 +47,23 @@ Nasledujúca tabuľka je odovdená od hodnôt v práci p. Mistríka na odkaze vy
 | 40 až 50  | Texty na hranici zrozumiteľnosti                             |
 
 Samozrejme, aj tieto hodnoty treba brať len veľmi orientačne. Lyrická próza bude mať napríklad prirozdene vyššiu zložitosť ako naratívny príbeh, rovnako ako môže mať na text vplyv aj subjektívny štýl autora, či žánru.
-## Spustenie z binárneho súboru
+
+### Vyhľadávanie v texte
+* Vpravo hore sa nachádza okno hľadať, ktoré je možné okrem kliknutia zafocusovať aj stlačením klávesovej skratky CTRL + F. Do editora sa dá vrátiť cez CTRL + E
+* Kliknutím na šípku hore/dole, alebo klávesovou skratkou Shift + Enter /  Enter je moźné prechádzať po jednotlivých výskytoch textu
+* Hľadanie neberie do úvay diakritiku, ani veľké a malé písmena
+
+### Introspekcia
+* Vľavo dole sa nachádza okno, v ktorom sa zobrazuje zvolené slovo v editore
+*  Spolu s ním sa zobrazuje slovný druh (POS tag)
+*  Spolus ním sa zobrazuje aj funkcia vo vete (DEP tag)
+*  Treba v praxi overiť, či sa zobrazujú dobre, pretože ich určuje pravdepodobnostný model
+
+## Spustenie programu
+### Spustenie z binárneho súboru
 V prípade podporovaných platforiem sú k dispozícií kompletné spustiteľné [balíčky](https://github.com/MartinHlavna/hector/releases) vo forme binárnych súborov (napr. exe). 
 
-## Spustenie zo zdrojového kódu
+### Spustenie zo zdrojového kódu
 Kód bol testovaný s použitím python interpretera verzie 3.10.
 ```
 # STIAHNUTIE ZDROJOVÝCH KÓDOV
@@ -57,7 +75,7 @@ pip install -r requirements.txt
 # SPUSTENIE PROGRAMU
 python3 -m hector.py
 ```
-## Pri prvom spustení
+### Pri prvom spustení
 Od verzie 0.3.0 Hector pri spustení vytvára v priečinku, odkiaľ sa spúšta nasledovné podpriečinky:
 
 ```
