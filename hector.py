@@ -56,6 +56,7 @@ CURRENT_SEARCH_RESULT_HIGHLIGHT_COLOR = "orange"
 # CONSTANTS
 # PREFIX FOR CLOSE WORD EDITOR TAGS
 CLOSE_WORD_PREFIX = "close_word_"
+CLOSE_WORD_TAG_NAME = "close_word"
 MULTIPLE_PUNCTUATION_TAG_NAME = "multiple_punctuation"
 TRAILING_SPACES_TAG_NAME = "trailing_spaces"
 MULTIPLE_SPACES_TAG_NAME = "multiple_spaces"
@@ -370,6 +371,7 @@ class MainWindow:
         self.search_debounce_timer = None
         self.search_matches = []
         self.last_search = ''
+        self.highlighted_close_word = ''
         self.last_match_index = 0
         self.tooltip = None
         self.doc = nlp('')
@@ -428,9 +430,9 @@ class MainWindow:
                  font=(HELVETICA_FONT_NAME, TEXT_SIZE_SECTION_HEADER), anchor='n',
                  justify='left').pack(side=tk.BOTTOM)
         tk.Label(left_side_panel, pady=10, background=PRIMARY_BLUE, foreground=TEXT_COLOR_WHITE,
-                                     text="Často sa opakujúce slová",
-                                     font=(HELVETICA_FONT_NAME, TEXT_SIZE_SECTION_HEADER), anchor='n',
-                                     justify='left').pack()
+                 text="Často sa opakujúce slová",
+                 font=(HELVETICA_FONT_NAME, TEXT_SIZE_SECTION_HEADER), anchor='n',
+                 justify='left').pack()
         separator = ttk.Separator(left_side_panel, orient='horizontal')
         separator.pack(fill=tk.X, padx=10)
 
@@ -674,13 +676,6 @@ class MainWindow:
                     self.text_editor.tag_add(LONG_SENTENCE_TAG_NAME_HIGH, start_index, end_index)
                 else:
                     self.text_editor.tag_add(LONG_SENTENCE_TAG_NAME_MID, start_index, end_index)
-                # ON MOUSE OVER, SHOW TOOLTIP
-                self.text_editor.tag_bind(LONG_SENTENCE_TAG_NAME_MID, "<Enter>",
-                                          lambda e: self.show_tooltip(e, f'Táto veta je trochu dlhšia.'))
-                self.text_editor.tag_bind(LONG_SENTENCE_TAG_NAME_MID, "<Leave>", lambda e: self.hide_tooltip(e))
-                self.text_editor.tag_bind(LONG_SENTENCE_TAG_NAME_HIGH, "<Enter>",
-                                          lambda e: self.show_tooltip(e, f'Táto veta je dlhá.'))
-                self.text_editor.tag_bind(LONG_SENTENCE_TAG_NAME_HIGH, "<Leave>", lambda e: self.hide_tooltip(e))
 
     # HIGHLIGH MULTIPLE SPACE, MULTIPLE PUNCTATION, AND TRAILING SPACES
     def highlight_multiple_issues(self, text):
@@ -691,10 +686,10 @@ class MainWindow:
                 start_index = f"1.0 + {match.start()} chars"
                 end_index = f"1.0 + {match.end()} chars"
                 self.text_editor.tag_add(MULTIPLE_SPACES_TAG_NAME, start_index, end_index)
-                # ON MOUSE OVER, SHOW TOOLTIP
-                self.text_editor.tag_bind(MULTIPLE_SPACES_TAG_NAME, "<Enter>",
-                                          lambda e: self.show_tooltip(e, 'Viacnásobná medzera'))
-                self.text_editor.tag_bind(MULTIPLE_SPACES_TAG_NAME, "<Leave>", lambda e: self.hide_tooltip(e))
+                self.bind_tag_mouse_event(MULTIPLE_SPACES_TAG_NAME,
+                                          lambda e: self.show_tooltip(e, f'Viacnásobná medzera.'),
+                                          lambda e: self.hide_tooltip(e)
+                                          )
 
         if self.config["enable_multiple_punctuation"]:
             matches = re.finditer(r'([!?.,:;]){2,}', text)
@@ -703,20 +698,13 @@ class MainWindow:
                     start_index = f"1.0 + {match.start()} chars"
                     end_index = f"1.0 + {match.end()} chars"
                     self.text_editor.tag_add(MULTIPLE_PUNCTUATION_TAG_NAME, start_index, end_index)
-                    # ON MOUSE OVER, SHOW TOOLTIP
-                    self.text_editor.tag_bind(MULTIPLE_PUNCTUATION_TAG_NAME, "<Enter>",
-                                              lambda e: self.show_tooltip(e, 'Viacnásobná interpunkcia'))
-                    self.text_editor.tag_bind(MULTIPLE_PUNCTUATION_TAG_NAME, "<Leave>", lambda e: self.hide_tooltip(e))
+
         if self.config["enable_trailing_spaces"]:
             matches = re.finditer(r' +$', text, re.MULTILINE)
             for match in matches:
                 start_index = f"1.0 + {match.start()} chars"
                 end_index = f"1.0 + {match.end()} chars"
                 self.text_editor.tag_add(TRAILING_SPACES_TAG_NAME, start_index, end_index)
-                # ON MOUSE OVER, SHOW TOOLTIP
-                self.text_editor.tag_bind(TRAILING_SPACES_TAG_NAME, "<Enter>",
-                                          lambda e: self.show_tooltip(e, 'Zbytočná medzera na konci odstavca'))
-                self.text_editor.tag_bind(TRAILING_SPACES_TAG_NAME, "<Leave>", lambda e: self.hide_tooltip(e))
 
     # HIGHLIGHT WORDS THAT REPEATS CLOSE TO EACH OTHER
     def highlight_close_words(self, doc: Doc):
@@ -781,28 +769,33 @@ class MainWindow:
                     else:
                         self.close_word_colors[tag_name] = color
                     self.text_editor.tag_add(tag_name, start_index, end_index)
+                    self.text_editor.tag_add(CLOSE_WORD_TAG_NAME, start_index, end_index)
                     self.text_editor.tag_config(tag_name, foreground=color,
                                                 font=(HELVETICA_FONT_NAME, self.text_size + 2, BOLD_FONT))
-                    # ON MOUSE OVER, HIGHLIGHT SAME WORDS
-                    self.text_editor.tag_bind(tag_name, "<Enter>",
-                                              lambda e, w=word.text.lower(): self.highlight_same_word(e, w))
-                    self.text_editor.tag_bind(tag_name, "<Leave>",
-                                              lambda e, w=word.text.lower(): self.unhighlight_same_word(e, w))
+
+    # BIND MOUSE ENTER AND MOUSE LEAVE EVENTS
+    def bind_tag_mouse_event(self, tag_name, on_enter, on_leave):
+        self.text_editor.tag_bind(tag_name, "<Enter>", on_enter)
+        self.text_editor.tag_bind(tag_name, "<Leave>", on_leave)
 
     # HIGHLIGHT SAME WORD ON MOUSE OVER
-    def highlight_same_word(self, event, word):
+    def highlight_same_word(self, event):
+        # Získanie indexu myši
+        mouse_index = self.text_editor.index(f"@{event.x},{event.y}")
+        # Získanie všetkých tagov na pozícii myši
+        tags_at_mouse = self.text_editor.tag_names(mouse_index)
         self.show_tooltip(event, 'Toto slovo sa opakuje viackrát na krátkom úseku')
-        for tag in self.text_editor.tag_names():
-            if tag == f"{CLOSE_WORD_PREFIX}{word}":
+        for tag in tags_at_mouse:
+            if tag.startswith(CLOSE_WORD_PREFIX):
+                self.highlighted_close_word = tag
                 self.text_editor.tag_config(tag, background="black", foreground="white")
 
     # REMOVE HIGHLIGHTING FROM SAME WORD ON MOUSE OVER END
-    def unhighlight_same_word(self, event, word):
+    def unhighlight_same_word(self, event):
         self.hide_tooltip(event)
-        for tag in self.text_editor.tag_names():
-            if tag.startswith(f"{CLOSE_WORD_PREFIX}{word}"):
-                original_color = self.close_word_colors.get(tag, "")
-                self.text_editor.tag_config(tag, background="", foreground=original_color)
+        if self.highlighted_close_word is not None and len(self.highlighted_close_word) > 0:
+            original_color = self.close_word_colors.get(self.highlighted_close_word, "")
+            self.text_editor.tag_config(self.highlighted_close_word, background="", foreground=original_color)
 
     def show_tooltip(self, event, text):
         if self.tooltip:
@@ -881,6 +874,27 @@ class MainWindow:
         self.text_editor.tag_config(SEARCH_RESULT_TAG_NAME, background=SEARCH_RESULT_HIGHLIGHT_COLOR)
         self.text_editor.tag_config(CURRENT_SEARCH_RESULT_TAG_NAME, background=CURRENT_SEARCH_RESULT_HIGHLIGHT_COLOR)
         self.text_editor.tag_raise("sel")
+        # MOUSE BINDINGS
+        self.bind_tag_mouse_event(CLOSE_WORD_TAG_NAME,
+                                  lambda e: self.highlight_same_word(e),
+                                  lambda e: self.unhighlight_same_word(e)
+                                  )
+        self.bind_tag_mouse_event(TRAILING_SPACES_TAG_NAME,
+                                  lambda e: self.show_tooltip(e, f'Zbytočná medzera na konci odstavca.'),
+                                  lambda e: self.hide_tooltip(e)
+                                  )
+        self.bind_tag_mouse_event(LONG_SENTENCE_TAG_NAME_MID,
+                                  lambda e: self.show_tooltip(e, f'Táto veta je trochu dlhšia.'),
+                                  lambda e: self.hide_tooltip(e)
+                                  )
+        self.bind_tag_mouse_event(LONG_SENTENCE_TAG_NAME_HIGH,
+                                  lambda e: self.show_tooltip(e, f'Táto veta je dlhá.'),
+                                  lambda e: self.hide_tooltip(e)
+                                  )
+        self.bind_tag_mouse_event(MULTIPLE_PUNCTUATION_TAG_NAME,
+                                  lambda e: self.show_tooltip(e, f'Viacnásobná interpunkcia.'),
+                                  lambda e: self.hide_tooltip(e)
+                                  )
         readability = Service.evaluate_readability(self.doc)
         self.readability_value.configure(text=f"{readability: .0f} / {READABILITY_MAX_VALUE}")
         self.introspect(event)
@@ -902,8 +916,8 @@ class MainWindow:
         if span is not None and self.current_instrospection_token != span.root:
             if span.root._.is_word:
                 self.current_instrospection_token = span.root
-                introspection_resut = f'Slovo: {self.current_instrospection_token}\n\n'\
-                                      f'Slovný druh: {POS_TAG_TRANSLATIONS[self.current_instrospection_token.pos_]}\n'\
+                introspection_resut = f'Slovo: {self.current_instrospection_token}\n\n' \
+                                      f'Slovný druh: {POS_TAG_TRANSLATIONS[self.current_instrospection_token.pos_]}\n' \
                                       f'Vetný člen: {DEP_TAG_TRANSLATION[self.current_instrospection_token.dep_.lower()]}'
                 MainWindow.set_text(self.introspection_text, introspection_resut)
 
