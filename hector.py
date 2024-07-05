@@ -855,6 +855,7 @@ class MainWindow:
         self.evaluate_logo_placement()
         # GET TEXT FROM EDITOR
         # RUN ANALYSIS
+        # TODO: Evaluate if we can run partial NLP only on changed parts
         self.doc = nlp(text).doc
         # CLEAR TAGS
         for tag in self.text_editor.tag_names():
