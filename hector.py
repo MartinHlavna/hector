@@ -835,7 +835,7 @@ class MainWindow:
                 text = file.read()
                 self.text_editor.delete(1.0, tk.END)
                 self.text_editor.insert(tk.END, text)
-                self.analyze_text()
+                self.analyze_text(True)
 
     # SAVE TEXT FILE
     def save_file(self):
@@ -846,11 +846,11 @@ class MainWindow:
                 file.write(text)
 
     # ANALYZE TEXT
-    def analyze_text(self, event=None):
+    def analyze_text(self, force_reload=False, event=None):
         # CLEAR DEBOUNCE TIMER IF ANY
         self.analyze_text_debounce_timer = None
         text = self.text_editor.get(1.0, tk.END)
-        if self.doc.text == text:
+        if not force_reload and self.doc.text == text:
             self.introspect(event)
             return
         if self.search_debounce_timer is not None:
@@ -872,6 +872,7 @@ class MainWindow:
         self.highlight_long_sentences(self.doc)
         self.highlight_close_words(self.doc)
         self.highlight_multiple_issues(text)
+        # CONFIG TAGS
         self.text_editor.tag_config(LONG_SENTENCE_TAG_NAME_MID, background=LONG_SENTENCE_HIGHLIGHT_COLOR_MID)
         self.text_editor.tag_config(LONG_SENTENCE_TAG_NAME_HIGH, background=LONG_SENTENCE_HIGHLIGHT_COLOR_HIGH)
         self.text_editor.tag_config(TRAILING_SPACES_TAG_NAME, background="red")
@@ -1015,7 +1016,7 @@ class MainWindow:
             self.config["close_words_min_frequency"] = int(close_words_min_frequency_entry.get())
             self.config["enable_close_words"] = close_words_var.get()
             Service.save_config(self.config)
-            self.analyze_text()  # Reanalyze text after saving settings
+            self.analyze_text(True)  # Reanalyze text after saving settings
             settings_window.destroy()
 
         # Frequent words settings
