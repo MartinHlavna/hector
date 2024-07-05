@@ -48,7 +48,8 @@ MID_BLUE = "#7ea6d7"
 LIGHT_WHITE = "#d7e6e1"
 TEXT_COLOR_WHITE = "#ffffff"
 TEXT_EDITOR_BG = "#E0E0E0"
-LONG_SENTENCE_HIGHLIGHT_COLOR = "#ffe8a8"
+LONG_SENTENCE_HIGHLIGHT_COLOR_MID = "#ffe8a8"
+LONG_SENTENCE_HIGHLIGHT_COLOR_HIGH = "#d15f26"
 SEARCH_RESULT_HIGHLIGHT_COLOR = "yellow"
 CURRENT_SEARCH_RESULT_HIGHLIGHT_COLOR = "orange"
 
@@ -58,7 +59,8 @@ CLOSE_WORD_PREFIX = "close_word_"
 MULTIPLE_PUNCTUATION_TAG_NAME = "multiple_punctuation"
 TRAILING_SPACES_TAG_NAME = "trailing_spaces"
 MULTIPLE_SPACES_TAG_NAME = "multiple_spaces"
-LONG_SENTENCE_TAG_NAME = "long_sentence"
+LONG_SENTENCE_TAG_NAME_MID = "long_sentence_mid"
+LONG_SENTENCE_TAG_NAME_HIGH = "long_sentence_high"
 SEARCH_RESULT_TAG_NAME = "search_result"
 CURRENT_SEARCH_RESULT_TAG_NAME = "current_search_result"
 READABILITY_MAX_VALUE = 50
@@ -657,7 +659,6 @@ class MainWindow:
 
     # HIGHLIGHT LONG SENTENCES
     def highlight_long_sentences(self, doc: Doc):
-        self.text_editor.tag_remove(LONG_SENTENCE_TAG_NAME, "1.0", tk.END)
         if not self.config["enable_long_sentences"]:
             return
         for sentence in doc.sents:
@@ -669,13 +670,17 @@ class MainWindow:
             if len(words) > self.config["long_sentence_words_mid"]:
                 start_index = f"1.0 + {highlight_start} chars"
                 end_index = f"1.0 + {highlight_end} chars"
-                # FIXME: determine long or mid long sentence (len(words) > self.config["long_sentence_words_mid"])
-                self.text_editor.tag_add(LONG_SENTENCE_TAG_NAME, start_index, end_index)
+                if len(words) > self.config["long_sentence_words_high"]:
+                    self.text_editor.tag_add(LONG_SENTENCE_TAG_NAME_HIGH, start_index, end_index)
+                else:
+                    self.text_editor.tag_add(LONG_SENTENCE_TAG_NAME_MID, start_index, end_index)
                 # ON MOUSE OVER, SHOW TOOLTIP
-                self.text_editor.tag_bind(LONG_SENTENCE_TAG_NAME, "<Enter>",
+                self.text_editor.tag_bind(LONG_SENTENCE_TAG_NAME_MID, "<Enter>",
+                                          lambda e: self.show_tooltip(e, f'Táto veta je trochu dlhšia.'))
+                self.text_editor.tag_bind(LONG_SENTENCE_TAG_NAME_MID, "<Leave>", lambda e: self.hide_tooltip(e))
+                self.text_editor.tag_bind(LONG_SENTENCE_TAG_NAME_HIGH, "<Enter>",
                                           lambda e: self.show_tooltip(e, f'Táto veta je dlhá.'))
-                self.text_editor.tag_bind(LONG_SENTENCE_TAG_NAME, "<Leave>", lambda e: self.hide_tooltip(e))
-        self.text_editor.tag_config(LONG_SENTENCE_TAG_NAME, background=LONG_SENTENCE_HIGHLIGHT_COLOR)
+                self.text_editor.tag_bind(LONG_SENTENCE_TAG_NAME_HIGH, "<Leave>", lambda e: self.hide_tooltip(e))
 
     # HIGHLIGH MULTIPLE SPACE, MULTIPLE PUNCTATION, AND TRAILING SPACES
     def highlight_multiple_issues(self, text):
@@ -712,10 +717,6 @@ class MainWindow:
                 self.text_editor.tag_bind(TRAILING_SPACES_TAG_NAME, "<Enter>",
                                           lambda e: self.show_tooltip(e, 'Zbytočná medzera na konci odstavca'))
                 self.text_editor.tag_bind(TRAILING_SPACES_TAG_NAME, "<Leave>", lambda e: self.hide_tooltip(e))
-
-        self.text_editor.tag_config(TRAILING_SPACES_TAG_NAME, background="red")
-        self.text_editor.tag_config(MULTIPLE_PUNCTUATION_TAG_NAME, background="red")
-        self.text_editor.tag_config(MULTIPLE_SPACES_TAG_NAME, background="red")
 
     # HIGHLIGHT WORDS THAT REPEATS CLOSE TO EACH OTHER
     def highlight_close_words(self, doc: Doc):
@@ -871,6 +872,13 @@ class MainWindow:
         self.highlight_long_sentences(self.doc)
         self.highlight_close_words(self.doc)
         self.highlight_multiple_issues(text)
+        self.text_editor.tag_config(LONG_SENTENCE_TAG_NAME_MID, background=LONG_SENTENCE_HIGHLIGHT_COLOR_MID)
+        self.text_editor.tag_config(LONG_SENTENCE_TAG_NAME_HIGH, background=LONG_SENTENCE_HIGHLIGHT_COLOR_HIGH)
+        self.text_editor.tag_config(TRAILING_SPACES_TAG_NAME, background="red")
+        self.text_editor.tag_config(MULTIPLE_PUNCTUATION_TAG_NAME, background="red")
+        self.text_editor.tag_config(MULTIPLE_SPACES_TAG_NAME, background="red")
+        self.text_editor.tag_config(SEARCH_RESULT_TAG_NAME, background=SEARCH_RESULT_HIGHLIGHT_COLOR)
+        self.text_editor.tag_config(CURRENT_SEARCH_RESULT_TAG_NAME, background=CURRENT_SEARCH_RESULT_HIGHLIGHT_COLOR)
         self.text_editor.tag_raise("sel")
         readability = Service.evaluate_readability(self.doc)
         self.readability_value.configure(text=f"{readability: .0f} / {READABILITY_MAX_VALUE}")
@@ -951,8 +959,6 @@ class MainWindow:
             if not first_match_highlighted and start > carrent_position:
                 self.last_match_index = i
         self.highlight_search()
-        self.text_editor.tag_config(SEARCH_RESULT_TAG_NAME, background=SEARCH_RESULT_HIGHLIGHT_COLOR)
-        self.text_editor.tag_config(CURRENT_SEARCH_RESULT_TAG_NAME, background=CURRENT_SEARCH_RESULT_HIGHLIGHT_COLOR)
         self.text_editor.tag_raise(CURRENT_SEARCH_RESULT_TAG_NAME)
 
     # RUN SEARCH ONE SECOND AFTER LAST CHANGE
