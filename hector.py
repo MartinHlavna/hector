@@ -255,6 +255,22 @@ def get_doc_unique_words(doc):
     return words
 
 
+# CHECKS IF TOKEN HAS NUMBER OF REPETITIONS ON GIVEN SIZE
+def get_repetitions(token, min_number_of_repetitions, size):
+    matcher = Matcher(nlp.vocab)
+    pattern = [{"lower": token.lower_}]
+    matcher.add("TOKEN_TEXT", [pattern])
+    span = token.doc[token.i:token.i + size]
+    matches = matcher(span)
+    repetitions = []
+    if len(matches) > min_number_of_repetitions + 1:
+        #print(f'word {token.lower_} has {len(matches)} repetitions on part of document [{token.i}:{token.i + size}]')
+        for match_id, start, end in matches:
+            token = span[start]
+            repetitions.append(token)
+    return repetitions
+
+
 # CUSTOM TOKENIZER THAT FOES NOT REMOVE HYPHENATED WORDS
 def custom_tokenizer(nlp_pipeline):
     infixes = (
@@ -710,59 +726,40 @@ class MainWindow:
     def highlight_close_words(self, doc: Doc):
         if self.config["enable_close_words"]:
             self.text_editor.tag_remove("close_word", "1.0", tk.END)
-            clusters = []
-            close_words_counts = {}
+            close_words = {}
             words_nlp = {k: v for (k, v) in doc._.unique_words.items() if
                          len(k) >= self.config["close_words_min_word_length"]}
             for unique_word in words_nlp.values():
                 # IF WORD DOES NOT OCCOUR ENOUGH TIMES WE DONT NEED TO CHECK IF ITS OCCOURENCES ARE CLOSE
-                if len(unique_word.occourences) < self.config["close_words_min_frequency"]:
+                if len(unique_word.occourences) < self.config["close_words_min_frequency"] + 1:
                     continue
-
-                current_cluster = set()
-                reference = None
-                for word_occource in unique_word.occourences:
-                    if reference is None:
-                        reference = word_occource
-                        continue
-                    if word_occource.i - reference.i < self.config["close_words_min_distance_between_words"]:
-                        # IF OCCOURENCE IS TOO CLOSE TO REFERENCE ADD TO CURRENT CLUSTER
-                        current_cluster.add(reference)
-                        current_cluster.add(word_occource)
-                    else:
-                        # CLUSTER IS BROKEN, START NEW
-                        if len(current_cluster) > self.config["close_words_min_frequency"]:
-                            clusters.append(current_cluster)
-                            if word_occource.text.lower() not in close_words_counts:
-                                close_words_counts[word_occource.text.lower()] = len(current_cluster)
-                            else:
-                                close_words_counts[word_occource.text.lower()] += len(current_cluster)
-                        current_cluster = set()
-                        # MOVE REFERENCE TO NEXT WORD
-                        reference = word_occource
-                # PUSH REMAINING CLUSTER
-                if len(current_cluster) >= self.config["close_words_min_frequency"]:
-                    clusters.append(current_cluster)
-                    word_occource = next(iter(current_cluster))
-                    if word_occource.text.lower() not in close_words_counts:
-                        close_words_counts[word_occource.text.lower()] = len(current_cluster)
-                    else:
-                        close_words_counts[word_occource.text.lower()] += len(current_cluster)
-            close_words_counts = dict(sorted(close_words_counts.items(), key=lambda item: item[1], reverse=True))
+                for idx, word_occource in enumerate(unique_word.occourences):
+                    repetitions = []
+                    for possible_repetition in unique_word.occourences[idx + 1:len(unique_word.occourences) + 1]:
+                        if possible_repetition.i - word_occource.i <= self.config["close_words_min_distance_between_words"]:
+                            repetitions.append(word_occource)
+                            repetitions.append(possible_repetition)
+                        else:
+                            break
+                    if len(repetitions) > self.config["close_words_min_frequency"]:
+                        if word_occource.lower_ not in close_words:
+                            close_words[word_occource.lower_] = set()
+                        close_words[word_occource.lower_].update(repetitions)
+            close_words = dict(sorted(close_words.items(), key=lambda item: len(item[1]), reverse=True))
 
             # NOTE
             # In tk, there is problem with scrolling so we default to using on big text to dispaly frequencies
             # There is way of making canvas with scrollregion but this is more performant
             close_words_value_text = "\n".join(
-                [f"{word.lower()}\t\t{close_words_counts[word]}x" for word in close_words_counts]
+                [f"{word.lower()}\t\t{len(close_words[word])}x" for word in close_words]
             )
             MainWindow.set_text(self.close_words_text, close_words_value_text)
-            for cluster in clusters:
-                color = random.choice(dark_colors)
-                for word in cluster:
-                    start_index = f"1.0 + {word.idx} chars"
-                    end_index = f"1.0 + {word.idx + len(word)} chars"
-                    tag_name = f"{CLOSE_WORD_PREFIX}{word.text.lower()}"
+            for word in close_words.items():
+                for occ in word[1]:
+                    color = random.choice(dark_colors)
+                    start_index = f"1.0 + {occ.idx} chars"
+                    end_index = f"1.0 + {occ.idx + len(occ.lower_)} chars"
+                    tag_name = f"{CLOSE_WORD_PREFIX}{occ.lower_}"
                     original_color = self.close_word_colors.get(tag_name, "")
                     if original_color != "":
                         color = original_color
@@ -1253,6 +1250,7 @@ nlp.tokenizer = custom_tokenizer(nlp)
 # SPACY EXTENSIONS
 word_pattern = re.compile("\\w+")
 Token.set_extension("is_word", getter=lambda t: re.match(word_pattern, t.text.lower()) is not None)
+Token.set_extension("get_repetitions", method=get_repetitions)
 Doc.set_extension("words", getter=get_doc_words)
 Doc.set_extension("unique_words", getter=get_doc_unique_words)
 Doc.set_extension("total_chars", getter=lambda d: len(d.text))
