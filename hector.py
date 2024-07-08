@@ -255,22 +255,6 @@ def get_doc_unique_words(doc):
     return words
 
 
-# CHECKS IF TOKEN HAS NUMBER OF REPETITIONS ON GIVEN SIZE
-def get_repetitions(token, min_number_of_repetitions, size):
-    matcher = Matcher(nlp.vocab)
-    pattern = [{"lower": token.lower_}]
-    matcher.add("TOKEN_TEXT", [pattern])
-    span = token.doc[token.i:token.i + size]
-    matches = matcher(span)
-    repetitions = []
-    if len(matches) > min_number_of_repetitions + 1:
-        #print(f'word {token.lower_} has {len(matches)} repetitions on part of document [{token.i}:{token.i + size}]')
-        for match_id, start, end in matches:
-            token = span[start]
-            repetitions.append(token)
-    return repetitions
-
-
 # CUSTOM TOKENIZER THAT FOES NOT REMOVE HYPHENATED WORDS
 def custom_tokenizer(nlp_pipeline):
     infixes = (
@@ -1250,7 +1234,6 @@ nlp.tokenizer = custom_tokenizer(nlp)
 # SPACY EXTENSIONS
 word_pattern = re.compile("\\w+")
 Token.set_extension("is_word", getter=lambda t: re.match(word_pattern, t.text.lower()) is not None)
-Token.set_extension("get_repetitions", method=get_repetitions)
 Doc.set_extension("words", getter=get_doc_words)
 Doc.set_extension("unique_words", getter=get_doc_unique_words)
 Doc.set_extension("total_chars", getter=lambda d: len(d.text))
