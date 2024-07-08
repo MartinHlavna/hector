@@ -12,9 +12,9 @@ import urllib
 import webbrowser
 from tkinter import filedialog, ttk
 
+from spacy import Language
 from spacy.lang.char_classes import LIST_ELLIPSES, LIST_ICONS, ALPHA_LOWER, ALPHA_UPPER, ALPHA
 from spacy.lang.sl.punctuation import CONCAT_QUOTES
-from spacy.matcher import Matcher
 from spacy.tokenizer import Tokenizer
 from spacy.tokens import Doc
 from spacy.tokens.token import Token
@@ -228,31 +228,34 @@ def resource_path(relative_path):
     return os.path.join(base_path, relative_path)
 
 
-def get_doc_words(doc):
-    matcher = Matcher(nlp.vocab)
-    pattern = [{"_": {"is_word": True}}]
-    matcher.add("IS_WORD_PATTERN", [pattern])
+@Language.component("word_detector")
+def word_detector(doc):
+    word_pattern = re.compile("\\w+")
     words = []
-    matches = matcher(doc)
-    for match_id, start, end in matches:
-        words.append(doc[start])
-    return words
-
-
-def get_doc_unique_words(doc):
-    matcher = Matcher(nlp.vocab)
-    pattern = [{"_": {"is_word": True}}]
-    matcher.add("IS_WORD_PATTERN", [pattern])
-    words = {}
-    matches = matcher(doc)
-    for match_id, start, end in matches:
-        token = doc[start]
-        unique_word = words.get(token.text.lower(), None)
-        if unique_word is None:
-            unique_word = UniqueWord(token.text.lower())
-            words[token.text.lower()] = unique_word
-        unique_word.occourences.append(token)
-    return words
+    unique_words = {}
+    Token.set_extension("is_word", default=False, force=True)
+    Doc.set_extension("words", default=[], force=True)
+    Doc.set_extension("unique_words", default=[], force=True)
+    Doc.set_extension("total_chars", default=0, force=True)
+    Doc.set_extension("total_words", default=0, force=True)
+    Doc.set_extension("total_unique_words", default=0, force=True)
+    Doc.set_extension("total_pages", default=0, force=True)
+    for token in doc:
+        token._.is_word = re.match(word_pattern, token.lower_) is not None
+        if token._.is_word:
+            words.append(token)
+            unique_word = unique_words.get(token.text.lower(), None)
+            if unique_word is None:
+                unique_word = UniqueWord(token.text.lower())
+                unique_words[token.text.lower()] = unique_word
+            unique_word.occourences.append(token)
+    doc._.words = words
+    doc._.unique_words = unique_words
+    doc._.total_chars = len(doc.text)
+    doc._.total_words = len(words)
+    doc._.total_unique_words = len(unique_words)
+    doc._.total_pages = round(doc._.total_chars / 1800, 2)
+    return doc
 
 
 # CUSTOM TOKENIZER THAT FOES NOT REMOVE HYPHENATED WORDS
@@ -313,7 +316,7 @@ class Service:
     def evaluate_readability(doc: Doc):
         if doc._.total_words <= 1:
             return 0
-        type_to_token_ratio = doc._.total_words / len(doc._.unique_words)
+        type_to_token_ratio = doc._.total_words / doc._.total_unique_words
         average_sentence_length = doc._.total_words / sum(1 for _ in doc.sents)
         average_word_length = doc._.total_chars / doc._.total_words / 2
         mistrik_index = 50 - ((average_sentence_length * average_word_length) / type_to_token_ratio)
@@ -1231,14 +1234,8 @@ nlp = spacy.load(os.path.join(
     SPACY_MODEL_NAME_WITH_VERSION)
 )
 nlp.tokenizer = custom_tokenizer(nlp)
+nlp.add_pipe("word_detector")
 # SPACY EXTENSIONS
-word_pattern = re.compile("\\w+")
-Token.set_extension("is_word", getter=lambda t: re.match(word_pattern, t.text.lower()) is not None)
-Doc.set_extension("words", getter=get_doc_words)
-Doc.set_extension("unique_words", getter=get_doc_unique_words)
-Doc.set_extension("total_chars", getter=lambda d: len(d.text))
-Doc.set_extension("total_words", getter=lambda d: len(d._.words))
-Doc.set_extension("total_pages", getter=lambda d: round(len(d.text) / 1800, 2))
 splash.update_status("inicializujem textový processor...")
 splash.close()
 main_window = MainWindow(root, nlp)
