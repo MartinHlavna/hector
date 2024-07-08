@@ -228,6 +228,7 @@ def resource_path(relative_path):
     return os.path.join(base_path, relative_path)
 
 
+# CUSTOM SPACY PIPE THAT ADDS ALL EXTENSIONS IN SINGLE PASS OVER ALL TOKENS
 @Language.component("word_detector")
 def word_detector(doc):
     word_pattern = re.compile("\\w+")
