@@ -12,6 +12,8 @@ import urllib
 import webbrowser
 from tkinter import filedialog, ttk
 
+import spacy
+from PIL import ImageTk, Image
 from spacy import Language
 from spacy.lang.char_classes import LIST_ELLIPSES, LIST_ICONS, ALPHA_LOWER, ALPHA_UPPER, ALPHA
 from spacy.lang.sl.punctuation import CONCAT_QUOTES
@@ -20,8 +22,6 @@ from spacy.tokens import Doc
 from spacy.tokens.token import Token
 from spacy.util import compile_infix_regex
 from ttkthemes import ThemedTk
-import spacy
-from PIL import ImageTk, Image
 
 # WE CAN MOVE OVER TO PYTHON SPLASH INSTEAD OF IMAGE NOW
 nativeSplashOpened = False
@@ -40,6 +40,7 @@ SPACY_MODEL_VERSION = "1.0.0"
 SPACY_MODEL_NAME_WITH_VERSION = f"{SPACY_MODEL_NAME}-{SPACY_MODEL_VERSION}"
 DOCUMENTATION_LINK = "https://github.com/MartinHlavna/hector"
 SPACY_MODEL_LINK = f"https://github.com/MartinHlavna/hector-spacy-model/releases/download/v.{SPACY_MODEL_VERSION}/{SPACY_MODEL_NAME_WITH_VERSION}.tar.gz"
+NLP_BATCH_SIZE = 8000
 
 # COLORS
 PRIMARY_BLUE = "#42659d"
@@ -379,6 +380,7 @@ class MainWindow:
         self.last_match_index = 0
         self.tooltip = None
         self.doc = nlp('')
+        word_detector(self.doc)
         self.current_instrospection_token = None
         # EDITOR TEXT SIZE
         self.text_size = 10
@@ -724,7 +726,8 @@ class MainWindow:
                 for idx, word_occource in enumerate(unique_word.occourences):
                     repetitions = []
                     for possible_repetition in unique_word.occourences[idx + 1:len(unique_word.occourences) + 1]:
-                        if possible_repetition.i - word_occource.i <= self.config["close_words_min_distance_between_words"]:
+                        if possible_repetition.i - word_occource.i <= self.config[
+                            "close_words_min_distance_between_words"]:
                             repetitions.append(word_occource)
                             repetitions.append(possible_repetition)
                         else:
@@ -841,7 +844,8 @@ class MainWindow:
         # GET TEXT FROM EDITOR
         # RUN ANALYSIS
         # TODO: Evaluate if we can run partial NLP only on changed parts
-        self.doc = nlp(text).doc
+        self.doc = Doc.from_docs(list(nlp.pipe([text], batch_size=NLP_BATCH_SIZE)))
+        word_detector(self.doc)
         # CLEAR TAGS
         for tag in self.text_editor.tag_names():
             self.text_editor.tag_delete(tag)
@@ -1235,7 +1239,6 @@ nlp = spacy.load(os.path.join(
     SPACY_MODEL_NAME_WITH_VERSION)
 )
 nlp.tokenizer = custom_tokenizer(nlp)
-nlp.add_pipe("word_detector")
 # SPACY EXTENSIONS
 splash.update_status("inicializujem textový processor...")
 splash.close()
