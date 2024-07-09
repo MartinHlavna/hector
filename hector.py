@@ -14,7 +14,6 @@ from tkinter import filedialog, ttk
 
 import spacy
 from PIL import ImageTk, Image
-from spacy import Language
 from spacy.lang.char_classes import LIST_ELLIPSES, LIST_ICONS, ALPHA_LOWER, ALPHA_UPPER, ALPHA
 from spacy.lang.sl.punctuation import CONCAT_QUOTES
 from spacy.tokenizer import Tokenizer
@@ -229,19 +228,11 @@ def resource_path(relative_path):
     return os.path.join(base_path, relative_path)
 
 
-# CUSTOM SPACY PIPE THAT ADDS ALL EXTENSIONS IN SINGLE PASS OVER ALL TOKENS
-@Language.component("word_detector")
+# CUSTOM THAT ADDS ALL EXTENSIONS IN SINGLE PASS OVER ALL TOKENS
 def word_detector(doc):
     word_pattern = re.compile("\\w+")
     words = []
     unique_words = {}
-    Token.set_extension("is_word", default=False, force=True)
-    Doc.set_extension("words", default=[], force=True)
-    Doc.set_extension("unique_words", default=[], force=True)
-    Doc.set_extension("total_chars", default=0, force=True)
-    Doc.set_extension("total_words", default=0, force=True)
-    Doc.set_extension("total_unique_words", default=0, force=True)
-    Doc.set_extension("total_pages", default=0, force=True)
     for token in doc:
         token._.is_word = re.match(word_pattern, token.lower_) is not None
         if token._.is_word:
@@ -1240,6 +1231,13 @@ nlp = spacy.load(os.path.join(
 )
 nlp.tokenizer = custom_tokenizer(nlp)
 # SPACY EXTENSIONS
+Token.set_extension("is_word", default=False, force=True)
+Doc.set_extension("words", default=[], force=True)
+Doc.set_extension("unique_words", default=[], force=True)
+Doc.set_extension("total_chars", default=0, force=True)
+Doc.set_extension("total_words", default=0, force=True)
+Doc.set_extension("total_unique_words", default=0, force=True)
+Doc.set_extension("total_pages", default=0, force=True)
 splash.update_status("inicializujem textový processor...")
 splash.close()
 main_window = MainWindow(root, nlp)
