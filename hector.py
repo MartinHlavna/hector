@@ -21,6 +21,8 @@ from spacy.tokens import Doc
 from spacy.tokens.token import Token
 from spacy.util import compile_infix_regex
 from ttkthemes import ThemedTk
+import hunspell
+import fsspec
 
 # WE CAN MOVE OVER TO PYTHON SPLASH INSTEAD OF IMAGE NOW
 nativeSplashOpened = False
@@ -57,6 +59,7 @@ CURRENT_SEARCH_RESULT_HIGHLIGHT_COLOR = "orange"
 # PREFIX FOR CLOSE WORD EDITOR TAGS
 CLOSE_WORD_PREFIX = "close_word_"
 CLOSE_WORD_TAG_NAME = "close_word"
+MISSPELLED_WORD_TAG_NAME = "misspelled_word"
 MULTIPLE_PUNCTUATION_TAG_NAME = "multiple_punctuation"
 TRAILING_SPACES_TAG_NAME = "trailing_spaces"
 MULTIPLE_SPACES_TAG_NAME = "multiple_spaces"
@@ -174,6 +177,9 @@ else:
 DATA_DIRECTORY = os.path.join(WORKING_DIRECTORY, "data")
 SPACY_MODELS_DIR = os.path.join(DATA_DIRECTORY, "spacy-models")
 SK_SPACY_MODEL_DIR = os.path.join(SPACY_MODELS_DIR, "sk")
+DICTIONARY_DIR = os.path.join(DATA_DIRECTORY, "dictionary")
+SK_DICTIONARY_DIR = os.path.join(DICTIONARY_DIR, "sk-libreoffice")
+SK_SPELL_DICTIONARY_DIR = os.path.join(DICTIONARY_DIR, "sk-skspell")
 CONFIG_FILE = os.path.join(DATA_DIRECTORY, "config.json")
 
 # COLOR PALLETE FOR CLOSE WORDS
@@ -320,6 +326,15 @@ class Service:
     def remove_accents(text):
         nfkd_form = unicodedata.normalize('NFD', text)
         return ''.join([c for c in nfkd_form if not unicodedata.combining(c)])
+
+    @staticmethod
+    def spellcheck(doc: Doc):
+        for word in doc._.unique_words.items():
+            for token in word[1].occourences:
+                if token._.is_word and not token._.is_spellchecked:
+                    is_misspeled = not spellcheck_dictionary.spell(token.text)
+                    token._.is_misspelled = is_misspeled
+                    token._.is_spellchecked = True
 
 
 class AutoScrollbar(ttk.Scrollbar):
@@ -580,6 +595,11 @@ class MainWindow:
         self.file_menu.add_command(label="Uložiť súbor", command=self.save_file)
         self.menu_bar.add_cascade(label="Súbor", menu=self.file_menu)
 
+        self.analysis_menu = tk.Menu(self.menu_bar, tearoff=0, background=PRIMARY_BLUE, foreground=TEXT_COLOR_WHITE,
+                                     font=(HELVETICA_FONT_NAME, TEXT_SIZE_MENU))
+        self.analysis_menu.add_command(label="Spustiť kontrolu gramatiky", command=self.run_spellcheck)
+        self.menu_bar.add_cascade(label="Analýza", menu=self.analysis_menu)
+
         # SETTINGS MENU
         self.settings_menu = tk.Menu(self.menu_bar, tearoff=0, background=PRIMARY_BLUE, foreground=TEXT_COLOR_WHITE,
                                      font=(HELVETICA_FONT_NAME, TEXT_SIZE_MENU))
@@ -757,6 +777,16 @@ class MainWindow:
         self.text_editor.tag_bind(tag_name, "<Enter>", on_enter)
         self.text_editor.tag_bind(tag_name, "<Leave>", on_leave)
 
+    def highlight_misspelled_word(self, event):
+        # Získanie indexu myši
+        mouse_index = self.text_editor.index(f"@{event.x},{event.y}")
+        word_position = self.text_editor.count("1.0", mouse_index, "chars")
+        if word_position is not None:
+            span = self.doc.char_span(word_position[0], word_position[0], alignment_mode='expand')
+            if span is not None:
+                suggestions = spellcheck_dictionary.suggest(span.root.text)
+                self.show_tooltip(event, f'Možný preklep v slove.\n\nNávrhy: {", ".join(suggestions)}')
+
     # HIGHLIGHT SAME WORD ON MOUSE OVER
     def highlight_same_word(self, event):
         # Získanie indexu myši
@@ -846,6 +876,7 @@ class MainWindow:
         self.highlight_long_sentences(self.doc)
         self.highlight_close_words(self.doc)
         self.highlight_multiple_issues(text)
+        self.run_spellcheck()
         # CONFIG TAGS
         self.text_editor.tag_config(LONG_SENTENCE_TAG_NAME_MID, background=LONG_SENTENCE_HIGHLIGHT_COLOR_MID)
         self.text_editor.tag_config(LONG_SENTENCE_TAG_NAME_HIGH, background=LONG_SENTENCE_HIGHLIGHT_COLOR_HIGH)
@@ -854,11 +885,16 @@ class MainWindow:
         self.text_editor.tag_config(MULTIPLE_SPACES_TAG_NAME, background="red")
         self.text_editor.tag_config(SEARCH_RESULT_TAG_NAME, background=SEARCH_RESULT_HIGHLIGHT_COLOR)
         self.text_editor.tag_config(CURRENT_SEARCH_RESULT_TAG_NAME, background=CURRENT_SEARCH_RESULT_HIGHLIGHT_COLOR)
+        self.text_editor.tag_config(MISSPELLED_WORD_TAG_NAME, underline=True, underlinefg="red")
         self.text_editor.tag_raise("sel")
         # MOUSE BINDINGS
         self.bind_tag_mouse_event(CLOSE_WORD_TAG_NAME,
                                   lambda e: self.highlight_same_word(e),
                                   lambda e: self.unhighlight_same_word(e)
+                                  )
+        self.bind_tag_mouse_event(MISSPELLED_WORD_TAG_NAME,
+                                  lambda e: self.highlight_misspelled_word(e),
+                                  lambda e: self.hide_tooltip(e)
                                   )
         self.bind_tag_mouse_event(TRAILING_SPACES_TAG_NAME,
                                   lambda e: self.show_tooltip(e, f'Zbytočná medzera na konci odstavca.'),
@@ -986,6 +1022,15 @@ class MainWindow:
     def focus_editor(self, event=None):
         self.text_editor.focus()
         return
+
+    # RUN SPELLCHECK
+    def run_spellcheck(self):
+        Service.spellcheck(self.doc)
+        for word in self.doc._.words:
+            if word._.is_misspelled:
+                start_index = f"1.0 + {word.idx} chars"
+                end_index = f"1.0 + {word.idx + len(word.lower_)} chars"
+                self.text_editor.tag_add(MISSPELLED_WORD_TAG_NAME, start_index, end_index)
 
     # SHOW SETTINGS WINDOW
     def show_settings(self):
@@ -1232,12 +1277,24 @@ nlp = spacy.load(os.path.join(
 nlp.tokenizer = custom_tokenizer(nlp)
 # SPACY EXTENSIONS
 Token.set_extension("is_word", default=False, force=True)
+Token.set_extension("is_spellchecked", default=False, force=True)
+Token.set_extension("is_misspelled", default=False, force=True)
 Doc.set_extension("words", default=[], force=True)
 Doc.set_extension("unique_words", default=[], force=True)
 Doc.set_extension("total_chars", default=0, force=True)
 Doc.set_extension("total_words", default=0, force=True)
 Doc.set_extension("total_unique_words", default=0, force=True)
 Doc.set_extension("total_pages", default=0, force=True)
+splash.update_status("sťahujem a inicializujem slovník...")
+if not os.path.isdir(DICTIONARY_DIR):
+    os.mkdir(DICTIONARY_DIR)
+if not os.path.isdir(SK_DICTIONARY_DIR):
+    os.mkdir(SK_DICTIONARY_DIR)
+    fs = fsspec.filesystem("github", org="LibreOffice", repo="dictionaries")
+    fs.get(fs.ls("sk_SK"), SK_DICTIONARY_DIR, recursive=True)
+    fs = fsspec.filesystem("github", org="sk-spell", repo="hunspell-sk")
+    fs.get(fs.ls("/"), SK_SPELL_DICTIONARY_DIR, recursive=True)
+spellcheck_dictionary = hunspell.HunSpell(os.path.join(SK_SPELL_DICTIONARY_DIR, "sk_SK.dic"), os.path.join(SK_SPELL_DICTIONARY_DIR, "sk_SK.aff"))
 splash.update_status("inicializujem textový processor...")
 splash.close()
 main_window = MainWindow(root, nlp)
