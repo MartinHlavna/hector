@@ -21,6 +21,7 @@ from spacy.tokens import Doc
 from spacy.tokens.token import Token
 from spacy.util import compile_infix_regex
 from ttkthemes import ThemedTk
+from pythes import PyThes
 import hunspell
 import fsspec
 
@@ -431,7 +432,7 @@ class MainWindow:
         self.bottom_panel.pack(fill=tk.BOTH, side=tk.BOTTOM)
 
         self.introspection_text = tk.Text(left_side_panel, highlightthickness=0, bd=0, wrap=tk.WORD, state=tk.DISABLED,
-                                          width=30, background=PRIMARY_BLUE, foreground=TEXT_COLOR_WHITE, height=5,
+                                          width=30, background=PRIMARY_BLUE, foreground=TEXT_COLOR_WHITE, height=15,
                                           font=(HELVETICA_FONT_NAME, 9))
         MainWindow.set_text(self.introspection_text, 'Kliknite na slovo v editore')
         self.introspection_text.pack(fill=tk.X, pady=10, padx=10, side=tk.BOTTOM)
@@ -933,9 +934,15 @@ class MainWindow:
         if span is not None and self.current_instrospection_token != span.root:
             if span.root._.is_word:
                 self.current_instrospection_token = span.root
+                thes_result = thesaurus.lookup(self.current_instrospection_token.lemma_)
                 introspection_resut = f'Slovo: {self.current_instrospection_token}\n\n' \
+                                      f'Základný tvar: {self.current_instrospection_token.lemma_}\n' \
                                       f'Slovný druh: {POS_TAG_TRANSLATIONS[self.current_instrospection_token.pos_]}\n' \
                                       f'Vetný člen: {DEP_TAG_TRANSLATION[self.current_instrospection_token.dep_.lower()]}'
+                if thes_result is not None:
+                    introspection_resut += f'\n\nSynonymá\n\n'
+                    for mean in thes_result.mean_tuple:
+                        introspection_resut += f'{mean.main}: {", ".join(mean.syn_tuple)}\n'
                 MainWindow.set_text(self.introspection_text, introspection_resut)
 
     # FOCUS NEXT SEARCH RESULT
@@ -1295,6 +1302,7 @@ if not os.path.isdir(SK_DICTIONARY_DIR):
     fs = fsspec.filesystem("github", org="sk-spell", repo="hunspell-sk")
     fs.get(fs.ls("/"), SK_SPELL_DICTIONARY_DIR, recursive=True)
 spellcheck_dictionary = hunspell.HunSpell(os.path.join(SK_SPELL_DICTIONARY_DIR, "sk_SK.dic"), os.path.join(SK_SPELL_DICTIONARY_DIR, "sk_SK.aff"))
+thesaurus = PyThes(os.path.join(SK_DICTIONARY_DIR, "th_sk_SK_v2.dat"))
 splash.update_status("inicializujem textový processor...")
 splash.close()
 main_window = MainWindow(root, nlp)
