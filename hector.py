@@ -930,8 +930,10 @@ class MainWindow:
             if span.root._.is_word:
                 self.current_instrospection_token = span.root
                 thes_result = thesaurus.lookup(self.current_instrospection_token.lemma_)
+                morph = self.current_instrospection_token.morph.to_dict()
                 introspection_resut = f'Slovo: {self.current_instrospection_token}\n\n' \
                                       f'Základný tvar: {self.current_instrospection_token.lemma_}\n' \
+                                      f'Morfológia: {morph.get("Case")} {morph.get("Number")}\n' \
                                       f'Slovný druh: {POS_TAG_TRANSLATIONS[self.current_instrospection_token.pos_]}\n' \
                                       f'Vetný člen: {DEP_TAG_TRANSLATION[self.current_instrospection_token.dep_.lower()]}'
                 if thes_result is not None:
