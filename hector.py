@@ -36,7 +36,7 @@ try:
 except:
     pass
 
-VERSION = "0.4.0 Alfa"
+VERSION = "0.5.0 Alfa"
 SPACY_MODEL_NAME = "sk_ud_sk_snk"
 SPACY_MODEL_VERSION = "1.0.0"
 SPACY_MODEL_NAME_WITH_VERSION = f"{SPACY_MODEL_NAME}-{SPACY_MODEL_VERSION}"
@@ -595,11 +595,6 @@ class MainWindow:
         self.file_menu.add_command(label="Načítať súbor", command=self.load_file)
         self.file_menu.add_command(label="Uložiť súbor", command=self.save_file)
         self.menu_bar.add_cascade(label="Súbor", menu=self.file_menu)
-
-        self.analysis_menu = tk.Menu(self.menu_bar, tearoff=0, background=PRIMARY_BLUE, foreground=TEXT_COLOR_WHITE,
-                                     font=(HELVETICA_FONT_NAME, TEXT_SIZE_MENU))
-        self.analysis_menu.add_command(label="Spustiť kontrolu gramatiky", command=self.run_spellcheck)
-        self.menu_bar.add_cascade(label="Analýza", menu=self.analysis_menu)
 
         # SETTINGS MENU
         self.settings_menu = tk.Menu(self.menu_bar, tearoff=0, background=PRIMARY_BLUE, foreground=TEXT_COLOR_WHITE,

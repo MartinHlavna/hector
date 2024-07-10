@@ -54,10 +54,15 @@ Samozrejme, aj tieto hodnoty treba brať len veľmi orientačne. Lyrická próza
 * Hľadanie neberie do úvay diakritiku, ani veľké a malé písmena
 
 ### Introspekcia
-* Vľavo dole sa nachádza okno, v ktorom sa zobrazuje zvolené slovo v editore
+* Vľavo dole sa nachádza okno, v ktorom sa zobrazuje zvolené slovo v editore a jeho základný tvar
 *  Spolu s ním sa zobrazuje slovný druh (POS tag)
 *  Spolus ním sa zobrazuje aj funkcia vo vete (DEP tag)
 *  Treba v praxi overiť, či sa zobrazujú dobre, pretože ich určuje pravdepodobnostný model
+*  V prípade, že k základnému tvaru existujú synonymá, tak sa zobrazia aj tie
+
+### Kontrola preklepov
+* Program automaticky porovnáva slová voči slovníku a slová, ktoré v ňom nenájde zvýrazní
+* Kvalita závisí od dostupných slovníkov
 
 ## Spustenie programu
 ### Spustenie z binárneho súboru
@@ -85,6 +90,14 @@ data/spacy-models/sk    --jazykový model pre spracovanie prirodzeného jazyka
 
 Hector pri prvom štarte automaticky z internetu stiahne jazykový model a uloží ho do priečinka ```data/spacy-models/sk```
 Pri uložení nastavení aplikácie sa uložia do súboru ```data/config.json```
+
+Od verzie 0.5.0 Hector pri prvom štarte automaticky sťahuje slovníky
+```
+data/dictionary/sk-skspell     --slovenský slovník projektu skspell
+data/dictionary/sk-líbreoffice --slovenský slovník projektu LibreOffice
+```
 ## Technické informácie
 ### Spracovanie prirodzeného jazyka
-Program využíva na identifikáciu slov a viet NLP prístup. Napriek tomu, že by sa dala táto úloha riešiť aj jednoduchšími metódami, zvolil som túto techniku najmä s ohľadom na budúce rozširovanie. [Model](https://github.com/MartinHlavna/hector-spacy-model), ktorý je použitý je natrénovaný na dátach z projektu [Slovak Universal Dependencies](https://universaldependencies.org/treebanks/sk_snk/index.html). 
+Program využíva na identifikáciu slov a viet NLP prístup. Napriek tomu, že by sa dala táto úloha riešiť aj jednoduchšími metódami, zvolil som túto techniku najmä s ohľadom na budúce rozširovanie. [Model](https://github.com/MartinHlavna/hector-spacy-model), ktorý je použitý je natrénovaný na dátach z projektu [Slovak Universal Dependencies](https://universaldependencies.org/treebanks/sk_snk/index.html) (Licencia CC BY-SA 4.0).
+### Slovníky
+Program využíva synonymický slovník z projektu [LibreOffice](https://github.com/LibreOffice/dictionaries/tree/master/sk_SK) (Licencia GPLv2) a spelling slovník projektu [hunspell-sk](https://github.com/sk-spell/hunspell-sk) (Licencia MPLv2). 
