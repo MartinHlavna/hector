@@ -16,6 +16,7 @@ import spacy
 from PIL import ImageTk, Image
 from spacy.lang.char_classes import LIST_ELLIPSES, LIST_ICONS, ALPHA_LOWER, ALPHA_UPPER, ALPHA
 from spacy.lang.sl.punctuation import CONCAT_QUOTES
+from spacy.matcher import DependencyMatcher
 from spacy.tokenizer import Tokenizer
 from spacy.tokens import Doc
 from spacy.tokens.token import Token
@@ -61,6 +62,7 @@ CURRENT_SEARCH_RESULT_HIGHLIGHT_COLOR = "orange"
 CLOSE_WORD_PREFIX = "close_word_"
 CLOSE_WORD_TAG_NAME = "close_word"
 MISSPELLED_WORD_TAG_NAME = "misspelled_word"
+IS_BAD_MASC_NOM_PLUR_TAG_NAME = "is_bad_masc_nom_plur"
 MULTIPLE_PUNCTUATION_TAG_NAME = "multiple_punctuation"
 TRAILING_SPACES_TAG_NAME = "trailing_spaces"
 MULTIPLE_SPACES_TAG_NAME = "multiple_spaces"
@@ -255,6 +257,27 @@ def word_detector(doc):
     doc._.total_words = len(words)
     doc._.total_unique_words = len(unique_words)
     doc._.total_pages = round(doc._.total_chars / 1800, 2)
+    pattern = [
+        {
+            "RIGHT_ID": "target",
+            "RIGHT_ATTRS": {"POS": "NOUN", "MORPH": {"IS_SUPERSET": ["Gender=Masc", "Number=Plur"]}}
+        },
+        # founded -> subject
+        {
+            "LEFT_ID": "target",
+            "REL_OP": ">",
+            "RIGHT_ID": "modifier",
+            "RIGHT_ATTRS": {"POS": {"IN": ["ADJ"]}}
+        },
+    ]
+
+    matcher = DependencyMatcher(nlp.vocab)
+    matcher.add("FOUNDED", [pattern])
+    for match_id, (target, modifier) in matcher(doc):
+        if doc[modifier].lower_.endswith("ý"):
+            print(doc[modifier], doc[target])
+            doc[modifier]._.is_bad_masc_nom_plur = True
+
     return doc
 
 
@@ -783,6 +806,16 @@ class MainWindow:
                 suggestions = spellcheck_dictionary.suggest(span.root.text)
                 self.show_tooltip(event, f'Možný preklep v slove.\n\nNávrhy: {", ".join(suggestions)}')
 
+    def highlight_bad_masc_nom_plur_word(self, event):
+        # Získanie indexu myši
+        mouse_index = self.text_editor.index(f"@{event.x},{event.y}")
+        word_position = self.text_editor.count("1.0", mouse_index, "chars")
+        if word_position is not None:
+            span = self.doc.char_span(word_position[0], word_position[0], alignment_mode='expand')
+            if span is not None:
+
+                self.show_tooltip(event, f'Nominatív množného čísla.\n\nNávrhy: {span.root.text[:-1] + "í"}')
+
     # HIGHLIGHT SAME WORD ON MOUSE OVER
     def highlight_same_word(self, event):
         # Získanie indexu myši
@@ -882,6 +915,7 @@ class MainWindow:
         self.text_editor.tag_config(SEARCH_RESULT_TAG_NAME, background=SEARCH_RESULT_HIGHLIGHT_COLOR)
         self.text_editor.tag_config(CURRENT_SEARCH_RESULT_TAG_NAME, background=CURRENT_SEARCH_RESULT_HIGHLIGHT_COLOR)
         self.text_editor.tag_config(MISSPELLED_WORD_TAG_NAME, underline=True, underlinefg="red")
+        self.text_editor.tag_config(IS_BAD_MASC_NOM_PLUR_TAG_NAME, underline=True, underlinefg="red")
         self.text_editor.tag_raise("sel")
         # MOUSE BINDINGS
         self.bind_tag_mouse_event(CLOSE_WORD_TAG_NAME,
@@ -890,6 +924,10 @@ class MainWindow:
                                   )
         self.bind_tag_mouse_event(MISSPELLED_WORD_TAG_NAME,
                                   lambda e: self.highlight_misspelled_word(e),
+                                  lambda e: self.hide_tooltip(e)
+                                  )
+        self.bind_tag_mouse_event(IS_BAD_MASC_NOM_PLUR_TAG_NAME,
+                                  lambda e: self.highlight_bad_masc_nom_plur_word(e),
                                   lambda e: self.hide_tooltip(e)
                                   )
         self.bind_tag_mouse_event(TRAILING_SPACES_TAG_NAME,
@@ -933,7 +971,7 @@ class MainWindow:
                 morph = self.current_instrospection_token.morph.to_dict()
                 introspection_resut = f'Slovo: {self.current_instrospection_token}\n\n' \
                                       f'Základný tvar: {self.current_instrospection_token.lemma_}\n' \
-                                      f'Morfológia: {morph.get("Case")} {morph.get("Number")}\n' \
+                                      f'Morfológia: {morph.get("Case")} {morph.get("Number")} {morph.get("Gender")}\n' \
                                       f'Slovný druh: {POS_TAG_TRANSLATIONS[self.current_instrospection_token.pos_]}\n' \
                                       f'Vetný člen: {DEP_TAG_TRANSLATION[self.current_instrospection_token.dep_.lower()]}'
                 if thes_result is not None:
@@ -1036,6 +1074,10 @@ class MainWindow:
                 start_index = f"1.0 + {word.idx} chars"
                 end_index = f"1.0 + {word.idx + len(word.lower_)} chars"
                 self.text_editor.tag_add(MISSPELLED_WORD_TAG_NAME, start_index, end_index)
+            if word._.is_bad_masc_nom_plur:
+                start_index = f"1.0 + {word.idx} chars"
+                end_index = f"1.0 + {word.idx + len(word.lower_)} chars"
+                self.text_editor.tag_add(IS_BAD_MASC_NOM_PLUR_TAG_NAME, start_index, end_index)
 
     # SHOW SETTINGS WINDOW
     def show_settings(self):
@@ -1283,6 +1325,7 @@ nlp.tokenizer = custom_tokenizer(nlp)
 # SPACY EXTENSIONS
 Token.set_extension("is_word", default=False, force=True)
 Token.set_extension("is_spellchecked", default=False, force=True)
+Token.set_extension("is_bad_masc_nom_plur", default=False, force=True)
 Token.set_extension("is_misspelled", default=False, force=True)
 Doc.set_extension("words", default=[], force=True)
 Doc.set_extension("unique_words", default=[], force=True)
