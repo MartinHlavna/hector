@@ -3,4 +3,4 @@ ttkthemes~=3.2.2
 pillow~=10.3.0
 setuptools~=68.2.0
 fsspec~=2024.6.1
-hunspell~=0.5.5
+pyenchant~=3.2.2

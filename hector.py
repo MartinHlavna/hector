@@ -22,7 +22,7 @@ from spacy.tokens.token import Token
 from spacy.util import compile_infix_regex
 from ttkthemes import ThemedTk
 from pythes import PyThes
-import hunspell
+import enchant
 import fsspec
 
 # WE CAN MOVE OVER TO PYTHON SPLASH INSTEAD OF IMAGE NOW
@@ -36,7 +36,7 @@ try:
 except:
     pass
 
-VERSION = "0.5.0 Alfa"
+VERSION = "0.5.1 Alfa"
 SPACY_MODEL_NAME = "sk_ud_sk_snk"
 SPACY_MODEL_VERSION = "1.0.0"
 SPACY_MODEL_NAME_WITH_VERSION = f"{SPACY_MODEL_NAME}-{SPACY_MODEL_VERSION}"
@@ -333,7 +333,7 @@ class Service:
         for word in doc._.unique_words.items():
             for token in word[1].occourences:
                 if token._.is_word and not token._.is_spellchecked:
-                    is_misspeled = not spellcheck_dictionary.spell(token.text)
+                    is_misspeled = not spellcheck_dictionary.check(token.text)
                     token._.is_misspelled = is_misspeled
                     token._.is_spellchecked = True
 
@@ -1297,7 +1297,7 @@ if not os.path.isdir(SK_DICTIONARY_DIR):
     fs.get(fs.ls("sk_SK"), SK_DICTIONARY_DIR, recursive=True)
     fs = fsspec.filesystem("github", org="sk-spell", repo="hunspell-sk")
     fs.get(fs.ls("/"), SK_SPELL_DICTIONARY_DIR, recursive=True)
-spellcheck_dictionary = hunspell.HunSpell(os.path.join(SK_SPELL_DICTIONARY_DIR, "sk_SK.dic"), os.path.join(SK_SPELL_DICTIONARY_DIR, "sk_SK.aff"))
+spellcheck_dictionary = enchant.Dict("sk_SK")
 thesaurus = PyThes(os.path.join(SK_DICTIONARY_DIR, "th_sk_SK_v2.dat"))
 splash.update_status("inicializujem textový processor...")
 splash.close()
