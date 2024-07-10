@@ -1020,7 +1020,8 @@ class MainWindow:
     # SELECT ALL TEXT
     def select_all(self, event=None):
         self.text_editor.tag_add(tk.SEL, "1.0", tk.END)
-        return
+        self.text_editor.tag_raise(tk.SEL)
+        return "break"
 
     def focus_search(self, event=None):
         self.search_field.focus()
