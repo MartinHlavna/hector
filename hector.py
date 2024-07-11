@@ -61,8 +61,7 @@ CURRENT_SEARCH_RESULT_HIGHLIGHT_COLOR = "orange"
 # PREFIX FOR CLOSE WORD EDITOR TAGS
 CLOSE_WORD_PREFIX = "close_word_"
 CLOSE_WORD_TAG_NAME = "close_word"
-MISSPELLED_WORD_TAG_NAME = "misspelled_word"
-IS_BAD_MASC_NOM_PLUR_TAG_NAME = "is_bad_masc_nom_plur"
+GRAMMAR_ERROR_TAG_NAME = "grammar_error"
 MULTIPLE_PUNCTUATION_TAG_NAME = "multiple_punctuation"
 TRAILING_SPACES_TAG_NAME = "trailing_spaces"
 MULTIPLE_SPACES_TAG_NAME = "multiple_spaces"
@@ -76,6 +75,11 @@ EDITOR_LOGO_WIDTH = 300
 TEXT_SIZE_SECTION_HEADER = 12
 TEXT_SIZE_MENU = 10
 TEXT_SIZE_BOTTOM_BAR = 10
+
+# GRAMMAR_ERROR_TYPES
+GRAMMAR_ERROR_TYPE_MISSPELLED_WORD = 'MISSPELLED_WORD'
+GRAMMAR_ERROR_TYPE_WRONG_Y_SUFFIX = 'WRONG_Y_SUFFIX'
+GRAMMAR_ERROR_TYPE_WRONG_I_SUFFIX = 'WRONG_I_SUFFIX'
 
 POS_TAG_TRANSLATIONS = {
     "ADJ": "prídavné meno",
@@ -257,27 +261,6 @@ def word_detector(doc):
     doc._.total_words = len(words)
     doc._.total_unique_words = len(unique_words)
     doc._.total_pages = round(doc._.total_chars / 1800, 2)
-    pattern = [
-        {
-            "RIGHT_ID": "target",
-            "RIGHT_ATTRS": {"POS": "NOUN", "MORPH": {"IS_SUPERSET": ["Gender=Masc", "Number=Plur"]}}
-        },
-        # founded -> subject
-        {
-            "LEFT_ID": "target",
-            "REL_OP": ">",
-            "RIGHT_ID": "modifier",
-            "RIGHT_ATTRS": {"POS": {"IN": ["ADJ"]}}
-        },
-    ]
-
-    matcher = DependencyMatcher(nlp.vocab)
-    matcher.add("FOUNDED", [pattern])
-    for match_id, (target, modifier) in matcher(doc):
-        if doc[modifier].lower_.endswith("ý"):
-            print(doc[modifier], doc[target])
-            doc[modifier]._.is_bad_masc_nom_plur = True
-
     return doc
 
 
@@ -355,10 +338,36 @@ class Service:
     def spellcheck(doc: Doc):
         for word in doc._.unique_words.items():
             for token in word[1].occourences:
-                if token._.is_word and not token._.is_spellchecked:
-                    is_misspeled = not spellcheck_dictionary.check(token.text)
-                    token._.is_misspelled = is_misspeled
-                    token._.is_spellchecked = True
+                if token._.is_word:
+                    if not spellcheck_dictionary.check(token.text):
+                        token._.has_grammar_error = True
+                        token._.grammar_error_type = GRAMMAR_ERROR_TYPE_MISSPELLED_WORD
+        # PATTER TO FIND ALL ADJECTIVE / NOUN PAIRS
+        pattern = [
+            {
+                "RIGHT_ID": "target",
+                "RIGHT_ATTRS": {"POS": "NOUN", "MORPH": {"IS_SUPERSET": ["Gender=Masc"]}}
+            },
+            # founded -> subject
+            {
+                "LEFT_ID": "target",
+                "REL_OP": ">>",
+                "RIGHT_ID": "modifier",
+                "RIGHT_ATTRS": {"POS": {"IN": ["ADJ", "DET", "PRON"]}}
+            },
+        ]
+
+        matcher = DependencyMatcher(nlp.vocab)
+        matcher.add("SHOULD_HAVE_I", [pattern])
+        for match_id, (target, modifier) in matcher(doc):
+            target_morph = doc[target].morph.to_dict()
+            modifier_morph = doc[modifier].morph.to_dict()
+            if target_morph.get("Number") == "Plur" and doc[modifier].lower_.endswith("ý"):
+                doc[modifier]._.has_grammar_error = True
+                doc[modifier]._.grammar_error_type = GRAMMAR_ERROR_TYPE_WRONG_Y_SUFFIX
+            elif target_morph.get("Number") == "Sing" and doc[modifier].lower_.endswith("í") and modifier_morph.get("Degree") == "Pos":
+                doc[modifier]._.has_grammar_error = True
+                doc[modifier]._.grammar_error_type = GRAMMAR_ERROR_TYPE_WRONG_I_SUFFIX
 
 
 class AutoScrollbar(ttk.Scrollbar):
@@ -796,25 +805,21 @@ class MainWindow:
         self.text_editor.tag_bind(tag_name, "<Enter>", on_enter)
         self.text_editor.tag_bind(tag_name, "<Leave>", on_leave)
 
-    def highlight_misspelled_word(self, event):
+    def highlight_grammar_error(self, event):
         # Získanie indexu myši
         mouse_index = self.text_editor.index(f"@{event.x},{event.y}")
         word_position = self.text_editor.count("1.0", mouse_index, "chars")
         if word_position is not None:
             span = self.doc.char_span(word_position[0], word_position[0], alignment_mode='expand')
             if span is not None:
-                suggestions = spellcheck_dictionary.suggest(span.root.text)
-                self.show_tooltip(event, f'Možný preklep v slove.\n\nNávrhy: {", ".join(suggestions)}')
-
-    def highlight_bad_masc_nom_plur_word(self, event):
-        # Získanie indexu myši
-        mouse_index = self.text_editor.index(f"@{event.x},{event.y}")
-        word_position = self.text_editor.count("1.0", mouse_index, "chars")
-        if word_position is not None:
-            span = self.doc.char_span(word_position[0], word_position[0], alignment_mode='expand')
-            if span is not None:
-
-                self.show_tooltip(event, f'Nominatív množného čísla.\n\nNávrhy: {span.root.text[:-1] + "í"}')
+                token = span.root
+                if token._.grammar_error_type == GRAMMAR_ERROR_TYPE_MISSPELLED_WORD:
+                    suggestions = spellcheck_dictionary.suggest(span.root.text)
+                    self.show_tooltip(event, f'Možný preklep v slove.\n\nNávrhy: {", ".join(suggestions)}')
+                elif token._.grammar_error_type == GRAMMAR_ERROR_TYPE_WRONG_Y_SUFFIX:
+                    self.show_tooltip(event, f'Slovo by malo končiť na í.\n\nNávrhy: {span.root.text[:-1] + "í"}')
+                elif token._.grammar_error_type == GRAMMAR_ERROR_TYPE_WRONG_I_SUFFIX:
+                    self.show_tooltip(event, f'Slovo by malo končiť na ý.\n\nNávrhy: {span.root.text[:-1] + "ý"}')
 
     # HIGHLIGHT SAME WORD ON MOUSE OVER
     def highlight_same_word(self, event):
@@ -914,20 +919,15 @@ class MainWindow:
         self.text_editor.tag_config(MULTIPLE_SPACES_TAG_NAME, background="red")
         self.text_editor.tag_config(SEARCH_RESULT_TAG_NAME, background=SEARCH_RESULT_HIGHLIGHT_COLOR)
         self.text_editor.tag_config(CURRENT_SEARCH_RESULT_TAG_NAME, background=CURRENT_SEARCH_RESULT_HIGHLIGHT_COLOR)
-        self.text_editor.tag_config(MISSPELLED_WORD_TAG_NAME, underline=True, underlinefg="red")
-        self.text_editor.tag_config(IS_BAD_MASC_NOM_PLUR_TAG_NAME, underline=True, underlinefg="red")
+        self.text_editor.tag_config(GRAMMAR_ERROR_TAG_NAME, underline=True, underlinefg="red")
         self.text_editor.tag_raise("sel")
         # MOUSE BINDINGS
         self.bind_tag_mouse_event(CLOSE_WORD_TAG_NAME,
                                   lambda e: self.highlight_same_word(e),
                                   lambda e: self.unhighlight_same_word(e)
                                   )
-        self.bind_tag_mouse_event(MISSPELLED_WORD_TAG_NAME,
-                                  lambda e: self.highlight_misspelled_word(e),
-                                  lambda e: self.hide_tooltip(e)
-                                  )
-        self.bind_tag_mouse_event(IS_BAD_MASC_NOM_PLUR_TAG_NAME,
-                                  lambda e: self.highlight_bad_masc_nom_plur_word(e),
+        self.bind_tag_mouse_event(GRAMMAR_ERROR_TAG_NAME,
+                                  lambda e: self.highlight_grammar_error(e),
                                   lambda e: self.hide_tooltip(e)
                                   )
         self.bind_tag_mouse_event(TRAILING_SPACES_TAG_NAME,
@@ -1070,14 +1070,10 @@ class MainWindow:
     def run_spellcheck(self):
         Service.spellcheck(self.doc)
         for word in self.doc._.words:
-            if word._.is_misspelled:
+            if word._.has_grammar_error:
                 start_index = f"1.0 + {word.idx} chars"
                 end_index = f"1.0 + {word.idx + len(word.lower_)} chars"
-                self.text_editor.tag_add(MISSPELLED_WORD_TAG_NAME, start_index, end_index)
-            if word._.is_bad_masc_nom_plur:
-                start_index = f"1.0 + {word.idx} chars"
-                end_index = f"1.0 + {word.idx + len(word.lower_)} chars"
-                self.text_editor.tag_add(IS_BAD_MASC_NOM_PLUR_TAG_NAME, start_index, end_index)
+                self.text_editor.tag_add(GRAMMAR_ERROR_TAG_NAME, start_index, end_index)
 
     # SHOW SETTINGS WINDOW
     def show_settings(self):
@@ -1324,9 +1320,8 @@ nlp = spacy.load(os.path.join(
 nlp.tokenizer = custom_tokenizer(nlp)
 # SPACY EXTENSIONS
 Token.set_extension("is_word", default=False, force=True)
-Token.set_extension("is_spellchecked", default=False, force=True)
-Token.set_extension("is_bad_masc_nom_plur", default=False, force=True)
-Token.set_extension("is_misspelled", default=False, force=True)
+Token.set_extension("grammar_error_type", default=False, force=True)
+Token.set_extension("has_grammar_error", default=False, force=True)
 Doc.set_extension("words", default=[], force=True)
 Doc.set_extension("unique_words", default=[], force=True)
 Doc.set_extension("total_chars", default=0, force=True)
