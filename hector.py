@@ -342,7 +342,7 @@ class Service:
                     if not spellcheck_dictionary.check(token.text):
                         token._.has_grammar_error = True
                         token._.grammar_error_type = GRAMMAR_ERROR_TYPE_MISSPELLED_WORD
-        # PATTER TO FIND ALL ADJECTIVE / DETERMINER / PRONOUN -> NOUN PAIRS
+        # PATTERN TO FIND ALL ADJECTIVE / DETERMINER / PRONOUN -> NOUN PAIRS
         pattern = [
             {
                 "RIGHT_ID": "target",
