@@ -64,6 +64,14 @@ Samozrejme, aj tieto hodnoty treba brať len veľmi orientačne. Lyrická próza
 * Program automaticky porovnáva slová voči slovníku a slová, ktoré v ňom nenájde zvýrazní
 * Kvalita závisí od dostupných slovníkov
 
+### Kontrola í/ý v niektorých prípadoch
+* Program automaticky kontroluje, či je použité í v
+    * Prídavnom mene, ktoré sa viaže na podstatné meno v nominatíve množného čísla v mužskom rode podľa vzoru pekný (napr. pekní chlapci)
+    * Zámene, ktoré sa viaže na podstatné meno v nominatíve množného čísla v mužskom rode podľa vzoru pekný (napr. ľudia, ktorí)
+* Program automaticky kontroluje, či je použité ý v
+    * Prídavnom mene, ktoré sa viaže na podstatné meno v nominatíve jednotného čísla v mužskom rode podľa vzoru pekný (napr. pekný chlapec)
+    * Zámene, ktoré sa viaže na podstatné meno v nominatíve jednotného čísla v mužskom rode podľa vzoru pekný (napr. človek, ktorý)
+
 ## Spustenie programu
 ### Spustenie z binárneho súboru
 V prípade podporovaných platforiem sú k dispozícií kompletné spustiteľné [balíčky](https://github.com/MartinHlavna/hector/releases) vo forme binárnych súborov (napr. exe). 

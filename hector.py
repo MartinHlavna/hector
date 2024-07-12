@@ -1,4 +1,5 @@
 import json
+import math
 import os
 import platform
 import random
@@ -10,9 +11,11 @@ import tkinter as tk
 import unicodedata
 import urllib
 import webbrowser
+from io import BytesIO
 from tkinter import filedialog, ttk
 
 import spacy
+from spacy import displacy
 from PIL import ImageTk, Image
 from spacy.lang.char_classes import LIST_ELLIPSES, LIST_ICONS, ALPHA_LOWER, ALPHA_UPPER, ALPHA
 from spacy.lang.sl.punctuation import CONCAT_QUOTES
@@ -23,8 +26,10 @@ from spacy.tokens.token import Token
 from spacy.util import compile_infix_regex
 from ttkthemes import ThemedTk
 from pythes import PyThes
+from autoscrollbar import AutoScrollbar
 import enchant
 import fsspec
+import cairosvg
 
 # WE CAN MOVE OVER TO PYTHON SPLASH INSTEAD OF IMAGE NOW
 nativeSplashOpened = False
@@ -79,7 +84,9 @@ TEXT_SIZE_BOTTOM_BAR = 10
 # GRAMMAR_ERROR_TYPES
 GRAMMAR_ERROR_TYPE_MISSPELLED_WORD = 'MISSPELLED_WORD'
 GRAMMAR_ERROR_TYPE_WRONG_Y_SUFFIX = 'WRONG_Y_SUFFIX'
+GRAMMAR_ERROR_TYPE_WRONG_YSI_SUFFIX = 'WRONG_YSI_SUFFIX'
 GRAMMAR_ERROR_TYPE_WRONG_I_SUFFIX = 'WRONG_I_SUFFIX'
+GRAMMAR_ERROR_TYPE_WRONG_ISI_SUFFIX = 'WRONG_ISI_SUFFIX'
 
 POS_TAG_TRANSLATIONS = {
     "ADJ": "prídavné meno",
@@ -343,10 +350,10 @@ class Service:
                         token._.has_grammar_error = True
                         token._.grammar_error_type = GRAMMAR_ERROR_TYPE_MISSPELLED_WORD
         # PATTERN TO FIND ALL ADJECTIVE / DETERMINER / PRONOUN -> NOUN PAIRS
-        pattern = [
+        pattern1 = [
             {
                 "RIGHT_ID": "target",
-                "RIGHT_ATTRS": {"POS": "NOUN", "MORPH": {"IS_SUPERSET": ["Gender=Masc"]}}
+                "RIGHT_ATTRS": {"POS": {"IN": ["NOUN", "DET", "PRON"]}}
             },
             # founded -> subject
             {
@@ -357,39 +364,55 @@ class Service:
             },
         ]
 
+        pattern2 = [
+            {
+                "RIGHT_ID": "target",
+                "RIGHT_ATTRS": {"POS": {"IN": ["NOUN", "DET", "PRON"]}}
+            },
+            # founded -> subject
+            {
+                "LEFT_ID": "target",
+                "REL_OP": "<<",
+                "RIGHT_ID": "modifier",
+                "RIGHT_ATTRS": {"POS": {"IN": ["ADJ", "DET", "PRON"]}}
+            },
+        ]
+
         matcher = DependencyMatcher(nlp.vocab)
-        matcher.add("SHOULD_HAVE_I", [pattern])
+        matcher.add("PATTERN_1", [pattern1])
+        matcher.add("PATTERN_2", [pattern2])
         for match_id, (target, modifier) in matcher(doc):
             target_morph = doc[target].morph.to_dict()
-            modifier_morph = doc[modifier].morph.to_dict()
-            if target_morph.get("Number") == "Plur" and doc[modifier].lower_.endswith("ý"):
-                doc[modifier]._.has_grammar_error = True
-                doc[modifier]._.grammar_error_type = GRAMMAR_ERROR_TYPE_WRONG_Y_SUFFIX
-            elif target_morph.get("Number") == "Sing" and doc[modifier].lower_.endswith("í") and modifier_morph.get("Degree") == "Pos":
-                doc[modifier]._.has_grammar_error = True
-                doc[modifier]._.grammar_error_type = GRAMMAR_ERROR_TYPE_WRONG_I_SUFFIX
-
-
-class AutoScrollbar(ttk.Scrollbar):
-    """Create a scrollbar that hides itself if it's not needed. Only
-    works if you use the pack geometry manager from tkinter.
-    """
-
-    def set(self, lo, hi):
-        if float(lo) <= 0.0 and float(hi) >= 1.0:
-            self.pack_forget()
-        else:
-            if self.cget("orient") == tk.HORIZONTAL:
-                self.pack(fill=tk.X, side=tk.BOTTOM)
-            else:
-                self.pack(fill=tk.Y, side=tk.RIGHT)
-        tk.Scrollbar.set(self, lo, hi)
-
-    def grid(self, **kw):
-        raise tk.TclError("cannot use grid with this widget")
-
-    def place(self, **kw):
-        raise tk.TclError("cannot use place with this widget")
+            if not doc[target]._.is_word or not doc[modifier]._.is_word:
+                continue
+            if (doc[target].pos_ == "DET" or doc[target].pos_ == "PRON") and target_morph.get("Case") != "Nom":
+                continue
+            if doc[target].pos_ == "NOUN" and target_morph.get("Gender") != "Masc":
+                continue
+            modifiers = [doc[modifier]]
+            # IF MODIFIER CONJUNTS ANY OTHER MODIFIERS WE NEED TO APPLY SAME RULE FOR ALL
+            if doc[modifier].conjuncts is not None:
+                for mod in doc[modifier].conjuncts:
+                    modifiers.append(mod)
+            # IF MODIFIER RELATES TO ANY DET, WE NEED TO APPLY SAME RULE FOR ALL
+            for child in doc[modifier].children:
+                if child.dep_ == "det":
+                    modifiers.append(child)
+            for mod in modifiers:
+                modifier_morph = mod.morph.to_dict()
+                print(mod, doc[target])
+                if target_morph.get("Number") == "Plur" and mod.lower_.endswith("ý"):
+                    mod._.has_grammar_error = True
+                    mod._.grammar_error_type = GRAMMAR_ERROR_TYPE_WRONG_Y_SUFFIX
+                elif target_morph.get("Number") == "Plur" and mod.lower_.endswith("ýsi"):
+                    mod._.has_grammar_error = True
+                    mod._.grammar_error_type = GRAMMAR_ERROR_TYPE_WRONG_YSI_SUFFIX
+                elif target_morph.get("Number") == "Sing" and mod.lower_.endswith("í") and modifier_morph.get("Degree") == "Pos":
+                    mod._.has_grammar_error = True
+                    mod._.grammar_error_type = GRAMMAR_ERROR_TYPE_WRONG_I_SUFFIX
+                elif target_morph.get("Number") == "Sing" and mod.lower_.endswith("ísi") and modifier_morph.get("Degree") == "Pos":
+                    mod._.has_grammar_error = True
+                    mod._.grammar_error_type = GRAMMAR_ERROR_TYPE_WRONG_ISI_SUFFIX
 
 
 # MAIN GUI WINDOW
@@ -466,6 +489,9 @@ class MainWindow:
         self.introspection_text = tk.Text(left_side_panel, highlightthickness=0, bd=0, wrap=tk.WORD, state=tk.DISABLED,
                                           width=30, background=PRIMARY_BLUE, foreground=TEXT_COLOR_WHITE, height=15,
                                           font=(HELVETICA_FONT_NAME, 9))
+        self.dep_image_holder = ttk.Label(left_side_panel, width=30)
+        self.dep_image_holder.pack(pady=10, padx=10, side=tk.BOTTOM)
+        self.dep_image_holder.bind("<Button-1>", self.show_dep_image)
         MainWindow.set_text(self.introspection_text, 'Kliknite na slovo v editore')
         self.introspection_text.pack(fill=tk.X, pady=10, padx=10, side=tk.BOTTOM)
         separator = ttk.Separator(left_side_panel, orient='horizontal')
@@ -820,6 +846,10 @@ class MainWindow:
                     self.show_tooltip(event, f'Slovo by malo končiť na í.\n\nNávrhy: {span.root.text[:-1] + "í"}')
                 elif token._.grammar_error_type == GRAMMAR_ERROR_TYPE_WRONG_I_SUFFIX:
                     self.show_tooltip(event, f'Slovo by malo končiť na ý.\n\nNávrhy: {span.root.text[:-1] + "ý"}')
+                elif token._.grammar_error_type == GRAMMAR_ERROR_TYPE_WRONG_YSI_SUFFIX:
+                    self.show_tooltip(event, f'Slovo by malo končiť na ísi.\n\nNávrhy: {span.root.text[:-3] + "ísi"}')
+                elif token._.grammar_error_type == GRAMMAR_ERROR_TYPE_WRONG_ISI_SUFFIX:
+                    self.show_tooltip(event, f'Slovo by malo končiť na ýsi.\n\nNávrhy: {span.root.text[:-3] + "ýsi"}')
 
     # HIGHLIGHT SAME WORD ON MOUSE OVER
     def highlight_same_word(self, event):
@@ -967,6 +997,11 @@ class MainWindow:
         if span is not None and self.current_instrospection_token != span.root:
             if span.root._.is_word:
                 self.current_instrospection_token = span.root
+                dep_image = Image.open(BytesIO(cairosvg.svg2png(displacy.render(span.root.sent, minify=True))))
+                scaling_ratio = 200 / dep_image.width
+                dep_view = ImageTk.PhotoImage(dep_image.resize((200, math.ceil(dep_image.height*scaling_ratio))))
+                self.dep_image_holder.config(image=dep_view)
+                self.dep_image_holder.image = dep_view
                 thes_result = thesaurus.lookup(self.current_instrospection_token.lemma_)
                 morph = self.current_instrospection_token.morph.to_dict()
                 introspection_resut = f'Slovo: {self.current_instrospection_token}\n\n' \
@@ -1240,6 +1275,18 @@ class MainWindow:
         link.pack()
         link.bind("<Button-1>", lambda e: webbrowser.open(DOCUMENTATION_LINK))
 
+    def show_dep_image(self, event = None):
+        if self.current_instrospection_token is not None:
+            dep_window = tk.Toplevel(self.root)
+            dep_window.title("Rozbor vety")
+            dep_image = Image.open(BytesIO(cairosvg.svg2png(displacy.render(self.current_instrospection_token.sent, minify=True))))
+            scaling_ratio = 1000 / dep_image.width
+            dep_view = ImageTk.PhotoImage(dep_image.resize((1000, math.ceil(dep_image.height*scaling_ratio))))
+            image_holder = ttk.Label(dep_window, image=dep_view)
+            image_holder.image = dep_view
+            image_holder.pack(fill=tk.BOTH, expand=True)
+            self.configure_modal(dep_window, width=dep_view.width(), height=dep_view.height())
+
     def configure_modal(self, modal, width=600, height=400):
         modal.geometry("%dx%d" % (width, height))
         modal.resizable(False, False)
@@ -1247,8 +1294,8 @@ class MainWindow:
         screen_height = self.root.winfo_screenheight()
         x = screen_width / 2 - (width / 2)
         y = screen_height / 2 - (height / 2)
-
-        self.root.geometry("+%d+%d" % (x, y))
+        modal.geometry("+%d+%d" % (x, y))
+        modal.wait_visibility()
         modal.grab_set()
         modal.transient(self.root)
 

@@ -4,3 +4,4 @@ pillow~=10.3.0
 setuptools~=68.2.0
 fsspec~=2024.6.1
 pyenchant~=3.2.2
+CairoSVG~=2.7.1
