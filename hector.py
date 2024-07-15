@@ -31,12 +31,16 @@ import enchant
 import fsspec
 import cairosvg
 
+from src.const.colors import *
+from src.const.fonts import *
+from src.gui.splash_window import SplashWindow
+from src.utils import Utils
+
 # WE CAN MOVE OVER TO PYTHON SPLASH INSTEAD OF IMAGE NOW
 nativeSplashOpened = False
 # noinspection PyBroadException
 try:
     import pyi_splash
-
     pyi_splash.update_text('inicializujem ...')
     nativeSplashOpened = True
 except:
@@ -49,18 +53,6 @@ SPACY_MODEL_NAME_WITH_VERSION = f"{SPACY_MODEL_NAME}-{SPACY_MODEL_VERSION}"
 DOCUMENTATION_LINK = "https://github.com/MartinHlavna/hector"
 SPACY_MODEL_LINK = f"https://github.com/MartinHlavna/hector-spacy-model/releases/download/v.{SPACY_MODEL_VERSION}/{SPACY_MODEL_NAME_WITH_VERSION}.tar.gz"
 NLP_BATCH_SIZE = 8000
-
-# COLORS
-PRIMARY_BLUE = "#42659d"
-LIGHT_BLUE = "#bfd5e3"
-MID_BLUE = "#7ea6d7"
-LIGHT_WHITE = "#d7e6e1"
-TEXT_COLOR_WHITE = "#ffffff"
-TEXT_EDITOR_BG = "#E0E0E0"
-LONG_SENTENCE_HIGHLIGHT_COLOR_MID = "#ffe8a8"
-LONG_SENTENCE_HIGHLIGHT_COLOR_HIGH = "#d15f26"
-SEARCH_RESULT_HIGHLIGHT_COLOR = "yellow"
-CURRENT_SEARCH_RESULT_HIGHLIGHT_COLOR = "orange"
 
 # CONSTANTS
 # PREFIX FOR CLOSE WORD EDITOR TAGS
@@ -178,9 +170,6 @@ DEP_TAG_TRANSLATION = {
     "xcomp": "otvorený klauzálny doplnok"
 }
 
-# WE USE HELVETICA FONT
-HELVETICA_FONT_NAME = "Helvetica"
-BOLD_FONT = "bold"
 # LOCATION OF CONFIG
 if getattr(sys, 'frozen', False):
     # If the application is run as a bundle, the PyInstaller bootloader
@@ -239,14 +228,6 @@ default_config = {
     # ENABLE HIGHLIGHTING OF WORD THAT ARE REPEATED AT SAME SPOTS
     "enable_close_words": True,
 }
-
-
-def resource_path(relative_path):
-    try:
-        base_path = sys._MEIPASS
-    except Exception:
-        base_path = os.path.abspath(".")
-    return os.path.join(base_path, relative_path)
 
 
 # CUSTOM TOKENIZER THAT FOES NOT REMOVE HYPHENATED WORDS
@@ -526,7 +507,7 @@ class MainWindow:
                                    yscrollcommand=text_editor_scroll.set, background=TEXT_EDITOR_BG, borderwidth=0)
         self.text_editor.config(font=(HELVETICA_FONT_NAME, self.text_size))
         self.text_editor.pack(expand=1, fill=tk.BOTH, padx=5, pady=5)
-        image = Image.open(resource_path("images/hector-logo.png"))
+        image = Image.open(Utils.resource_path("images/hector-logo.png"))
         logo = ImageTk.PhotoImage(image.resize((EDITOR_LOGO_WIDTH, EDITOR_LOGO_HEIGHT)))
         self.logo_holder = ttk.Label(text_editor_frame, image=logo, background=TEXT_EDITOR_BG)
         self.logo_holder.image = logo
@@ -1278,45 +1259,10 @@ class MainWindow:
         modal.grab_set()
         modal.transient(self.root)
 
-# TODO: Move splash window to separate file
-# SPLASH SCREEN TO SHOW WHILE INITIALIZING MAIN APP
-class SplashWindow:
-    def __init__(self, r):
-        self.root = r
-        self.root.geometry("600x400")
-        screen_width = self.root.winfo_screenwidth()
-        screen_height = self.root.winfo_screenheight()
-        x = screen_width / 2 - 300
-        y = screen_height / 2 - 200
-
-        self.root.geometry("+%d+%d" % (x, y))
-        self.root.overrideredirect(True)
-        # MAIN FRAME
-        self.main_frame = tk.Frame(self.root, background=PRIMARY_BLUE)
-        self.main_frame.pack(expand=1, fill=tk.BOTH, side=tk.LEFT)
-        image = Image.open(resource_path("images/hector-logo.png"))
-        logo = ImageTk.PhotoImage(image.resize((300, 300)))
-
-        logo_holder = ttk.Label(self.main_frame, image=logo, background=PRIMARY_BLUE)
-        logo_holder.image = logo
-        logo_holder.pack()
-        self.status = tk.Label(self.main_frame, text="inicializujem...", background=PRIMARY_BLUE,
-                               font=(HELVETICA_FONT_NAME, 10), foreground="#ffffff")
-        self.status.pack()
-        # required to make window show before the program gets to the mainloop
-        self.root.update()
-
-    def close(self):
-        self.main_frame.destroy()
-
-    def update_status(self, text):
-        self.status.config(text=text)
-        self.root.update()
-
 
 root = ThemedTk(theme="clam")
 root.title("Hector")
-photo = tk.PhotoImage(file=resource_path('images/hector-icon.png'))
+photo = tk.PhotoImage(file=Utils.resource_path('images/hector-icon.png'))
 root.wm_iconphoto(True, photo)
 splash = SplashWindow(root)
 splash.update_status("sťahujem a inicializujem jazykový model...")
@@ -1324,7 +1270,7 @@ splash.update_status("sťahujem a inicializujem jazykový model...")
 if nativeSplashOpened:
     pyi_splash.close()
 # INITIALIZE NLP ENGINE
-spacy.util.set_data_path = resource_path('lib/site-packages/spacy/data')
+spacy.util.set_data_path = Utils.resource_path('lib/site-packages/spacy/data')
 if not os.path.isdir(DATA_DIRECTORY):
     os.mkdir(DATA_DIRECTORY)
 if not os.path.isdir(SPACY_MODELS_DIR):
