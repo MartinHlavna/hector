@@ -88,6 +88,7 @@ GRAMMAR_ERROR_TYPE_WRONG_YSI_SUFFIX = 'WRONG_YSI_SUFFIX'
 GRAMMAR_ERROR_TYPE_WRONG_I_SUFFIX = 'WRONG_I_SUFFIX'
 GRAMMAR_ERROR_TYPE_WRONG_ISI_SUFFIX = 'WRONG_ISI_SUFFIX'
 
+# TODO: Move to data file
 POS_TAG_TRANSLATIONS = {
     "ADJ": "prídavné meno",
     "ADP": "predložka",
@@ -248,29 +249,6 @@ def resource_path(relative_path):
     return os.path.join(base_path, relative_path)
 
 
-# CUSTOM THAT ADDS ALL EXTENSIONS IN SINGLE PASS OVER ALL TOKENS
-def word_detector(doc):
-    word_pattern = re.compile("\\w+")
-    words = []
-    unique_words = {}
-    for token in doc:
-        token._.is_word = re.match(word_pattern, token.lower_) is not None
-        if token._.is_word:
-            words.append(token)
-            unique_word = unique_words.get(token.text.lower(), None)
-            if unique_word is None:
-                unique_word = UniqueWord(token.text.lower())
-                unique_words[token.text.lower()] = unique_word
-            unique_word.occourences.append(token)
-    doc._.words = words
-    doc._.unique_words = unique_words
-    doc._.total_chars = len(doc.text)
-    doc._.total_words = len(words)
-    doc._.total_unique_words = len(unique_words)
-    doc._.total_pages = round(doc._.total_chars / 1800, 2)
-    return doc
-
-
 # CUSTOM TOKENIZER THAT FOES NOT REMOVE HYPHENATED WORDS
 def custom_tokenizer(nlp_pipeline):
     infixes = (
@@ -302,6 +280,7 @@ class UniqueWord:
         self.occourences = []
 
 
+# TODO: Move service to separate class
 class Service:
     # FUNCTION THAT LOADS CONFIG FROM FILE
     @staticmethod
@@ -341,6 +320,29 @@ class Service:
         nfkd_form = unicodedata.normalize('NFD', text)
         return ''.join([c for c in nfkd_form if not unicodedata.combining(c)])
 
+    # METHOD THAT ADDS ALL EXTENSION DATA IN SINGLE PASS OVER ALL TOKENS
+    @staticmethod
+    def fill_custom_data(doc: Doc):
+        word_pattern = re.compile("\\w+")
+        words = []
+        unique_words = {}
+        for token in doc:
+            token._.is_word = re.match(word_pattern, token.lower_) is not None
+            if token._.is_word:
+                words.append(token)
+                unique_word = unique_words.get(token.text.lower(), None)
+                if unique_word is None:
+                    unique_word = UniqueWord(token.text.lower())
+                    unique_words[token.text.lower()] = unique_word
+                unique_word.occourences.append(token)
+        doc._.words = words
+        doc._.unique_words = unique_words
+        doc._.total_chars = len(doc.text)
+        doc._.total_words = len(words)
+        doc._.total_unique_words = len(unique_words)
+        doc._.total_pages = round(doc._.total_chars / 1800, 2)
+        return doc
+
     @staticmethod
     def spellcheck(doc: Doc):
         for word in doc._.unique_words.items():
@@ -358,7 +360,7 @@ class Service:
             # founded -> subject
             {
                 "LEFT_ID": "target",
-                "REL_OP": ">>",
+                "REL_OP": ">",
                 "RIGHT_ID": "modifier",
                 "RIGHT_ATTRS": {"POS": {"IN": ["ADJ", "DET", "PRON"]}}
             },
@@ -372,7 +374,7 @@ class Service:
             # founded -> subject
             {
                 "LEFT_ID": "target",
-                "REL_OP": "<<",
+                "REL_OP": "<",
                 "RIGHT_ID": "modifier",
                 "RIGHT_ATTRS": {"POS": {"IN": ["ADJ", "DET", "PRON"]}}
             },
@@ -387,7 +389,11 @@ class Service:
                 continue
             if (doc[target].pos_ == "DET" or doc[target].pos_ == "PRON") and target_morph.get("Case") != "Nom":
                 continue
-            if doc[target].pos_ == "NOUN" and target_morph.get("Gender") != "Masc":
+            # KNOWN MISTAGS
+            # TODO: Maybe we can move these mistagged word to separate data files
+            if doc[target].lower_ == "ony":
+                continue
+            if doc[target].pos_ == "NOUN" and (target_morph.get("Gender") != "Masc" or target_morph.get("Case") != "Nom"):
                 continue
             modifiers = [doc[modifier]]
             # IF MODIFIER CONJUNTS ANY OTHER MODIFIERS WE NEED TO APPLY SAME RULE FOR ALL
@@ -415,42 +421,23 @@ class Service:
                     mod._.grammar_error_type = GRAMMAR_ERROR_TYPE_WRONG_ISI_SUFFIX
 
 
+# TODO: Move anything non gui related to service and separate backend and frontend logic
+# TODO: Move MainWindow to separate class
 # MAIN GUI WINDOW
 class MainWindow:
-    nlp: spacy = None
-
     def __init__(self, r, _nlp: spacy):
-        self.nlp = _nlp
         self.root = r
         r.overrideredirect(False)
         style = ttk.Style(self.root)
+        # CUSTOM SCROLLBAR
         style.configure("Vertical.TScrollbar", gripcount=0, troughcolor=PRIMARY_BLUE, bordercolor=PRIMARY_BLUE,
                         background=LIGHT_BLUE, lightcolor=LIGHT_BLUE, darkcolor=MID_BLUE)
 
-        # create new scrollbar layout
         style.layout('arrowless.Vertical.TScrollbar',
                      [('Vertical.Scrollbar.trough',
                        {'children': [('Vertical.Scrollbar.thumb',
                                       {'expand': '1', 'sticky': 'nswe'})],
                         'sticky': 'ns'})])
-        # TIMER FOR DEBOUNCING EDITOR CHANGE EVENT
-        self.analyze_text_debounce_timer = None
-        self.search_debounce_timer = None
-        self.search_matches = []
-        self.last_search = ''
-        self.highlighted_close_word = ''
-        self.last_match_index = 0
-        self.tooltip = None
-        self.doc = nlp('')
-        word_detector(self.doc)
-        self.current_instrospection_token = None
-        # EDITOR TEXT SIZE
-        self.text_size = 10
-        # DICTIONARY THAT HOLDS COLOR OF WORD TO PREVENT RECOLORING ON TYPING
-        self.close_word_colors = {}
-        # MAIN PROGRAM RUN
-        # LOAD CONFIG
-        self.config = Service.load_config()
         self.root.eval('tk::PlaceWindow . center')
         # OPEN WINDOW IN MAXIMIZED STATE
         # FOR WINDOWS AND MAC OS SET STATE ZOOMED
@@ -459,33 +446,51 @@ class MainWindow:
             self.root.state("zoomed")
         else:
             self.root.attributes('-zoomed', True)
-
+        self.nlp = _nlp
+        # TIMERS FOR DEBOUNCING CHANGE EVENTS
+        self.analyze_text_debounce_timer = None
+        self.search_debounce_timer = None
+        # SEARCH DATA
+        self.search_matches = []
+        self.last_search = ''
+        self.last_match_index = 0
+        # CLOSE WORD, THAT IS CURRENTLY HIGHLIGHTED
+        self.highlighted_close_word = ''
+        # TOOLTIP WINDOW
+        self.tooltip = None
+        # DEFAULT NLP DOCUMENT INITIALIZED ON EMPTY TEXT
+        self.doc = nlp('')
+        # TOKEN SELECTED IN LEFT BOTTOM INTOSPECTION WINDOW
+        self.current_instrospection_token = None
+        # EDITOR TEXT SIZE
+        self.text_size = 10
+        # DICTIONARY THAT HOLDS COLOR OF WORD TO PREVENT RECOLORING WHILE TYPING
+        self.close_word_colors = {}
+        # LOAD CONFIG
+        self.config = Service.load_config()
+        # INIT GUI
+        # TODO: Remove anything that does not have to be in self and move that var only to local
         # MAIN FRAME
         main_frame = tk.Frame(self.root)
         main_frame.pack(expand=1, fill=tk.BOTH, side=tk.LEFT)
-
         # LEFT SCROLLABLE SIDE PANEL WITH FREQUENT WORDS
         left_side_panel = tk.Frame(main_frame, width=300, relief=tk.FLAT, borderwidth=1, background=PRIMARY_BLUE)
         left_side_panel.pack(fill=tk.BOTH, side=tk.LEFT, expand=0)
-
         # RIGHT SCROLLABLE SIDE PANEL WITH FREQUENT WORDS
         right_side_panel = tk.Frame(main_frame, width=200, relief=tk.FLAT, borderwidth=1, background=PRIMARY_BLUE)
         right_side_panel.pack(fill=tk.BOTH, side=tk.RIGHT)
-
         # MIDDLE TEXT EDITOR WINDOW
         text_editor_frame = tk.Frame(main_frame, background=TEXT_EDITOR_BG, borderwidth=0)
         text_editor_frame.pack(expand=1, fill=tk.BOTH)
-
         text_editor_scroll_frame = tk.Frame(text_editor_frame, width=10, relief=tk.FLAT, background=PRIMARY_BLUE)
         text_editor_scroll_frame.pack(side=tk.RIGHT, fill=tk.Y)
         text_editor_scroll = AutoScrollbar(text_editor_scroll_frame, orient='vertical',
                                            style='arrowless.Vertical.TScrollbar', takefocus=False)
         text_editor_scroll.pack(side=tk.RIGHT, fill=tk.Y)
-
         # BOTTOM PANEL WITH TEXT SIZE
         self.bottom_panel = tk.Frame(text_editor_frame, background=MID_BLUE, height=20)
         self.bottom_panel.pack(fill=tk.BOTH, side=tk.BOTTOM)
-
+        # LEFT PANEL CONTENTS
         self.introspection_text = tk.Text(left_side_panel, highlightthickness=0, bd=0, wrap=tk.WORD, state=tk.DISABLED,
                                           width=30, background=PRIMARY_BLUE, foreground=TEXT_COLOR_WHITE, height=15,
                                           font=(HELVETICA_FONT_NAME, 9))
@@ -506,50 +511,27 @@ class MainWindow:
                  justify='left').pack()
         separator = ttk.Separator(left_side_panel, orient='horizontal')
         separator.pack(fill=tk.X, padx=10)
-
         left_side_panel_scroll_frame = tk.Frame(left_side_panel, width=10, relief=tk.FLAT, background=PRIMARY_BLUE)
         left_side_panel_scroll_frame.pack(side=tk.RIGHT, fill=tk.Y)
         left_side_frame_scroll = AutoScrollbar(left_side_panel_scroll_frame, orient='vertical',
                                                style='arrowless.Vertical.TScrollbar', takefocus=False)
         left_side_frame_scroll.pack(side=tk.RIGHT, fill=tk.Y)
-
         self.close_words_text = tk.Text(left_side_panel, highlightthickness=0, bd=0, wrap=tk.WORD, state=tk.DISABLED,
                                         width=20, background=PRIMARY_BLUE, foreground=TEXT_COLOR_WHITE,
                                         yscrollcommand=left_side_frame_scroll.set)
         self.close_words_text.pack(fill=tk.BOTH, expand=1, pady=10, padx=10)
-
         left_side_frame_scroll.config(command=self.close_words_text.yview)
-
+        # MIDDLE TEXT EDITOR CONTENTS
         self.text_editor = tk.Text(text_editor_frame, wrap=tk.WORD, relief=tk.FLAT, highlightthickness=0,
                                    yscrollcommand=text_editor_scroll.set, background=TEXT_EDITOR_BG, borderwidth=0)
         self.text_editor.config(font=(HELVETICA_FONT_NAME, self.text_size))
         self.text_editor.pack(expand=1, fill=tk.BOTH, padx=5, pady=5)
-
         image = Image.open(resource_path("images/hector-logo.png"))
         logo = ImageTk.PhotoImage(image.resize((EDITOR_LOGO_WIDTH, EDITOR_LOGO_HEIGHT)))
-
         self.logo_holder = ttk.Label(text_editor_frame, image=logo, background=TEXT_EDITOR_BG)
         self.logo_holder.image = logo
-
         text_editor_scroll.config(command=self.text_editor.yview)
-
-        # MOUSE AND KEYBOARD BINDINGS FOR TEXT EDITOR
-        self.text_editor.bind("<KeyRelease>", self.analyze_text_debounced)
-        self.text_editor.bind("<Button-1>", lambda e: root.after(0, self.introspect))
-        self.text_editor.bind("<Control-a>", self.select_all)
-        self.text_editor.bind("<Control-A>", self.select_all)
-        self.text_editor.bind("<Configure>", self.evaluate_logo_placement)
-        self.root.bind("<Control-F>", self.focus_search)
-        self.root.bind("<Control-f>", self.focus_search)
-        self.root.bind("<Control-e>", self.focus_editor)
-        self.root.bind("<Control-E>", self.focus_editor)
-
-        # MOUSE WHEEL BINDING ON ROOT WINDOW
-        # Windows OS
-        self.root.bind("<MouseWheel>", self.change_text_size)
-        # Linux OS
-        self.root.bind("<Button-4>", self.change_text_size)
-        self.root.bind("<Button-5>", self.change_text_size)
+        # RIGHT PANEL CONTENTS
         tk.Label(right_side_panel, pady=10, background=PRIMARY_BLUE, foreground=TEXT_COLOR_WHITE,
                  text="Hľadať", font=(HELVETICA_FONT_NAME, TEXT_SIZE_SECTION_HEADER),
                  anchor='n', justify='left').pack(fill=tk.X)
@@ -571,65 +553,54 @@ class MainWindow:
         tk.Label(right_side_panel, pady=10, background=PRIMARY_BLUE, foreground=TEXT_COLOR_WHITE,
                  text="Často použité slová", font=(HELVETICA_FONT_NAME, TEXT_SIZE_SECTION_HEADER),
                  anchor='n', justify='left').pack()
-
         ttk.Separator(right_side_panel, orient='horizontal').pack(fill=tk.X, padx=10)
         right_side_panel_scroll_frame = tk.Frame(right_side_panel, width=10, relief=tk.FLAT, background=PRIMARY_BLUE)
         right_side_panel_scroll_frame.pack(side=tk.RIGHT, fill=tk.Y)
         right_side_frame_scroll = AutoScrollbar(right_side_panel_scroll_frame, orient='vertical',
                                                 style='arrowless.Vertical.TScrollbar', takefocus=False)
         right_side_frame_scroll.pack(side=tk.RIGHT, fill=tk.Y)
-
         self.word_freq_text = tk.Text(right_side_panel, highlightthickness=0, bd=0, wrap=tk.WORD, state=tk.DISABLED,
                                       width=20, background=PRIMARY_BLUE, foreground=TEXT_COLOR_WHITE,
                                       yscrollcommand=right_side_frame_scroll.set)
         self.word_freq_text.pack(fill=tk.BOTH, expand=1, pady=10, padx=10)
-
         right_side_frame_scroll.config(command=self.word_freq_text.yview)
-
+        # BOTTOM PANEL CONTENTS
         char_count_info_label = tk.Label(self.bottom_panel, text="Počet znakov s medzerami:", anchor='sw',
                                          justify='left', background=MID_BLUE, foreground=TEXT_COLOR_WHITE,
                                          font=(HELVETICA_FONT_NAME, TEXT_SIZE_BOTTOM_BAR))
         char_count_info_label.pack(side=tk.LEFT, padx=(5, 0), pady=5)
-
         self.char_count_info_value = tk.Label(self.bottom_panel, text="0", anchor='sw', justify='left',
                                               background=MID_BLUE, foreground=TEXT_COLOR_WHITE,
                                               font=(HELVETICA_FONT_NAME, TEXT_SIZE_BOTTOM_BAR))
         self.char_count_info_value.pack(side=tk.LEFT, padx=0, pady=5)
-
         tk.Label(self.bottom_panel, text="Počet slov:", anchor='sw', justify='left',
                  background=MID_BLUE, foreground=TEXT_COLOR_WHITE,
                  font=(HELVETICA_FONT_NAME, TEXT_SIZE_BOTTOM_BAR)).pack(
             side=tk.LEFT, padx=(5, 0), pady=5
         )
-
         self.word_count_info_value = tk.Label(self.bottom_panel, text="0", anchor='sw', justify='left',
                                               background=MID_BLUE, foreground=TEXT_COLOR_WHITE,
                                               font=(HELVETICA_FONT_NAME, TEXT_SIZE_BOTTOM_BAR))
         self.word_count_info_value.pack(side=tk.LEFT, padx=0, pady=5)
-
         tk.Label(self.bottom_panel, text="Počet normostrán:", anchor='sw', justify='left',
                  background=MID_BLUE, foreground=TEXT_COLOR_WHITE,
                  font=(HELVETICA_FONT_NAME, TEXT_SIZE_BOTTOM_BAR)).pack(
             side=tk.LEFT, padx=(5, 0), pady=5
         )
-
         self.page_count_info_value = tk.Label(self.bottom_panel, text="0", anchor='sw', justify='left',
                                               background=MID_BLUE, foreground=TEXT_COLOR_WHITE,
                                               font=(HELVETICA_FONT_NAME, TEXT_SIZE_BOTTOM_BAR))
         self.page_count_info_value.pack(side=tk.LEFT, padx=0, pady=5)
-
         tk.Label(self.bottom_panel, text="Štylistická zložitosť textu:", anchor='sw', justify='left',
                  background=MID_BLUE, foreground=TEXT_COLOR_WHITE,
                  font=(HELVETICA_FONT_NAME, TEXT_SIZE_BOTTOM_BAR)).pack(
             side=tk.LEFT, padx=(5, 0), pady=5
         )
-
         self.readability_value = tk.Label(self.bottom_panel, text=f"0 / {READABILITY_MAX_VALUE}", anchor='sw',
                                           justify='left',
                                           background=MID_BLUE, foreground=TEXT_COLOR_WHITE,
                                           font=(HELVETICA_FONT_NAME, TEXT_SIZE_BOTTOM_BAR))
         self.readability_value.pack(side=tk.LEFT, padx=0, pady=5)
-
         self.editor_text_size_input = ttk.Spinbox(self.bottom_panel, from_=1, to=30, width=10,
                                                   font=(HELVETICA_FONT_NAME, TEXT_SIZE_BOTTOM_BAR),
                                                   style='info.TSpinbox', takefocus=False,
@@ -642,30 +613,41 @@ class MainWindow:
                  font=(HELVETICA_FONT_NAME, TEXT_SIZE_BOTTOM_BAR)).pack(
             side=tk.RIGHT, padx=(5, 0), pady=5
         )
-
         # TOP MENU
         self.menu_bar = tk.Menu(self.root, background=PRIMARY_BLUE, foreground=TEXT_COLOR_WHITE, border=1)
         self.root.config(menu=self.menu_bar)
-
         # FILE MENU
         self.file_menu = tk.Menu(self.menu_bar, tearoff=0, background=PRIMARY_BLUE, foreground=TEXT_COLOR_WHITE,
                                  font=(HELVETICA_FONT_NAME, TEXT_SIZE_MENU))
         self.file_menu.add_command(label="Načítať súbor", command=self.load_file)
         self.file_menu.add_command(label="Uložiť súbor", command=self.save_file)
         self.menu_bar.add_cascade(label="Súbor", menu=self.file_menu)
-
         # SETTINGS MENU
         self.settings_menu = tk.Menu(self.menu_bar, tearoff=0, background=PRIMARY_BLUE, foreground=TEXT_COLOR_WHITE,
                                      font=(HELVETICA_FONT_NAME, TEXT_SIZE_MENU))
         self.settings_menu.add_command(label="Parametre analýzy", command=self.show_settings)
         self.menu_bar.add_cascade(label="Nastavenia", menu=self.settings_menu)
-
         # HELP MENU
         self.help_menu = tk.Menu(self.menu_bar, tearoff=0, background=PRIMARY_BLUE, foreground=TEXT_COLOR_WHITE,
                                  font=(HELVETICA_FONT_NAME, TEXT_SIZE_MENU))
         self.help_menu.add_command(label="O programe", command=self.show_about)
         self.help_menu.add_command(label="Dokumentácia", command=lambda: webbrowser.open(DOCUMENTATION_LINK))
         self.menu_bar.add_cascade(label="Pomoc", menu=self.help_menu)
+        # MOUSE AND KEYBOARD BINDINGS
+        self.text_editor.bind("<KeyRelease>", self.analyze_text_debounced)
+        self.text_editor.bind("<Button-1>", lambda e: root.after(0, self.introspect))
+        self.text_editor.bind("<Control-a>", self.select_all)
+        self.text_editor.bind("<Control-A>", self.select_all)
+        self.text_editor.bind("<Configure>", self.evaluate_logo_placement)
+        self.root.bind("<Control-F>", self.focus_search)
+        self.root.bind("<Control-f>", self.focus_search)
+        self.root.bind("<Control-e>", self.focus_editor)
+        self.root.bind("<Control-E>", self.focus_editor)
+        # WINDOWS SPECIFIC
+        self.root.bind("<MouseWheel>", self.change_text_size)
+        # LINUX SPECIFIC
+        self.root.bind("<Button-4>", self.change_text_size)
+        self.root.bind("<Button-5>", self.change_text_size)
         root.after(100, self.evaluate_logo_placement)
 
     # START MAIN LOOP
@@ -730,6 +712,7 @@ class MainWindow:
         )
         MainWindow.set_text(self.word_freq_text, frequent_words_text)
 
+    # TODO: MAYBE LOGIC SHOULD BE HANDLED IN SERVICE AND ADDED AS EXTENSION TO Sent SPAN
     # HIGHLIGHT LONG SENTENCES
     def highlight_long_sentences(self, doc: Doc):
         if not self.config["enable_long_sentences"]:
@@ -737,7 +720,6 @@ class MainWindow:
         for sentence in doc.sents:
             highlight_start = sentence.start_char
             highlight_end = sentence.end_char
-
             words = [word for word in sentence if
                      word._.is_word and len(word.text) >= self.config["long_sentence_min_word_length"]]
             if len(words) > self.config["long_sentence_words_mid"]:
@@ -873,16 +855,13 @@ class MainWindow:
     def show_tooltip(self, event, text):
         if self.tooltip:
             self.tooltip.destroy()
-
         # Get the position of the mouse
         x = event.x_root + 10
         y = event.y_root + 10
-
         # Create a Toplevel window
         self.tooltip = tk.Toplevel(self.root)
         self.tooltip.wm_overrideredirect(True)
         self.tooltip.wm_geometry(f"+{x}+{y}")
-
         # Add content to the tooltip
         label = tk.Label(self.tooltip, text=f"{text}", background=LIGHT_BLUE, relief="solid", borderwidth=1,
                          justify="left", padx=5, pady=5)
@@ -930,7 +909,7 @@ class MainWindow:
         # RUN ANALYSIS
         # TODO: Evaluate if we can run partial NLP only on changed parts
         self.doc = Doc.from_docs(list(nlp.pipe([text], batch_size=NLP_BATCH_SIZE)))
-        word_detector(self.doc)
+        Service.fill_custom_data(self.doc)
         # CLEAR TAGS
         for tag in self.text_editor.tag_names():
             self.text_editor.tag_delete(tag)
@@ -1299,7 +1278,7 @@ class MainWindow:
         modal.grab_set()
         modal.transient(self.root)
 
-
+# TODO: Move splash window to separate file
 # SPLASH SCREEN TO SHOW WHILE INITIALIZING MAIN APP
 class SplashWindow:
     def __init__(self, r):
@@ -1390,6 +1369,9 @@ splash.update_status("inicializujem textový processor...")
 splash.close()
 main_window = MainWindow(root, nlp)
 main_window.start_main_loop()
+
+# TODO LEVEL A (production features):
+# Word frequencies and close words should be able to work on lemmas
 
 # TODO LEVEL B (nice to have features): Consider adding:
 # Heatmap?
