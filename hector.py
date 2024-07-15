@@ -1,4 +1,3 @@
-import json
 import math
 import os
 import platform
@@ -8,31 +7,31 @@ import shutil
 import sys
 import tarfile
 import tkinter as tk
-import unicodedata
 import urllib
 import webbrowser
 from io import BytesIO
 from tkinter import filedialog, ttk
 
+import cairosvg
+import enchant
+import fsspec
 import spacy
-from spacy import displacy
 from PIL import ImageTk, Image
+from spacy import displacy
 from spacy.lang.char_classes import LIST_ELLIPSES, LIST_ICONS, ALPHA_LOWER, ALPHA_UPPER, ALPHA
 from spacy.lang.sl.punctuation import CONCAT_QUOTES
-from spacy.matcher import DependencyMatcher
 from spacy.tokenizer import Tokenizer
 from spacy.tokens import Doc
 from spacy.tokens.token import Token
 from spacy.util import compile_infix_regex
 from ttkthemes import ThemedTk
-from pythes import PyThes
-from autoscrollbar import AutoScrollbar
-import enchant
-import fsspec
-import cairosvg
 
+from autoscrollbar import AutoScrollbar
+from pythes import PyThes
+from src.backend.service import Service
 from src.const.colors import *
 from src.const.fonts import *
+from src.const.grammar_error_types import *
 from src.gui.splash_window import SplashWindow
 from src.utils import Utils
 
@@ -41,6 +40,7 @@ nativeSplashOpened = False
 # noinspection PyBroadException
 try:
     import pyi_splash
+
     pyi_splash.update_text('inicializujem ...')
     nativeSplashOpened = True
 except:
@@ -72,13 +72,6 @@ EDITOR_LOGO_WIDTH = 300
 TEXT_SIZE_SECTION_HEADER = 12
 TEXT_SIZE_MENU = 10
 TEXT_SIZE_BOTTOM_BAR = 10
-
-# GRAMMAR_ERROR_TYPES
-GRAMMAR_ERROR_TYPE_MISSPELLED_WORD = 'MISSPELLED_WORD'
-GRAMMAR_ERROR_TYPE_WRONG_Y_SUFFIX = 'WRONG_Y_SUFFIX'
-GRAMMAR_ERROR_TYPE_WRONG_YSI_SUFFIX = 'WRONG_YSI_SUFFIX'
-GRAMMAR_ERROR_TYPE_WRONG_I_SUFFIX = 'WRONG_I_SUFFIX'
-GRAMMAR_ERROR_TYPE_WRONG_ISI_SUFFIX = 'WRONG_ISI_SUFFIX'
 
 # TODO: Move to data file
 POS_TAG_TRANSLATIONS = {
@@ -170,7 +163,6 @@ DEP_TAG_TRANSLATION = {
     "xcomp": "otvorený klauzálny doplnok"
 }
 
-# LOCATION OF CONFIG
 if getattr(sys, 'frozen', False):
     # If the application is run as a bundle, the PyInstaller bootloader
     # extends the sys module by a flag frozen=True
@@ -178,13 +170,14 @@ if getattr(sys, 'frozen', False):
 else:
     WORKING_DIRECTORY = os.path.dirname(os.path.abspath(__file__))
 
+# LOCATION OF CONFIG
 DATA_DIRECTORY = os.path.join(WORKING_DIRECTORY, "data")
 SPACY_MODELS_DIR = os.path.join(DATA_DIRECTORY, "spacy-models")
 SK_SPACY_MODEL_DIR = os.path.join(SPACY_MODELS_DIR, "sk")
 DICTIONARY_DIR = os.path.join(DATA_DIRECTORY, "dictionary")
 SK_DICTIONARY_DIR = os.path.join(DICTIONARY_DIR, "sk-libreoffice")
 SK_SPELL_DICTIONARY_DIR = os.path.join(DICTIONARY_DIR, "sk-skspell")
-CONFIG_FILE = os.path.join(DATA_DIRECTORY, "config.json")
+CONFIG_FILE_PATH = os.path.join(DATA_DIRECTORY, "config.json")
 
 # COLOR PALLETE FOR CLOSE WORDS
 dark_colors = [
@@ -195,39 +188,6 @@ dark_colors = [
     '#FF4500',  # Orange Red
     '#CD5C5C',  # Indian Red
 ]
-
-# DEFAULT CONFIGURATION VALUES
-# SANE DEFAULTS FOR CREATIVE WRITTING
-default_config = {
-    # MINIMAL LENGTH OF WORD FOR IT TO APPEAR IN FREQUENT WORDS SECTION
-    "repeated_words_min_word_length": 3,
-    # MINIMAL NUMBER OF WORD REPETITIONS FOR IT TO APPEAR IN REPEATED WORDS SECTION
-    "repeated_words_min_word_frequency": 2,
-    # SENTENCE IS CONSIDERED MID LONG IF IT HAS MORE WORDS THAN THIS CONFIG
-    "long_sentence_words_mid": 8,
-    # SENTENCE IS CONSIDERED HIGH LONG IF IT HAS MORE WORDS THAN THIS CONFIG
-    "long_sentence_words_high": 16,
-    # WORD IS COUNTED TO SENTENCE LENGTH ONLY IF IT HAS MORE MORE CHARS THAN THIS CONFIG
-    "long_sentence_min_word_length": 5,
-    # MINIMAL LENGTH OF WORD FOR IT TO BE HIGHLIGHTED IF VIA CLOSE_WORDS FUNCTIONALITY
-    "close_words_min_word_length": 3,
-    # MINIMAL DISTANCE BETWEEN REPEATED WORDS
-    "close_words_min_distance_between_words": 100,
-    # MINIMAL FREQUENCE FOR REPEATED WORD TO BE HIGHLIGHTED
-    "close_words_min_frequency": 3,
-    # ENABLE FREQUENT WORDS SIDE PANEL
-    "enable_frequent_words": True,
-    # ENADBLE HIGHLIGHTING OF LONG SENTENCES
-    "enable_long_sentences": True,
-    # ENABLE HIGHLIGHTING OF REPEATED SPACES
-    "enable_multiple_spaces": True,
-    # ENABLE HIGHLIGHTING OF REPEATED PUNCTUATION  (eg. !! ?? ..)
-    "enable_multiple_punctuation": True,
-    # ENABLE HIGHLIGHTING OF TRAILING SPACES AT THE END OF PARAGRAPH
-    "enable_trailing_spaces": True,
-    # ENABLE HIGHLIGHTING OF WORD THAT ARE REPEATED AT SAME SPOTS
-    "enable_close_words": True,
-}
 
 
 # CUSTOM TOKENIZER THAT FOES NOT REMOVE HYPHENATED WORDS
@@ -251,155 +211,6 @@ def custom_tokenizer(nlp_pipeline):
                      infix_finditer=infix_re.finditer,
                      token_match=nlp_pipeline.tokenizer.token_match,
                      rules=nlp_pipeline.Defaults.tokenizer_exceptions)
-
-
-# CLASS DEFINITIONS
-# UNIQUE WORD WITH IT's OCCOURENCES
-class UniqueWord:
-    def __init__(self, text):
-        self.text = text
-        self.occourences = []
-
-
-# TODO: Move service to separate class
-class Service:
-    # FUNCTION THAT LOADS CONFIG FROM FILE
-    @staticmethod
-    def load_config():
-        if os.path.exists(CONFIG_FILE):
-            with open(CONFIG_FILE, 'r') as file:
-                c = json.load(file)
-                # CHECK IF ALL CONFIG_KEYS ARE PRESENT
-                # PROVIDE MISSING KEYS FROM DEFAULTS
-                for key, value in default_config.items():
-                    if key not in c:
-                        c[key] = value
-                return c
-        else:
-            return default_config
-
-    # FUNCTION THAT SAVES CONFIG TO FILE
-    @staticmethod
-    def save_config(c):
-        with open(CONFIG_FILE, 'w') as file:
-            json.dump(c, file, indent=4)
-
-    # FUNCTION THAT CALCULATE READABILITY INDICES
-    @staticmethod
-    def evaluate_readability(doc: Doc):
-        if doc._.total_words <= 1:
-            return 0
-        type_to_token_ratio = doc._.total_words / doc._.total_unique_words
-        average_sentence_length = doc._.total_words / sum(1 for _ in doc.sents)
-        average_word_length = doc._.total_chars / doc._.total_words / 2
-        mistrik_index = 50 - ((average_sentence_length * average_word_length) / type_to_token_ratio)
-        return 50 - max(0.0, round(mistrik_index, 0))
-
-    # METHOD THAT REMOVES ACCENTS FROM STRING
-    @staticmethod
-    def remove_accents(text):
-        nfkd_form = unicodedata.normalize('NFD', text)
-        return ''.join([c for c in nfkd_form if not unicodedata.combining(c)])
-
-    # METHOD THAT ADDS ALL EXTENSION DATA IN SINGLE PASS OVER ALL TOKENS
-    @staticmethod
-    def fill_custom_data(doc: Doc):
-        word_pattern = re.compile("\\w+")
-        words = []
-        unique_words = {}
-        for token in doc:
-            token._.is_word = re.match(word_pattern, token.lower_) is not None
-            if token._.is_word:
-                words.append(token)
-                unique_word = unique_words.get(token.text.lower(), None)
-                if unique_word is None:
-                    unique_word = UniqueWord(token.text.lower())
-                    unique_words[token.text.lower()] = unique_word
-                unique_word.occourences.append(token)
-        doc._.words = words
-        doc._.unique_words = unique_words
-        doc._.total_chars = len(doc.text)
-        doc._.total_words = len(words)
-        doc._.total_unique_words = len(unique_words)
-        doc._.total_pages = round(doc._.total_chars / 1800, 2)
-        return doc
-
-    @staticmethod
-    def spellcheck(doc: Doc):
-        for word in doc._.unique_words.items():
-            for token in word[1].occourences:
-                if token._.is_word:
-                    if not spellcheck_dictionary.check(token.text):
-                        token._.has_grammar_error = True
-                        token._.grammar_error_type = GRAMMAR_ERROR_TYPE_MISSPELLED_WORD
-        # PATTERN TO FIND ALL ADJECTIVE / DETERMINER / PRONOUN -> NOUN PAIRS
-        pattern1 = [
-            {
-                "RIGHT_ID": "target",
-                "RIGHT_ATTRS": {"POS": {"IN": ["NOUN", "DET", "PRON"]}}
-            },
-            # founded -> subject
-            {
-                "LEFT_ID": "target",
-                "REL_OP": ">",
-                "RIGHT_ID": "modifier",
-                "RIGHT_ATTRS": {"POS": {"IN": ["ADJ", "DET", "PRON"]}}
-            },
-        ]
-
-        pattern2 = [
-            {
-                "RIGHT_ID": "target",
-                "RIGHT_ATTRS": {"POS": {"IN": ["NOUN", "DET", "PRON"]}}
-            },
-            # founded -> subject
-            {
-                "LEFT_ID": "target",
-                "REL_OP": "<",
-                "RIGHT_ID": "modifier",
-                "RIGHT_ATTRS": {"POS": {"IN": ["ADJ", "DET", "PRON"]}}
-            },
-        ]
-
-        matcher = DependencyMatcher(nlp.vocab)
-        matcher.add("PATTERN_1", [pattern1])
-        matcher.add("PATTERN_2", [pattern2])
-        for match_id, (target, modifier) in matcher(doc):
-            target_morph = doc[target].morph.to_dict()
-            if not doc[target]._.is_word or not doc[modifier]._.is_word:
-                continue
-            if (doc[target].pos_ == "DET" or doc[target].pos_ == "PRON") and target_morph.get("Case") != "Nom":
-                continue
-            # KNOWN MISTAGS
-            # TODO: Maybe we can move these mistagged word to separate data files
-            if doc[target].lower_ == "ony":
-                continue
-            if doc[target].pos_ == "NOUN" and (target_morph.get("Gender") != "Masc" or target_morph.get("Case") != "Nom"):
-                continue
-            modifiers = [doc[modifier]]
-            # IF MODIFIER CONJUNTS ANY OTHER MODIFIERS WE NEED TO APPLY SAME RULE FOR ALL
-            if doc[modifier].conjuncts is not None:
-                for mod in doc[modifier].conjuncts:
-                    modifiers.append(mod)
-            # IF MODIFIER RELATES TO ANY DET, WE NEED TO APPLY SAME RULE FOR ALL
-            for child in doc[modifier].children:
-                if child.dep_ == "det":
-                    modifiers.append(child)
-            for mod in modifiers:
-                modifier_morph = mod.morph.to_dict()
-                print(mod, doc[target])
-                if target_morph.get("Number") == "Plur" and mod.lower_.endswith("ý"):
-                    mod._.has_grammar_error = True
-                    mod._.grammar_error_type = GRAMMAR_ERROR_TYPE_WRONG_Y_SUFFIX
-                elif target_morph.get("Number") == "Plur" and mod.lower_.endswith("ýsi"):
-                    mod._.has_grammar_error = True
-                    mod._.grammar_error_type = GRAMMAR_ERROR_TYPE_WRONG_YSI_SUFFIX
-                elif target_morph.get("Number") == "Sing" and mod.lower_.endswith("í") and modifier_morph.get("Degree") == "Pos":
-                    mod._.has_grammar_error = True
-                    mod._.grammar_error_type = GRAMMAR_ERROR_TYPE_WRONG_I_SUFFIX
-                elif target_morph.get("Number") == "Sing" and mod.lower_.endswith("ísi") and modifier_morph.get("Degree") == "Pos":
-                    mod._.has_grammar_error = True
-                    mod._.grammar_error_type = GRAMMAR_ERROR_TYPE_WRONG_ISI_SUFFIX
 
 
 # TODO: Move anything non gui related to service and separate backend and frontend logic
@@ -448,7 +259,7 @@ class MainWindow:
         # DICTIONARY THAT HOLDS COLOR OF WORD TO PREVENT RECOLORING WHILE TYPING
         self.close_word_colors = {}
         # LOAD CONFIG
-        self.config = Service.load_config()
+        self.config = Service.load_config(CONFIG_FILE_PATH)
         # INIT GUI
         # TODO: Remove anything that does not have to be in self and move that var only to local
         # MAIN FRAME
@@ -959,7 +770,7 @@ class MainWindow:
                 self.current_instrospection_token = span.root
                 dep_image = Image.open(BytesIO(cairosvg.svg2png(displacy.render(span.root.sent, minify=True))))
                 scaling_ratio = 200 / dep_image.width
-                dep_view = ImageTk.PhotoImage(dep_image.resize((200, math.ceil(dep_image.height*scaling_ratio))))
+                dep_view = ImageTk.PhotoImage(dep_image.resize((200, math.ceil(dep_image.height * scaling_ratio))))
                 self.dep_image_holder.config(image=dep_view)
                 self.dep_image_holder.image = dep_view
                 thes_result = thesaurus.lookup(self.current_instrospection_token.lemma_)
@@ -1063,7 +874,7 @@ class MainWindow:
 
     # RUN SPELLCHECK
     def run_spellcheck(self):
-        Service.spellcheck(self.doc)
+        Service.spellcheck(spellcheck_dictionary, self.doc)
         for word in self.doc._.words:
             if word._.has_grammar_error:
                 start_index = f"1.0 + {word.idx} chars"
@@ -1093,7 +904,7 @@ class MainWindow:
                 close_words_min_distance_between_words_entry.get())
             self.config["close_words_min_frequency"] = int(close_words_min_frequency_entry.get())
             self.config["enable_close_words"] = close_words_var.get()
-            Service.save_config(self.config)
+            Service.save_config(self.config, CONFIG_FILE_PATH)
             self.analyze_text(True)  # Reanalyze text after saving settings
             settings_window.destroy()
 
@@ -1235,13 +1046,14 @@ class MainWindow:
         link.pack()
         link.bind("<Button-1>", lambda e: webbrowser.open(DOCUMENTATION_LINK))
 
-    def show_dep_image(self, event = None):
+    def show_dep_image(self, event=None):
         if self.current_instrospection_token is not None:
             dep_window = tk.Toplevel(self.root)
             dep_window.title("Rozbor vety")
-            dep_image = Image.open(BytesIO(cairosvg.svg2png(displacy.render(self.current_instrospection_token.sent, minify=True))))
+            dep_image = Image.open(
+                BytesIO(cairosvg.svg2png(displacy.render(self.current_instrospection_token.sent, minify=True))))
             scaling_ratio = 1000 / dep_image.width
-            dep_view = ImageTk.PhotoImage(dep_image.resize((1000, math.ceil(dep_image.height*scaling_ratio))))
+            dep_view = ImageTk.PhotoImage(dep_image.resize((1000, math.ceil(dep_image.height * scaling_ratio))))
             image_holder = ttk.Label(dep_window, image=dep_view)
             image_holder.image = dep_view
             image_holder.pack(fill=tk.BOTH, expand=True)
