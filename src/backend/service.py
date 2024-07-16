@@ -10,6 +10,7 @@ from spacy.tokens import Doc
 
 from src.backend.unique_word import UniqueWord
 from src.const.grammar_error_types import *
+from src.const.values import *
 
 # DEFAULT CONFIGURATION VALUES
 # SANE DEFAULTS FOR CREATIVE WRITTING
@@ -76,8 +77,8 @@ class Service:
         type_to_token_ratio = doc._.total_words / doc._.total_unique_words
         average_sentence_length = doc._.total_words / sum(1 for _ in doc.sents)
         average_word_length = doc._.total_chars / doc._.total_words / 2
-        mistrik_index = 50 - ((average_sentence_length * average_word_length) / type_to_token_ratio)
-        return 50 - max(0.0, round(mistrik_index, 0))
+        mistrik_index = READABILITY_MAX_VALUE - ((average_sentence_length * average_word_length) / type_to_token_ratio)
+        return READABILITY_MAX_VALUE - max(0.0, round(mistrik_index, 0))
 
     # METHOD THAT REMOVES ACCENTS FROM STRING
     @staticmethod
