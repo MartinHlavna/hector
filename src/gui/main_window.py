@@ -121,7 +121,6 @@ DEP_TAG_TRANSLATION = {
 
 
 # TODO: Move anything non gui related to service and separate backend and frontend logic
-# TODO: Move MainWindow to separate class
 # MAIN GUI WINDOW
 class MainWindow:
     def __init__(self, r, _nlp: spacy, spellcheck_dictionary: Dict, thesaurus: PyThes):
