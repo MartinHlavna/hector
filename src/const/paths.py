@@ -1,13 +1,26 @@
 import os
 import sys
-
-if getattr(sys, 'frozen', False):
+WORKING_DIRECTORY = '.'
+RUN_DIRECTORY = '.'
+if "NUITKA_ONEFILE_PARENT" in os.environ:
+    # If the application is compiled using nuitka it sets enviroment value
+    WORKING_DIRECTORY = os.path.dirname(sys.argv[0])
+    RUN_DIRECTORY = os.path.dirname(sys.executable)
+    print('app is compiled')
+elif getattr(sys, 'frozen', False):
     # If the application is run as a bundle, the PyInstaller bootloader
     # extends the sys module by a flag frozen=True
     WORKING_DIRECTORY = os.path.dirname(sys.executable)
+    # noinspection PyUnresolvedReferences
+    RUN_DIRECTORY = sys._MEIPASS
+    print('app is frozen')
 else:
+    print('app is running from source')
     WORKING_DIRECTORY = os.getcwd()
+    RUN_DIRECTORY = os.getcwd()
 
+print(WORKING_DIRECTORY)
+print(RUN_DIRECTORY)
 # LOCATION OF CONFIG
 DATA_DIRECTORY = os.path.join(WORKING_DIRECTORY, "data")
 SPACY_MODELS_DIR = os.path.join(DATA_DIRECTORY, "spacy-models")

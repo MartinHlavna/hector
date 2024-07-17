@@ -3,9 +3,9 @@ import tarfile
 import tkinter as tk
 import urllib
 
-import enchant
 import fsspec
 import spacy
+import hunspell
 from spacy.lang.char_classes import LIST_ELLIPSES, LIST_ICONS, ALPHA_LOWER, ALPHA_UPPER, ALPHA
 from spacy.lang.sl.punctuation import CONCAT_QUOTES
 from spacy.tokenizer import Tokenizer
@@ -105,7 +105,7 @@ if not os.path.isdir(SK_DICTIONARY_DIR):
     fs.get(fs.ls("sk_SK"), SK_DICTIONARY_DIR, recursive=True)
     fs = fsspec.filesystem("github", org="sk-spell", repo="hunspell-sk")
     fs.get(fs.ls("/"), SK_SPELL_DICTIONARY_DIR, recursive=True)
-spellcheck_dictionary = enchant.Dict("sk_SK")
+spellcheck_dictionary = hunspell.HunSpell(os.path.join(SK_SPELL_DICTIONARY_DIR, "sk_SK.dic"), os.path.join(SK_SPELL_DICTIONARY_DIR, "sk_SK.aff"))
 thesaurus = PyThes(os.path.join(SK_DICTIONARY_DIR, "th_sk_SK_v2.dat"))
 splash.update_status("inicializujem textový processor...")
 splash.close()

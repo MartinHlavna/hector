@@ -1,3 +1,4 @@
+import io
 import math
 import platform
 import random
@@ -7,12 +8,14 @@ import webbrowser
 from io import BytesIO
 from tkinter import filedialog, ttk
 
-import cairosvg
+import hunspell
 import spacy
 from PIL import ImageTk, Image
-from enchant import Dict
+from reportlab.graphics import renderPM
 from spacy import displacy
 from spacy.tokens import Doc
+import svglib
+from svglib.svglib import svg2rlg
 
 from autoscrollbar import AutoScrollbar
 from pythes import PyThes
@@ -123,7 +126,7 @@ DEP_TAG_TRANSLATION = {
 # TODO: Move anything non gui related to service and separate backend and frontend logic
 # MAIN GUI WINDOW
 class MainWindow:
-    def __init__(self, r, _nlp: spacy, spellcheck_dictionary: Dict, thesaurus: PyThes):
+    def __init__(self, r, _nlp: spacy, spellcheck_dictionary: hunspell.HunSpell, thesaurus: PyThes):
         self.root = r
         r.overrideredirect(False)
         style = ttk.Style(self.root)
@@ -676,7 +679,8 @@ class MainWindow:
         if span is not None and self.current_instrospection_token != span.root:
             if span.root._.is_word:
                 self.current_instrospection_token = span.root
-                dep_image = Image.open(BytesIO(cairosvg.svg2png(displacy.render(span.root.sent, minify=True))))
+                rlg = svg2rlg(io.StringIO(displacy.render(span.root.sent, minify=True)))
+                dep_image = renderPM.drawToPIL(rlg)
                 scaling_ratio = 200 / dep_image.width
                 dep_view = ImageTk.PhotoImage(dep_image.resize((200, math.ceil(dep_image.height * scaling_ratio))))
                 self.dep_image_holder.config(image=dep_view)
@@ -958,8 +962,8 @@ class MainWindow:
         if self.current_instrospection_token is not None:
             dep_window = tk.Toplevel(self.root)
             dep_window.title("Rozbor vety")
-            dep_image = Image.open(
-                BytesIO(cairosvg.svg2png(displacy.render(self.current_instrospection_token.sent, minify=True))))
+            rlg = svg2rlg(io.StringIO(displacy.render(self.current_instrospection_token.sent, minify=True)))
+            dep_image = renderPM.drawToPIL(rlg)
             scaling_ratio = 1000 / dep_image.width
             dep_view = ImageTk.PhotoImage(dep_image.resize((1000, math.ceil(dep_image.height * scaling_ratio))))
             image_holder = ttk.Label(dep_window, image=dep_view)

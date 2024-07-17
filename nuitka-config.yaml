@@ -1,0 +1,12 @@
+# yamllint disable rule:line-length
+# yamllint disable rule:indentation
+# yamllint disable rule:comments-indentation
+# too many spelling things, spell-checker: disable
+- module-name: 'thinc.backends'
+  data-files:
+    patterns:
+      - '*.cu'
+  dlls:
+    - from_filenames:
+        prefixes:
+          - ''

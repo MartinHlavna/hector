@@ -4,7 +4,7 @@ import re
 import string
 import unicodedata
 
-from enchant import Dict
+import hunspell
 from spacy.matcher import DependencyMatcher
 from spacy.tokens import Doc
 
@@ -110,11 +110,11 @@ class Service:
         return doc
 
     @staticmethod
-    def spellcheck(spellcheck_dictionary: Dict, doc: Doc):
+    def spellcheck(spellcheck_dictionary: hunspell.HunSpell, doc: Doc):
         for word in doc._.unique_words.items():
             for token in word[1].occourences:
                 if token._.is_word:
-                    if not spellcheck_dictionary.check(token.text):
+                    if not spellcheck_dictionary.spell(token.text):
                         token._.has_grammar_error = True
                         token._.grammar_error_type = GRAMMAR_ERROR_TYPE_MISSPELLED_WORD
         # PATTERN TO FIND ALL ADJECTIVE / DETERMINER / PRONOUN -> NOUN PAIRS
