@@ -34,7 +34,7 @@ jobs:
       - name: Install GCC
         uses: egor-tensin/setup-gcc@v1.3
       - name: Install hunspell
-        if: runner.os == 'ubuntu-latest'
+        if: matrix.os == 'ubuntu-latest'
         run: sudo apt-get install -y libhunspell-dev
       - name: Install dependencies
         run: |
