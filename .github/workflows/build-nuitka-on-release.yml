@@ -70,6 +70,5 @@ jobs:
           runner.os == 'Linux'
         uses: svenstaro/upload-release-action@v2
         with:
-          file: build/hector.bin
-          asset_name: hector-${{ github.ref }}-${{ steps.platform_name.outputs.lowercase }}.bin
+          file: hector.bin
           tag: ${{ github.ref }}
