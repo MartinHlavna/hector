@@ -16,9 +16,10 @@ permissions:
 
 jobs:
   build:
-
-    runs-on: ubuntu-latest
-
+    strategy:
+      matrix:
+        os: [ubuntu-latest, windows-latest] #FIXME:, macos-latest
+    runs-on: ${{ matrix.os }}
     steps:
     - uses: actions/checkout@v4
     - name: Set up Python 3.10
@@ -28,7 +29,8 @@ jobs:
         cache: 'pip'
     - name: Install GCC
       uses: egor-tensin/setup-gcc@v1.3
-    - name: Install hunspell
+    - name: Install hunspell for linux
+      if: matrix.os == 'ubuntu-latest'
       run: sudo apt-get install -y libhunspell-dev
     - name: Install dependencies
       run: |
