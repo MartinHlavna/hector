@@ -46,7 +46,7 @@ jobs:
           nuitka-version: develop
           script-name: hector.py
           onefile: true
-          enable-plugin: tk-inter
+          enable-plugins: tk-inter
           include-package: ttkthemes
           include-package-data: ttkthemes
           include-module: fsspec.implementations.github
@@ -70,5 +70,6 @@ jobs:
           runner.os == 'Linux'
         uses: svenstaro/upload-release-action@v2
         with:
+          repo_token: ${{ secrets.GITHUB_TOKEN }}
           file: build/hector.bin
           tag: ${{ github.ref }}
