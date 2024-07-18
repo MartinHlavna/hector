@@ -1,3 +1,4 @@
+[![Python application](https://github.com/MartinHlavna/hector/actions/workflows/python-app.yml/badge.svg)](https://github.com/MartinHlavna/hector/actions/workflows/python-app.yml)
 # Hector
 ![hector logo](https://github.com/MartinHlavna/hector/blob/main/images/hector-logo-white-bg.png?raw=true)
 ## O programe
