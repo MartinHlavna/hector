@@ -69,7 +69,7 @@ jobs:
           github.event_name == 'release' &&
           runner.os == 'Linux'
         uses: svenstaro/upload-release-action@v2
-        file: build/hector.bin
         with:
+          file: build/hector.bin
           asset_name: hector-${{ github.ref }}-${{ steps.platform_name.outputs.lowercase }}.bin
           tag: ${{ github.ref }}
