@@ -13,6 +13,7 @@ permissions:
 
 jobs:
   build:
+    permissions: write-all
     strategy:
       matrix:
         os: [ubuntu-latest] #FIXME: windows-latest, macos-latest
