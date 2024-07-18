@@ -47,6 +47,7 @@ jobs:
         auto-match: false
         retry-times: 3
     - name: extract-7z-action
+      if: matrix.os == 'windows-latest'
       uses: DuckSoft/extract-7z-action@v1.0
       with:
         pathSource: "${{steps.downloadfile.outputs.filename}}"
