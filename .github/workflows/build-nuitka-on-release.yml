@@ -51,11 +51,25 @@ jobs:
           include-package-data: ttkthemes
           include-module: fsspec.implementations.github
           include-data-dir: images=images
-
-
       - name: Upload Artifacts
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: ${{ runner.os }} Build
           path: |
             build/*.bin
+          compression-level: 0 #NUITKA ALREADY COMPRESSES
+      - name: Plaform name to lower
+        id: platform_name
+        if: ${{ github.event_name == 'release' }}
+        uses: ASzc/change-string-case-action@v6
+        with:
+          string: ${{ runner.os }}
+      - name: Upload binaries to release
+        if: |
+          github.event_name == 'release' &&
+          runner.os == 'Linux'
+        uses: svenstaro/upload-release-action@v2
+        file: build/hector.bin
+        with:
+          asset_name: hector-${{ github.ref }}-${{ steps.platform_name.outputs.lowercase }}.bin
+          tag: ${{ github.ref }}

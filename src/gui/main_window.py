@@ -5,7 +5,6 @@ import random
 import re
 import tkinter as tk
 import webbrowser
-from io import BytesIO
 from tkinter import filedialog, ttk
 
 import hunspell
@@ -14,7 +13,6 @@ from PIL import ImageTk, Image
 from reportlab.graphics import renderPM
 from spacy import displacy
 from spacy.tokens import Doc
-import svglib
 from svglib.svglib import svg2rlg
 
 from autoscrollbar import AutoScrollbar
@@ -30,7 +28,7 @@ from src.utils import Utils
 
 EDITOR_LOGO_HEIGHT = 300
 EDITOR_LOGO_WIDTH = 300
-VERSION = "0.5.1 Alfa"
+VERSION = "0.6.0 Alfa"
 
 # TODO: Move to data file
 POS_TAG_TRANSLATIONS = {
