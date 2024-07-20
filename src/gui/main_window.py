@@ -7,14 +7,13 @@ import tkinter as tk
 import webbrowser
 from tkinter import filedialog, ttk
 
-import hunspell
 import spacy
 from PIL import ImageTk, Image
 from reportlab.graphics import renderPM
 from spacy import displacy
 from spacy.tokens import Doc
 from svglib.svglib import svg2rlg
-
+from hunspell import Hunspell
 from autoscrollbar import AutoScrollbar
 from pythes import PyThes
 from src.backend.service import Service
@@ -28,6 +27,7 @@ from src.utils import Utils
 
 EDITOR_LOGO_HEIGHT = 300
 EDITOR_LOGO_WIDTH = 300
+ENABLE_DEBUG_DEP_IMAGE = False
 VERSION = "0.6.0 Alfa"
 
 # TODO: Move to data file
@@ -124,7 +124,7 @@ DEP_TAG_TRANSLATION = {
 # TODO: Move anything non gui related to service and separate backend and frontend logic
 # MAIN GUI WINDOW
 class MainWindow:
-    def __init__(self, r, _nlp: spacy, spellcheck_dictionary: hunspell.HunSpell, thesaurus: PyThes):
+    def __init__(self, r, _nlp: spacy, spellcheck_dictionary: Hunspell, thesaurus: PyThes):
         self.root = r
         r.overrideredirect(False)
         style = ttk.Style(self.root)
@@ -195,9 +195,10 @@ class MainWindow:
         self.introspection_text = tk.Text(left_side_panel, highlightthickness=0, bd=0, wrap=tk.WORD, state=tk.DISABLED,
                                           width=30, background=PRIMARY_BLUE, foreground=TEXT_COLOR_WHITE, height=15,
                                           font=(HELVETICA_FONT_NAME, 9))
-        self.dep_image_holder = ttk.Label(left_side_panel, width=30)
-        self.dep_image_holder.pack(pady=10, padx=10, side=tk.BOTTOM)
-        self.dep_image_holder.bind("<Button-1>", self.show_dep_image)
+        if ENABLE_DEBUG_DEP_IMAGE:
+            self.dep_image_holder = ttk.Label(left_side_panel, width=30)
+            self.dep_image_holder.pack(pady=10, padx=10, side=tk.BOTTOM)
+            self.dep_image_holder.bind("<Button-1>", self.show_dep_image)
         MainWindow.set_text(self.introspection_text, 'Kliknite na slovo v editore')
         self.introspection_text.pack(fill=tk.X, pady=10, padx=10, side=tk.BOTTOM)
         separator = ttk.Separator(left_side_panel, orient='horizontal')
@@ -677,12 +678,13 @@ class MainWindow:
         if span is not None and self.current_instrospection_token != span.root:
             if span.root._.is_word:
                 self.current_instrospection_token = span.root
-                rlg = svg2rlg(io.StringIO(displacy.render(span.root.sent, minify=True)))
-                dep_image = renderPM.drawToPIL(rlg)
-                scaling_ratio = 200 / dep_image.width
-                dep_view = ImageTk.PhotoImage(dep_image.resize((200, math.ceil(dep_image.height * scaling_ratio))))
-                self.dep_image_holder.config(image=dep_view)
-                self.dep_image_holder.image = dep_view
+                if ENABLE_DEBUG_DEP_IMAGE:
+                    rlg = svg2rlg(io.StringIO(displacy.render(span.root.sent, minify=True)))
+                    dep_image = renderPM.drawToPIL(rlg)
+                    scaling_ratio = 200 / dep_image.width
+                    dep_view = ImageTk.PhotoImage(dep_image.resize((200, math.ceil(dep_image.height * scaling_ratio))))
+                    self.dep_image_holder.config(image=dep_view)
+                    self.dep_image_holder.image = dep_view
                 thes_result = self.thesaurus.lookup(self.current_instrospection_token.lemma_)
                 morph = self.current_instrospection_token.morph.to_dict()
                 introspection_resut = f'Slovo: {self.current_instrospection_token}\n\n' \

@@ -4,7 +4,7 @@ import re
 import string
 import unicodedata
 
-import hunspell
+from hunspell import Hunspell
 from spacy.matcher import DependencyMatcher
 from spacy.tokens import Doc
 
@@ -110,7 +110,7 @@ class Service:
         return doc
 
     @staticmethod
-    def spellcheck(spellcheck_dictionary: hunspell.HunSpell, doc: Doc):
+    def spellcheck(spellcheck_dictionary: Hunspell, doc: Doc):
         for word in doc._.unique_words.items():
             for token in word[1].occourences:
                 if token._.is_word:
