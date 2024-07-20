@@ -30,9 +30,6 @@ jobs:
     - name: Install GCC for linux
       uses: egor-tensin/setup-gcc@v1.3
       if: matrix.os == 'ubuntu-latest'
-#    - name: Install GCC for windows
-#      uses: e-t-l/setup-mingw@patch-1
-#      if: matrix.os == 'windows-latest'
     - name: Install hunspell requirements for linux
       if: matrix.os == 'ubuntu-latest'
       run: sudo apt install -y autoconf libtool gettext autopoint

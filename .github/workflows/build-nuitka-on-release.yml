@@ -16,7 +16,7 @@ jobs:
     permissions: write-all
     strategy:
       matrix:
-        os: [ubuntu-latest] #FIXME: windows-latest, macos-latest
+        os: [ubuntu-latest, windows-latest] #FIXME: macos-latest
 
     runs-on: ${{ matrix.os }}
 
@@ -32,11 +32,12 @@ jobs:
           cache: 'pip'
           cache-dependency-path: |
             **/requirements*.txt
-      - name: Install GCC
+      - name: Install GCC for linux
         uses: egor-tensin/setup-gcc@v1.3
-      - name: Install hunspell
         if: matrix.os == 'ubuntu-latest'
-        run: sudo apt-get install -y libhunspell-dev
+      - name: Install hunspell dependencies for linux
+        if: matrix.os == 'ubuntu-latest'
+        run: sudo apt install -y autoconf libtool gettext autopoint
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
@@ -48,8 +49,8 @@ jobs:
           script-name: hector.py
           onefile: true
           enable-plugins: tk-inter
-          include-package: ttkthemes
-          include-package-data: ttkthemes
+          include-package: ttkthemes, cacheman, hunspell
+          include-package-data: ttkthemes, hunspell
           include-module: fsspec.implementations.github
           include-data-dir: images=images
       - name: Upload Artifacts
@@ -58,19 +59,16 @@ jobs:
           name: ${{ runner.os }} Build
           path: |
             build/*.bin
+            build/*.exe
           compression-level: 0 #NUITKA ALREADY COMPRESSES
-      - name: Plaform name to lower
-        id: platform_name
-        if: ${{ github.event_name == 'release' }}
-        uses: ASzc/change-string-case-action@v6
-        with:
-          string: ${{ runner.os }}
-      - name: Upload binaries to release
+      - name: Upload binary to release
         if: |
           github.event_name == 'release' &&
           runner.os == 'Linux'
         uses: svenstaro/upload-release-action@v2
         with:
           repo_token: ${{ secrets.GITHUB_TOKEN }}
-          file: build/hector.bin
+          file: build/hector.*
           tag: ${{ github.ref }}
+          file_glob: true
+          overwrite: true
