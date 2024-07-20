@@ -1,4 +1,6 @@
 [![Python application](https://github.com/MartinHlavna/hector/actions/workflows/python-app.yml/badge.svg)](https://github.com/MartinHlavna/hector/actions/workflows/python-app.yml)
+![GitHub Release](https://img.shields.io/github/v/release/MartinHlavna/hector?include_prereleases&sort=semver&display_name=release&link=https%3A%2F%2Fgithub.com%2FMartinHlavna%2Fhector%2Freleases%2Flatest)
+
 # Hector
 ![hector logo](https://github.com/MartinHlavna/hector/blob/main/images/hector-logo-white-bg.png?raw=true)
 ## O programe
