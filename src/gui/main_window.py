@@ -28,7 +28,7 @@ from src.utils import Utils
 EDITOR_LOGO_HEIGHT = 300
 EDITOR_LOGO_WIDTH = 300
 ENABLE_DEBUG_DEP_IMAGE = False
-VERSION = "0.6.0 Alfa"
+VERSION = "0.6.1 Alfa"
 
 # TODO: Move to data file
 POS_TAG_TRANSLATIONS = {
