@@ -49,8 +49,8 @@ jobs:
           script-name: hector.py
           onefile: true
           enable-plugins: tk-inter
-          include-package: ttkthemes, cacheman, hunspell
-          include-package-data: ttkthemes, hunspell
+          include-package: ttkthemes,cacheman,hunspell
+          include-package-data: ttkthemes,hunspell
           include-module: fsspec.implementations.github
           include-data-dir: images=images
       - name: Upload Artifacts
