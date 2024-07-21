@@ -63,8 +63,7 @@ jobs:
           compression-level: 0 #NUITKA ALREADY COMPRESSES
       - name: Upload binary to release
         if: |
-          github.event_name == 'release' &&
-          runner.os == 'Linux'
+          github.event_name == 'release'
         uses: svenstaro/upload-release-action@v2
         with:
           repo_token: ${{ secrets.GITHUB_TOKEN }}
