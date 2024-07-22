@@ -9,6 +9,8 @@ class Config:
         if data is None:
             data = {}
 
+        # USE LEMMA COMPARISION IN CLOSE_WORDS FUNCTIONALITY
+        self.repeated_words_use_lemma = data.get('repeated_words_use_lemma', False)
         # MINIMAL LENGTH OF WORD FOR IT TO APPEAR IN FREQUENT WORDS SECTION
         self.repeated_words_min_word_length = data.get('repeated_words_min_word_length', 3)
         # MINIMAL NUMBER OF WORD REPETITIONS FOR IT TO APPEAR IN REPEATED WORDS SECTION
@@ -21,6 +23,8 @@ class Config:
         self.long_sentence_min_word_length = data.get('long_sentence_min_word_length', 5)
         # MINIMAL LENGTH OF WORD FOR IT TO BE HIGHLIGHTED IF VIA CLOSE_WORDS FUNCTIONALITY
         self.close_words_min_word_length = data.get('close_words_min_word_length', 3)
+        # USE LEMMA COMPARISION IN CLOSE_WORDS FUNCTIONALITY
+        self.close_words_use_lemma = data.get('close_words_use_lemma', False)
         # MINIMAL DISTANCE BETWEEN REPEATED WORDS
         self.close_words_min_distance_between_words = data.get('close_words_min_distance_between_words', 100)
         # MINIMAL FREQUENCY FOR REPEATED WORD TO BE HIGHLIGHTED
@@ -37,6 +41,8 @@ class Config:
         self.enable_trailing_spaces = data.get('enable_trailing_spaces', True)
         # ENABLE HIGHLIGHTING OF WORDS THAT ARE REPEATED AT SAME SPOTS
         self.enable_close_words = data.get('enable_close_words', True)
+        # ENABLE SPELLCHECK
+        self.enable_spellcheck = data.get('enable_spellcheck', True)
 
     def to_dict(self):
         """
@@ -58,5 +64,6 @@ class Config:
             "enable_multiple_spaces": self.enable_multiple_spaces,
             "enable_multiple_punctuation": self.enable_multiple_punctuation,
             "enable_trailing_spaces": self.enable_trailing_spaces,
-            "enable_close_words": self.enable_close_words
+            "enable_close_words": self.enable_close_words,
+            "enable_spellcheck": self.enable_spellcheck
         }
