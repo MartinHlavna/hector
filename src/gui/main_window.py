@@ -401,7 +401,10 @@ class MainWindow:
     def display_word_frequencies(self, doc: Doc):
         if not self.config.enable_frequent_words:
             return
-        words = {k: v for (k, v) in doc._.unique_words.items() if
+        x = doc._.unique_words
+        if self.config.repeated_words_use_lemma:
+            x = doc._.lemmas
+        words = {k: v for (k, v) in x.items() if
                  len(k) >= self.config.repeated_words_min_word_length and len(
                      v.occourences) >= self.config.repeated_words_min_word_frequency}
         sorted_word_counts = sorted(words.values(), key=lambda x: len(x.occourences), reverse=True)

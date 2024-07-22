@@ -56,18 +56,26 @@ class Service:
     def fill_custom_data(doc: Doc):
         word_pattern = re.compile("\\w+")
         words = []
+        lemmas = {}
         unique_words = {}
         for token in doc:
             token._.is_word = re.match(word_pattern, token.lower_) is not None
             if token._.is_word:
                 words.append(token)
+                lemma = token.lemma_.lower()
                 unique_word = unique_words.get(token.text.lower(), None)
+                unique_lemma = lemmas.get(lemma, None)
                 if unique_word is None:
                     unique_word = UniqueWord(token.text.lower())
                     unique_words[token.text.lower()] = unique_word
+                if unique_lemma is None:
+                    unique_lemma = UniqueWord(lemma)
+                    lemmas[lemma] = unique_lemma
                 unique_word.occourences.append(token)
+                unique_lemma.occourences.append(token)
         doc._.words = words
         doc._.unique_words = unique_words
+        doc._.lemmas = lemmas
         doc._.total_chars = len(doc.text)
         doc._.total_words = len(words)
         doc._.total_unique_words = len(unique_words)
