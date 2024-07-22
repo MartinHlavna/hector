@@ -81,6 +81,12 @@ V prípade podporovaných platforiem sú k dispozícií kompletné spustiteľné
 
 ### Spustenie zo zdrojového kódu
 Kód bol testovaný s použitím python interpretera verzie 3.10.
+#### Špeciálne kroky pre linux (debian-based)
+Nainštalovať balíčky
+```
+sudo apt install -y autoconf libtool gettext autopoint
+```
+Následne možno pokračovať štandardne
 ```
 # STIAHNUTIE ZDROJOVÝCH KÓDOV
 git clone https://github.com/MartinHlavna/hector
