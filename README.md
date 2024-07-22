@@ -11,11 +11,13 @@ Hector žltým podsvietením zvýrazňuje dlhé vety. Samotná dlhá veta probl�
 
 Riešenie: Autor by sa mal snažiť o vhodnú kombináciu dlhých a krátkych viet, aby dostiahol vhodný rytmus textu.
 ### Štatistika výskytu slov
-Hector v pravom paneli zobrazuje informáciu o počte výskytu daného slova.
+Hector v pravom paneli zobrazuje informáciu o počte výskytu daného slova. V prípade, že je v nastaveniach zapnutá voľba "používať základný tvar slova," tak program v pravom stĺpci zobrazuje základné tvary slov. Napríklad budú všetky slová, "ktorý" "ktorá" "ktoré" započítané, ako výskyty slova "ktorý"
 
 Riešenie: Ak sa niektoré slovo opakuje výrazne veľakrát, autor môže zvážiť jeho nahradenie synonymami.
 ### Štatistika a zvýraznenie často sa opakujúcich slov
 Hector v ľavom paneli zobrazuje slová, ktorá sa opakujú „blízko seba“. Na rozdiel od pravého panelu sú v tomto zozname iba slová, ktorých výskyty sú bliźšie, ako definovaná hodnota (napr. ak sa slovo zopakuje aspoň dvakrát v rozmedzí 100 znakov). Takýmto spôsobom dokáže hector identifikovať zhluky opakujúcich sa slov. Tieto slová sú zároveň zvýraznené. Po prejdení myšou nad takéto slovo sa v texte zvýrazania všetky jeho výskyty.
+V prípade, že je v nastaveniach zapnutá možnosť "porovnávať základný tvar slova," tak program používa základný tvar
+a voči nemu aplikuje aj ostatné reštrukcie (napr. základný tvar od "sú" je "byť". Ak je nastavená minimálna dĺžka slova 3 znaky, tak program zvýrazní aj kratšie výskyty)
 
 Riešenie: Nahradenie opakovaných slov synonymom, preformulovanie textu alebo doplnenie textu medzi jednotlivé výskyty.
 

@@ -469,9 +469,12 @@ class MainWindow:
         if self.config.enable_close_words:
             self.text_editor.tag_remove("close_word", "1.0", tk.END)
             close_words = {}
-            words_nlp = {k: v for (k, v) in doc._.unique_words.items() if
+            x = doc._.unique_words
+            if self.config.close_words_use_lemma:
+                x = doc._.lemmas
+            words_nlp = {k: v for (k, v) in x.items() if
                          len(k) >= self.config.close_words_min_word_length}
-            for unique_word in words_nlp.values():
+            for key, unique_word in words_nlp.items():
                 # IF WORD DOES NOT OCCOUR ENOUGH TIMES WE DONT NEED TO CHECK IF ITS OCCOURENCES ARE CLOSE
                 if len(unique_word.occourences) < self.config.close_words_min_frequency + 1:
                     continue
@@ -484,9 +487,9 @@ class MainWindow:
                         else:
                             break
                     if len(repetitions) > self.config.close_words_min_frequency:
-                        if word_occource.lower_ not in close_words:
-                            close_words[word_occource.lower_] = set()
-                        close_words[word_occource.lower_].update(repetitions)
+                        if key not in close_words:
+                            close_words[key] = set()
+                        close_words[key].update(repetitions)
             close_words = dict(sorted(close_words.items(), key=lambda item: len(item[1]), reverse=True))
 
             # NOTE
@@ -497,11 +500,12 @@ class MainWindow:
             )
             MainWindow.set_text(self.close_words_text, close_words_value_text)
             for word in close_words.items():
+                key = word[0]
                 for occ in word[1]:
                     color = random.choice(CLOSE_WORDS_PALLETE)
                     start_index = f"1.0 + {occ.idx} chars"
                     end_index = f"1.0 + {occ.idx + len(occ.lower_)} chars"
-                    tag_name = f"{CLOSE_WORD_PREFIX}{occ.lower_}"
+                    tag_name = f"{CLOSE_WORD_PREFIX}{key}"
                     original_color = self.close_word_colors.get(tag_name, "")
                     if original_color != "":
                         color = original_color
@@ -539,6 +543,7 @@ class MainWindow:
 
     # HIGHLIGHT SAME WORD ON MOUSE OVER
     def highlight_same_word(self, event):
+        self.unhighlight_same_word(event)
         # Získanie indexu myši
         mouse_index = self.text_editor.index(f"@{event.x},{event.y}")
         # Získanie všetkých tagov na pozícii myši
