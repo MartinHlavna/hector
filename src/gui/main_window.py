@@ -399,11 +399,11 @@ class MainWindow:
 
     # CALCULATE AND DISPLAY FREQUENT WORDS
     def display_word_frequencies(self, doc: Doc):
-        if not self.config["enable_frequent_words"]:
+        if not self.config.enable_frequent_words:
             return
         words = {k: v for (k, v) in doc._.unique_words.items() if
-                 len(k) >= self.config["repeated_words_min_word_length"] and len(v.occourences) >= self.config[
-                     "repeated_words_min_word_frequency"]}
+                 len(k) >= self.config.repeated_words_min_word_length and len(
+                     v.occourences) >= self.config.repeated_words_min_word_frequency}
         sorted_word_counts = sorted(words.values(), key=lambda x: len(x.occourences), reverse=True)
 
         # NOTE
@@ -417,17 +417,17 @@ class MainWindow:
     # TODO: MAYBE LOGIC SHOULD BE HANDLED IN SERVICE AND ADDED AS EXTENSION TO Sent SPAN
     # HIGHLIGHT LONG SENTENCES
     def highlight_long_sentences(self, doc: Doc):
-        if not self.config["enable_long_sentences"]:
+        if not self.config.enable_long_sentences:
             return
         for sentence in doc.sents:
             highlight_start = sentence.start_char
             highlight_end = sentence.end_char
             words = [word for word in sentence if
-                     word._.is_word and len(word.text) >= self.config["long_sentence_min_word_length"]]
-            if len(words) > self.config["long_sentence_words_mid"]:
+                     word._.is_word and len(word.text) >= self.config.long_sentence_min_word_length]
+            if len(words) > self.config.long_sentence_words_mid:
                 start_index = f"1.0 + {highlight_start} chars"
                 end_index = f"1.0 + {highlight_end} chars"
-                if len(words) > self.config["long_sentence_words_high"]:
+                if len(words) > self.config.long_sentence_words_high:
                     self.text_editor.tag_add(LONG_SENTENCE_TAG_NAME_HIGH, start_index, end_index)
                 else:
                     self.text_editor.tag_add(LONG_SENTENCE_TAG_NAME_MID, start_index, end_index)
@@ -435,7 +435,7 @@ class MainWindow:
     # HIGHLIGH MULTIPLE SPACE, MULTIPLE PUNCTATION, AND TRAILING SPACES
     def highlight_multiple_issues(self, text):
         self.text_editor.tag_remove(MULTIPLE_SPACES_TAG_NAME, "1.0", tk.END)
-        if self.config["enable_multiple_spaces"]:
+        if self.config.enable_multiple_spaces:
             matches = re.finditer(r' {2,}', text)
             for match in matches:
                 start_index = f"1.0 + {match.start()} chars"
@@ -446,7 +446,7 @@ class MainWindow:
                                           lambda e: self.hide_tooltip(e)
                                           )
 
-        if self.config["enable_multiple_punctuation"]:
+        if self.config.enable_multiple_punctuation:
             matches = re.finditer(r'([!?.,:;]){2,}', text)
             for match in matches:
                 if match.group() not in ["?!"]:
@@ -454,7 +454,7 @@ class MainWindow:
                     end_index = f"1.0 + {match.end()} chars"
                     self.text_editor.tag_add(MULTIPLE_PUNCTUATION_TAG_NAME, start_index, end_index)
 
-        if self.config["enable_trailing_spaces"]:
+        if self.config.enable_trailing_spaces:
             matches = re.finditer(r' +$', text, re.MULTILINE)
             for match in matches:
                 start_index = f"1.0 + {match.start()} chars"
@@ -463,25 +463,24 @@ class MainWindow:
 
     # HIGHLIGHT WORDS THAT REPEATS CLOSE TO EACH OTHER
     def highlight_close_words(self, doc: Doc):
-        if self.config["enable_close_words"]:
+        if self.config.enable_close_words:
             self.text_editor.tag_remove("close_word", "1.0", tk.END)
             close_words = {}
             words_nlp = {k: v for (k, v) in doc._.unique_words.items() if
-                         len(k) >= self.config["close_words_min_word_length"]}
+                         len(k) >= self.config.close_words_min_word_length}
             for unique_word in words_nlp.values():
                 # IF WORD DOES NOT OCCOUR ENOUGH TIMES WE DONT NEED TO CHECK IF ITS OCCOURENCES ARE CLOSE
-                if len(unique_word.occourences) < self.config["close_words_min_frequency"] + 1:
+                if len(unique_word.occourences) < self.config.close_words_min_frequency + 1:
                     continue
                 for idx, word_occource in enumerate(unique_word.occourences):
                     repetitions = []
                     for possible_repetition in unique_word.occourences[idx + 1:len(unique_word.occourences) + 1]:
-                        if possible_repetition.i - word_occource.i <= self.config[
-                            "close_words_min_distance_between_words"]:
+                        if possible_repetition.i - word_occource.i <= self.config.close_words_min_distance_between_words:
                             repetitions.append(word_occource)
                             repetitions.append(possible_repetition)
                         else:
                             break
-                    if len(repetitions) > self.config["close_words_min_frequency"]:
+                    if len(repetitions) > self.config.close_words_min_frequency:
                         if word_occource.lower_ not in close_words:
                             close_words[word_occource.lower_] = set()
                         close_words[word_occource.lower_].update(repetitions)
@@ -801,21 +800,20 @@ class MainWindow:
 
         # SAVE SETTINGS
         def save_settings():
-            self.config["repeated_words_min_word_length"] = int(repeated_words_min_word_length_entry.get())
-            self.config["repeated_words_min_word_frequency"] = int(repeated_words_min_word_frequency_entry.get())
-            self.config["long_sentence_words_mid"] = int(long_sentence_words_mid_entry.get())
-            self.config["long_sentence_words_high"] = int(long_sentence_words_high_entry.get())
-            self.config["long_sentence_min_word_length"] = int(long_sentence_min_word_length_entry.get())
-            self.config["enable_frequent_words"] = frequent_words_var.get()
-            self.config["enable_long_sentences"] = long_sentences_var.get()
-            self.config["enable_multiple_spaces"] = multiple_spaces_var.get()
-            self.config["enable_multiple_punctuation"] = multiple_punctuation_var.get()
-            self.config["enable_trailing_spaces"] = trailing_spaces_var.get()
-            self.config["close_words_min_word_length"] = int(close_words_min_word_length_entry.get())
-            self.config["close_words_min_distance_between_words"] = int(
-                close_words_min_distance_between_words_entry.get())
-            self.config["close_words_min_frequency"] = int(close_words_min_frequency_entry.get())
-            self.config["enable_close_words"] = close_words_var.get()
+            self.config.repeated_words_min_word_length = int(repeated_words_min_word_length_entry.get())
+            self.config.repeated_words_min_word_frequency = int(repeated_words_min_word_frequency_entry.get())
+            self.config.long_sentence_words_mid = int(long_sentence_words_mid_entry.get())
+            self.config.long_sentence_words_high = int(long_sentence_words_high_entry.get())
+            self.config.long_sentence_min_word_length = int(long_sentence_min_word_length_entry.get())
+            self.config.enable_frequent_words = frequent_words_var.get()
+            self.config.enable_long_sentences = long_sentences_var.get()
+            self.config.enable_multiple_spaces = multiple_spaces_var.get()
+            self.config.enable_multiple_punctuation = multiple_punctuation_var.get()
+            self.config.enable_trailing_spaces = trailing_spaces_var.get()
+            self.config.close_words_min_word_length = int(close_words_min_word_length_entry.get())
+            self.config.close_words_min_distance_between_words = int(close_words_min_distance_between_words_entry.get())
+            self.config.close_words_min_frequency = int(close_words_min_frequency_entry.get())
+            self.config.enable_close_words = close_words_var.get()
             Service.save_config(self.config, CONFIG_FILE_PATH)
             self.analyze_text(True)  # Reanalyze text after saving settings
             settings_window.destroy()
@@ -825,7 +823,7 @@ class MainWindow:
                  anchor='w').grid(
             row=0, column=0, columnspan=1, padx=(10, 80), pady=(10, 2), sticky='w'
         )
-        frequent_words_var = tk.BooleanVar(value=self.config["enable_frequent_words"])
+        frequent_words_var = tk.BooleanVar(value=self.config.enable_frequent_words)
         frequent_words_checkbox = ttk.Checkbutton(settings_window, text="Zapnuté", variable=frequent_words_var)
         frequent_words_checkbox.grid(row=0, column=1, padx=(6, 10), pady=2, sticky='w')
         tk.Label(settings_window, text="Minimálna dĺžka slova", anchor='w').grid(
@@ -833,7 +831,7 @@ class MainWindow:
         )
         repeated_words_min_word_length_entry = ttk.Spinbox(settings_window, from_=1, to=100, width=6, justify=tk.LEFT)
         repeated_words_min_word_length_entry.grid(row=1, column=1, padx=10, pady=2, sticky='w')
-        repeated_words_min_word_length_entry.set(self.config["repeated_words_min_word_length"])
+        repeated_words_min_word_length_entry.set(self.config.repeated_words_min_word_length)
         tk.Label(settings_window, text="znakov", anchor='w').grid(
             row=1, column=2, padx=10, pady=2, sticky='w'
         )
@@ -842,13 +840,13 @@ class MainWindow:
         )
         repeated_words_min_word_frequency_entry = ttk.Spinbox(settings_window, from_=1, to=100, width=6)
         repeated_words_min_word_frequency_entry.grid(row=2, column=1, padx=10, pady=2, sticky='w')
-        repeated_words_min_word_frequency_entry.set(self.config["repeated_words_min_word_frequency"])
+        repeated_words_min_word_frequency_entry.set(self.config.repeated_words_min_word_frequency)
         # Long sentences settings
         tk.Label(settings_window, text="Zvýrazňovanie dlhých viet", font=(HELVETICA_FONT_NAME, 12, BOLD_FONT),
                  anchor='w').grid(
             row=5, column=0, columnspan=1, padx=(10, 80), pady=(10, 2), sticky='w'
         )
-        long_sentences_var = tk.BooleanVar(value=self.config["enable_long_sentences"])
+        long_sentences_var = tk.BooleanVar(value=self.config.enable_long_sentences)
         long_sentences_checkbox = ttk.Checkbutton(settings_window, text="Zapnuté", variable=long_sentences_var)
         long_sentences_checkbox.grid(row=5, column=1, padx=(6, 10), pady=2, sticky='w')
         tk.Label(settings_window, text="Veta je stredne dlhá, ak obsahuje aspoň", anchor='w').grid(
@@ -856,7 +854,7 @@ class MainWindow:
         )
         long_sentence_words_mid_entry = ttk.Spinbox(settings_window, from_=1, to=100, width=6)
         long_sentence_words_mid_entry.grid(row=6, column=1, padx=10, pady=2, sticky='w')
-        long_sentence_words_mid_entry.set(self.config["long_sentence_words_mid"])
+        long_sentence_words_mid_entry.set(self.config.long_sentence_words_mid)
         tk.Label(settings_window, text="slov", anchor='w').grid(
             row=6, column=2, padx=10, pady=2, sticky='w'
         )
@@ -865,7 +863,7 @@ class MainWindow:
         )
         long_sentence_words_high_entry = ttk.Spinbox(settings_window, from_=1, to=9999, width=6)
         long_sentence_words_high_entry.grid(row=7, column=1, padx=10, pady=2, sticky='w')
-        long_sentence_words_high_entry.set(self.config["long_sentence_words_high"])
+        long_sentence_words_high_entry.set(self.config.long_sentence_words_high)
         tk.Label(settings_window, text="slov", anchor='w').grid(
             row=7, column=2, padx=10, pady=2, sticky='w'
         )
@@ -874,7 +872,7 @@ class MainWindow:
         )
         long_sentence_min_word_length_entry = ttk.Spinbox(settings_window, from_=1, to=100, width=6)
         long_sentence_min_word_length_entry.grid(row=8, column=1, padx=10, pady=2, sticky='w')
-        long_sentence_min_word_length_entry.set(self.config["long_sentence_min_word_length"])
+        long_sentence_min_word_length_entry.set(self.config.long_sentence_min_word_length)
         tk.Label(settings_window, text="znakov", anchor='w').grid(
             row=8, column=2, padx=10, pady=2, sticky='w'
         )
@@ -883,7 +881,7 @@ class MainWindow:
                  anchor='w').grid(
             row=11, column=0, columnspan=1, padx=(10, 80), pady=(10, 2), sticky='w'
         )
-        multiple_spaces_var = tk.BooleanVar(value=self.config["enable_multiple_spaces"])
+        multiple_spaces_var = tk.BooleanVar(value=self.config.enable_multiple_spaces)
         multiple_spaces_checkbox = ttk.Checkbutton(settings_window, text="Zapnuté", variable=multiple_spaces_var)
         multiple_spaces_checkbox.grid(row=11, column=1, padx=(6, 10), pady=2, sticky='w')
         # Multiple punctuation settings
@@ -892,7 +890,7 @@ class MainWindow:
                  anchor='w').grid(
             row=14, column=0, columnspan=1, padx=(10, 80), pady=(10, 2), sticky='w'
         )
-        multiple_punctuation_var = tk.BooleanVar(value=self.config["enable_multiple_punctuation"])
+        multiple_punctuation_var = tk.BooleanVar(value=self.config.enable_multiple_punctuation)
         multiple_punctuation_checkbox = ttk.Checkbutton(settings_window, text="Zapnuté",
                                                         variable=multiple_punctuation_var)
         multiple_punctuation_checkbox.grid(row=14, column=1, padx=(6, 10), pady=2, sticky='w')
@@ -901,14 +899,14 @@ class MainWindow:
                  font=(HELVETICA_FONT_NAME, 12, BOLD_FONT), anchor='w').grid(
             row=17, column=0, columnspan=1, padx=(10, 80), pady=(10, 2), sticky='w'
         )
-        trailing_spaces_var = tk.BooleanVar(value=self.config["enable_trailing_spaces"])
+        trailing_spaces_var = tk.BooleanVar(value=self.config.enable_trailing_spaces)
         trailing_spaces_checkbox = ttk.Checkbutton(settings_window, text="Zapnuté", variable=trailing_spaces_var)
         trailing_spaces_checkbox.grid(row=17, column=1, padx=(6, 10), pady=2, sticky='w')
         # Close words settings
         tk.Label(settings_window, text="Slová blízko seba", font=(HELVETICA_FONT_NAME, 12, BOLD_FONT), anchor='w').grid(
             row=20, column=0, columnspan=1, padx=(10, 80), pady=(10, 2), sticky='w'
         )
-        close_words_var = tk.BooleanVar(value=self.config["enable_close_words"])
+        close_words_var = tk.BooleanVar(value=self.config.enable_close_words)
         close_words_checkbox = ttk.Checkbutton(settings_window, text="Zapnuté", variable=close_words_var)
         close_words_checkbox.grid(row=20, column=1, padx=(6, 10), pady=2, sticky='w')
         tk.Label(settings_window, text="Minimálna dlžka slova", anchor='w').grid(
@@ -916,7 +914,7 @@ class MainWindow:
         )
         close_words_min_word_length_entry = ttk.Spinbox(settings_window, from_=1, to=100, width=6)
         close_words_min_word_length_entry.grid(row=21, column=1, padx=10, pady=2, sticky='w')
-        close_words_min_word_length_entry.insert(0, str(self.config["close_words_min_word_length"]))
+        close_words_min_word_length_entry.insert(0, str(self.config.close_words_min_word_length))
         tk.Label(settings_window, text="znakov", anchor='w').grid(
             row=21, column=2, padx=10, pady=2, sticky='w'
         )
@@ -925,7 +923,7 @@ class MainWindow:
         )
         close_words_min_distance_between_words_entry = ttk.Spinbox(settings_window, from_=1, to=9999, width=6)
         close_words_min_distance_between_words_entry.grid(row=22, column=1, padx=10, pady=2, sticky='w')
-        close_words_min_distance_between_words_entry.set(self.config["close_words_min_distance_between_words"])
+        close_words_min_distance_between_words_entry.set(self.config.close_words_min_distance_between_words)
         tk.Label(settings_window, text="slov", anchor='w').grid(
             row=22, column=2, padx=10, pady=2, sticky='w'
         )
@@ -934,7 +932,7 @@ class MainWindow:
         )
         close_words_min_frequency_entry = ttk.Spinbox(settings_window, from_=1, to=100, width=6)
         close_words_min_frequency_entry.grid(row=23, column=1, padx=10, pady=2, sticky='w')
-        close_words_min_frequency_entry.set(self.config["close_words_min_frequency"])
+        close_words_min_frequency_entry.set(self.config.close_words_min_frequency)
         # SAVE BUTTON
         ttk.Button(settings_window, text="Uložiť", command=save_settings).grid(
             row=25, column=1, columnspan=2, padx=10, pady=10, sticky='w'

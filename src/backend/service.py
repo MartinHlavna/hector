@@ -8,42 +8,10 @@ from hunspell import Hunspell
 from spacy.matcher import DependencyMatcher
 from spacy.tokens import Doc
 
-from src.backend.unique_word import UniqueWord
+from src.domain.config import Config
+from src.domain.unique_word import UniqueWord
 from src.const.grammar_error_types import *
 from src.const.values import *
-
-# DEFAULT CONFIGURATION VALUES
-# SANE DEFAULTS FOR CREATIVE WRITTING
-default_config = {
-    # MINIMAL LENGTH OF WORD FOR IT TO APPEAR IN FREQUENT WORDS SECTION
-    "repeated_words_min_word_length": 3,
-    # MINIMAL NUMBER OF WORD REPETITIONS FOR IT TO APPEAR IN REPEATED WORDS SECTION
-    "repeated_words_min_word_frequency": 2,
-    # SENTENCE IS CONSIDERED MID LONG IF IT HAS MORE WORDS THAN THIS CONFIG
-    "long_sentence_words_mid": 8,
-    # SENTENCE IS CONSIDERED HIGH LONG IF IT HAS MORE WORDS THAN THIS CONFIG
-    "long_sentence_words_high": 16,
-    # WORD IS COUNTED TO SENTENCE LENGTH ONLY IF IT HAS MORE MORE CHARS THAN THIS CONFIG
-    "long_sentence_min_word_length": 5,
-    # MINIMAL LENGTH OF WORD FOR IT TO BE HIGHLIGHTED IF VIA CLOSE_WORDS FUNCTIONALITY
-    "close_words_min_word_length": 3,
-    # MINIMAL DISTANCE BETWEEN REPEATED WORDS
-    "close_words_min_distance_between_words": 100,
-    # MINIMAL FREQUENCE FOR REPEATED WORD TO BE HIGHLIGHTED
-    "close_words_min_frequency": 3,
-    # ENABLE FREQUENT WORDS SIDE PANEL
-    "enable_frequent_words": True,
-    # ENADBLE HIGHLIGHTING OF LONG SENTENCES
-    "enable_long_sentences": True,
-    # ENABLE HIGHLIGHTING OF REPEATED SPACES
-    "enable_multiple_spaces": True,
-    # ENABLE HIGHLIGHTING OF REPEATED PUNCTUATION  (eg. !! ?? ..)
-    "enable_multiple_punctuation": True,
-    # ENABLE HIGHLIGHTING OF TRAILING SPACES AT THE END OF PARAGRAPH
-    "enable_trailing_spaces": True,
-    # ENABLE HIGHLIGHTING OF WORD THAT ARE REPEATED AT SAME SPOTS
-    "enable_close_words": True,
-}
 
 
 # MAIN BACKEND LOGIC IMPLEMENTATION
@@ -54,20 +22,17 @@ class Service:
         if os.path.exists(path):
             with open(path, 'r') as file:
                 c = json.load(file)
+                return Config(c)
                 # CHECK IF ALL CONFIG_KEYS ARE PRESENT
                 # PROVIDE MISSING KEYS FROM DEFAULTS
-                for key, value in default_config.items():
-                    if key not in c:
-                        c[key] = value
-                return c
         else:
-            return default_config
+            return Config()
 
     # FUNCTION THAT SAVES CONFIG TO FILE
     @staticmethod
-    def save_config(c, path: string):
+    def save_config(c: Config, path: string):
         with open(path, 'w') as file:
-            json.dump(c, file, indent=4)
+            json.dump(c.to_dict(), file, indent=4)
 
     # FUNCTION THAT CALCULATE READABILITY INDICES
     @staticmethod

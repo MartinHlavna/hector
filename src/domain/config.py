@@ -1,0 +1,62 @@
+class Config:
+    def __init__(self, data=None):
+        """
+        Constructor accepts a dictionary and sets the class attributes.
+        If a key is not provided in the dictionary, the default value is used.
+
+        :param data: Dictionary containing the data to initialize the object. If not provided, default values are used.
+        """
+        if data is None:
+            data = {}
+
+        # MINIMAL LENGTH OF WORD FOR IT TO APPEAR IN FREQUENT WORDS SECTION
+        self.repeated_words_min_word_length = data.get('repeated_words_min_word_length', 3)
+        # MINIMAL NUMBER OF WORD REPETITIONS FOR IT TO APPEAR IN REPEATED WORDS SECTION
+        self.repeated_words_min_word_frequency = data.get('repeated_words_min_word_frequency', 2)
+        # SENTENCE IS CONSIDERED MID LONG IF IT HAS MORE WORDS THAN THIS CONFIG
+        self.long_sentence_words_mid = data.get('long_sentence_words_mid', 8)
+        # SENTENCE IS CONSIDERED HIGH LONG IF IT HAS MORE WORDS THAN THIS CONFIG
+        self.long_sentence_words_high = data.get('long_sentence_words_high', 16)
+        # WORD IS COUNTED TO SENTENCE LENGTH ONLY IF IT HAS MORE CHARS THAN THIS CONFIG
+        self.long_sentence_min_word_length = data.get('long_sentence_min_word_length', 5)
+        # MINIMAL LENGTH OF WORD FOR IT TO BE HIGHLIGHTED IF VIA CLOSE_WORDS FUNCTIONALITY
+        self.close_words_min_word_length = data.get('close_words_min_word_length', 3)
+        # MINIMAL DISTANCE BETWEEN REPEATED WORDS
+        self.close_words_min_distance_between_words = data.get('close_words_min_distance_between_words', 100)
+        # MINIMAL FREQUENCY FOR REPEATED WORD TO BE HIGHLIGHTED
+        self.close_words_min_frequency = data.get('close_words_min_frequency', 3)
+        # ENABLE FREQUENT WORDS SIDE PANEL
+        self.enable_frequent_words = data.get('enable_frequent_words', True)
+        # ENABLE HIGHLIGHTING OF LONG SENTENCES
+        self.enable_long_sentences = data.get('enable_long_sentences', True)
+        # ENABLE HIGHLIGHTING OF REPEATED SPACES
+        self.enable_multiple_spaces = data.get('enable_multiple_spaces', True)
+        # ENABLE HIGHLIGHTING OF REPEATED PUNCTUATION (eg. !! ?? ..)
+        self.enable_multiple_punctuation = data.get('enable_multiple_punctuation', True)
+        # ENABLE HIGHLIGHTING OF TRAILING SPACES AT THE END OF PARAGRAPH
+        self.enable_trailing_spaces = data.get('enable_trailing_spaces', True)
+        # ENABLE HIGHLIGHTING OF WORDS THAT ARE REPEATED AT SAME SPOTS
+        self.enable_close_words = data.get('enable_close_words', True)
+
+    def to_dict(self):
+        """
+        Exports the current state of the object to a dictionary.
+
+        :return: Dictionary containing the current state of the object.
+        """
+        return {
+            "repeated_words_min_word_length": self.repeated_words_min_word_length,
+            "repeated_words_min_word_frequency": self.repeated_words_min_word_frequency,
+            "long_sentence_words_mid": self.long_sentence_words_mid,
+            "long_sentence_words_high": self.long_sentence_words_high,
+            "long_sentence_min_word_length": self.long_sentence_min_word_length,
+            "close_words_min_word_length": self.close_words_min_word_length,
+            "close_words_min_distance_between_words": self.close_words_min_distance_between_words,
+            "close_words_min_frequency": self.close_words_min_frequency,
+            "enable_frequent_words": self.enable_frequent_words,
+            "enable_long_sentences": self.enable_long_sentences,
+            "enable_multiple_spaces": self.enable_multiple_spaces,
+            "enable_multiple_punctuation": self.enable_multiple_punctuation,
+            "enable_trailing_spaces": self.enable_trailing_spaces,
+            "enable_close_words": self.enable_close_words
+        }
