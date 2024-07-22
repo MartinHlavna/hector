@@ -114,7 +114,6 @@ main_window = MainWindow(root, nlp, spellcheck_dictionary, thesaurus)
 main_window.start_main_loop()
 
 # TODO LEVEL A (production features):
-# Word frequencies and close words should be able to work on lemmas
 
 # TODO LEVEL B (nice to have features): Consider adding:
 # Heatmap?
