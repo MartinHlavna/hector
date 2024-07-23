@@ -38,7 +38,6 @@ with open(Utils.resource_path('data_files/dep_tag_translations.json'), 'r', enco
     DEP_TAG_TRANSLATION = json.load(file)
 
 
-# TODO: Move anything non gui related to service and separate backend and frontend logic
 # MAIN GUI WINDOW
 class MainWindow:
     def __init__(self, r, _nlp: spacy, spellcheck_dictionary: Hunspell, thesaurus: PyThes):
@@ -317,56 +316,41 @@ class MainWindow:
     def display_word_frequencies(self, doc: Doc):
         if not self.config.enable_frequent_words:
             return
-        x = doc._.unique_words
-        if self.config.repeated_words_use_lemma:
-            x = doc._.lemmas
-        words = {k: v for (k, v) in x.items() if
-                 len(k) >= self.config.repeated_words_min_word_length and len(
-                     v.occourences) >= self.config.repeated_words_min_word_frequency}
-        sorted_word_counts = sorted(words.values(), key=lambda x: len(x.occourences), reverse=True)
-
+        word_counts = Service.compute_word_frequencies(doc, self.config)
         # NOTE
         # In tk, there is problem with scrolling so we default to using on big text to dispaly frequencies
         # There is way of making canvas with scrollregion but this is more performant
         frequent_words_text = "\n".join(
-            [f"{word.text}\t\t{len(word.occourences)}x" for word in sorted_word_counts]
+            [f"{word.text}\t\t{len(word.occourences)}x" for word in word_counts]
         )
         MainWindow.set_text(self.word_freq_text, frequent_words_text)
 
-    # TODO: MAYBE LOGIC SHOULD BE HANDLED IN SERVICE AND ADDED AS EXTENSION TO Sent SPAN
     # HIGHLIGHT LONG SENTENCES
     def highlight_long_sentences(self, doc: Doc):
         if not self.config.enable_long_sentences:
             return
         for sentence in doc.sents:
-            highlight_start = sentence.start_char
-            highlight_end = sentence.end_char
-            words = [word for word in sentence if
-                     word._.is_word and len(word.text) >= self.config.long_sentence_min_word_length]
-            if len(words) > self.config.long_sentence_words_mid:
-                start_index = f"1.0 + {highlight_start} chars"
-                end_index = f"1.0 + {highlight_end} chars"
-                if len(words) > self.config.long_sentence_words_high:
-                    self.text_editor.tag_add(LONG_SENTENCE_TAG_NAME_HIGH, start_index, end_index)
-                else:
-                    self.text_editor.tag_add(LONG_SENTENCE_TAG_NAME_MID, start_index, end_index)
+            if sentence._.is_long_sentence:
+                start_index = f"1.0 + {sentence.start_char} chars"
+                end_index = f"1.0 + {sentence.end_char} chars"
+                self.text_editor.tag_add(LONG_SENTENCE_TAG_NAME_HIGH, start_index, end_index)
+            elif sentence._.is_mid_sentence:
+                start_index = f"1.0 + {sentence.start_char} chars"
+                end_index = f"1.0 + {sentence.end_char} chars"
+                self.text_editor.tag_add(LONG_SENTENCE_TAG_NAME_MID, start_index, end_index)
 
     # HIGHLIGH MULTIPLE SPACE, MULTIPLE PUNCTATION, AND TRAILING SPACES
-    def highlight_multiple_issues(self, text):
+    def highlight_multiple_issues(self, doc: Doc):
         self.text_editor.tag_remove(MULTIPLE_SPACES_TAG_NAME, "1.0", tk.END)
         if self.config.enable_multiple_spaces:
-            matches = re.finditer(r' {2,}', text)
+            matches = Service.find_multiple_spaces(doc)
             for match in matches:
                 start_index = f"1.0 + {match.start()} chars"
                 end_index = f"1.0 + {match.end()} chars"
                 self.text_editor.tag_add(MULTIPLE_SPACES_TAG_NAME, start_index, end_index)
-                self.bind_tag_mouse_event(MULTIPLE_SPACES_TAG_NAME,
-                                          lambda e: self.show_tooltip(e, f'Viacnásobná medzera.'),
-                                          lambda e: self.hide_tooltip(e)
-                                          )
 
         if self.config.enable_multiple_punctuation:
-            matches = re.finditer(r'([!?.,:;]){2,}', text)
+            matches = Service.find_multiple_punctuation(doc)
             for match in matches:
                 if match.group() not in ["?!"]:
                     start_index = f"1.0 + {match.start()} chars"
@@ -374,7 +358,7 @@ class MainWindow:
                     self.text_editor.tag_add(MULTIPLE_PUNCTUATION_TAG_NAME, start_index, end_index)
 
         if self.config.enable_trailing_spaces:
-            matches = re.finditer(r' +$', text, re.MULTILINE)
+            matches = Service.find_trailing_spaces(doc)
             for match in matches:
                 start_index = f"1.0 + {match.start()} chars"
                 end_index = f"1.0 + {match.end()} chars"
@@ -384,30 +368,7 @@ class MainWindow:
     def highlight_close_words(self, doc: Doc):
         if self.config.enable_close_words:
             self.text_editor.tag_remove("close_word", "1.0", tk.END)
-            close_words = {}
-            x = doc._.unique_words
-            if self.config.close_words_use_lemma:
-                x = doc._.lemmas
-            words_nlp = {k: v for (k, v) in x.items() if
-                         len(k) >= self.config.close_words_min_word_length}
-            for key, unique_word in words_nlp.items():
-                # IF WORD DOES NOT OCCOUR ENOUGH TIMES WE DONT NEED TO CHECK IF ITS OCCOURENCES ARE CLOSE
-                if len(unique_word.occourences) < self.config.close_words_min_frequency + 1:
-                    continue
-                for idx, word_occource in enumerate(unique_word.occourences):
-                    repetitions = []
-                    for possible_repetition in unique_word.occourences[idx + 1:len(unique_word.occourences) + 1]:
-                        if possible_repetition.i - word_occource.i <= self.config.close_words_min_distance_between_words:
-                            repetitions.append(word_occource)
-                            repetitions.append(possible_repetition)
-                        else:
-                            break
-                    if len(repetitions) > self.config.close_words_min_frequency:
-                        if key not in close_words:
-                            close_words[key] = set()
-                        close_words[key].update(repetitions)
-            close_words = dict(sorted(close_words.items(), key=lambda item: len(item[1]), reverse=True))
-
+            close_words = Service.evaluate_close_words(doc, self.config)
             # NOTE
             # In tk, there is problem with scrolling so we default to using on big text to dispaly frequencies
             # There is way of making canvas with scrollregion but this is more performant
@@ -534,7 +495,7 @@ class MainWindow:
         # RUN ANALYSIS
         # TODO: Evaluate if we can run partial NLP only on changed parts
         self.doc = Doc.from_docs(list(self.nlp.pipe([text], batch_size=NLP_BATCH_SIZE)))
-        Service.fill_custom_data(self.doc)
+        Service.fill_custom_data(self.doc, self.config)
         # CLEAR TAGS
         for tag in self.text_editor.tag_names():
             self.text_editor.tag_delete(tag)
@@ -543,8 +504,8 @@ class MainWindow:
         self.display_size_info(self.doc)
         self.highlight_long_sentences(self.doc)
         self.highlight_close_words(self.doc)
-        self.highlight_multiple_issues(text)
-        self.run_spellcheck()
+        self.highlight_multiple_issues(self.doc)
+        self.run_spellcheck(self.doc)
         # CONFIG TAGS
         self.text_editor.tag_config(LONG_SENTENCE_TAG_NAME_MID, background=LONG_SENTENCE_HIGHLIGHT_COLOR_MID)
         self.text_editor.tag_config(LONG_SENTENCE_TAG_NAME_HIGH, background=LONG_SENTENCE_HIGHLIGHT_COLOR_HIGH)
@@ -578,6 +539,10 @@ class MainWindow:
                                   )
         self.bind_tag_mouse_event(MULTIPLE_PUNCTUATION_TAG_NAME,
                                   lambda e: self.show_tooltip(e, f'Viacnásobná interpunkcia.'),
+                                  lambda e: self.hide_tooltip(e)
+                                  )
+        self.bind_tag_mouse_event(MULTIPLE_SPACES_TAG_NAME,
+                                  lambda e: self.show_tooltip(e, f'Viacnásobná medzera.'),
                                   lambda e: self.hide_tooltip(e)
                                   )
         readability = Service.evaluate_readability(self.doc)
@@ -708,9 +673,9 @@ class MainWindow:
         return
 
     # RUN SPELLCHECK
-    def run_spellcheck(self):
+    def run_spellcheck(self, doc: Doc):
         if self.config.enable_spellcheck:
-            Service.spellcheck(self.spellcheck_dictionary, self.doc)
+            Service.spellcheck(self.spellcheck_dictionary, doc)
             for word in self.doc._.words:
                 if word._.has_grammar_error:
                     start_index = f"1.0 + {word.idx} chars"
@@ -913,8 +878,7 @@ class MainWindow:
             row=row, column=1, columnspan=2, padx=10, pady=10, sticky='w'
         )
 
-
-# SHOW ABOUT DIALOG
+    # SHOW ABOUT DIALOG
     def show_about(self):
         about_window = tk.Toplevel(self.root)
         about_window.title("O programe")

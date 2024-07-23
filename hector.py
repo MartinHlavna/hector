@@ -9,7 +9,7 @@ from hunspell import Hunspell
 from spacy.lang.char_classes import LIST_ELLIPSES, LIST_ICONS, ALPHA_LOWER, ALPHA_UPPER, ALPHA
 from spacy.lang.sl.punctuation import CONCAT_QUOTES
 from spacy.tokenizer import Tokenizer
-from spacy.tokens import Doc
+from spacy.tokens import Doc, Span
 from spacy.tokens.token import Token
 from spacy.util import compile_infix_regex
 from ttkthemes import ThemedTk
@@ -97,6 +97,8 @@ Doc.set_extension("total_chars", default=0, force=True)
 Doc.set_extension("total_words", default=0, force=True)
 Doc.set_extension("total_unique_words", default=0, force=True)
 Doc.set_extension("total_pages", default=0, force=True)
+Span.set_extension("is_mid_sentence", default=False, force=True)
+Span.set_extension("is_long_sentence", default=False, force=True)
 splash.update_status("sťahujem a inicializujem slovník...")
 if not os.path.isdir(DICTIONARY_DIR):
     os.mkdir(DICTIONARY_DIR)

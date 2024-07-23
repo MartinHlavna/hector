@@ -14,6 +14,12 @@ from src.const.grammar_error_types import *
 from src.const.values import *
 from src.utils import Utils
 
+PATTERN_TRAILING_SPACES = r' +$'
+
+PATTERN_MULTIPLE_PUNCTUACTION = r'([!?.,:;]){2,}'
+
+PATTERN_MULTIPLE_SPACES = r' {2,}'
+
 with open(Utils.resource_path('data_files/misstagged_words.json'), 'r', encoding='utf-8') as file:
     MISSTAGGED_WORDS = json.load(file)
 
@@ -49,6 +55,44 @@ class Service:
         mistrik_index = READABILITY_MAX_VALUE - ((average_sentence_length * average_word_length) / type_to_token_ratio)
         return READABILITY_MAX_VALUE - max(0.0, round(mistrik_index, 0))
 
+    # METHOD THAT COMPUTES WORD FREQUENCIES
+    @staticmethod
+    def compute_word_frequencies(doc: Doc, config: Config):
+        x = doc._.unique_words
+        if config.repeated_words_use_lemma:
+            x = doc._.lemmas
+        words = {k: v for (k, v) in x.items() if
+                 len(k) >= config.repeated_words_min_word_length and len(
+                     v.occourences) >= config.repeated_words_min_word_frequency}
+        return sorted(words.values(), key=lambda x: len(x.occourences), reverse=True)
+
+    # METHOD THAT EVALUATES CLOSE WORDS
+    @staticmethod
+    def evaluate_close_words(doc: Doc, config: Config):
+        close_words = {}
+        x = doc._.unique_words
+        if config.close_words_use_lemma:
+            x = doc._.lemmas
+        words_nlp = {k: v for (k, v) in x.items() if
+                     len(k) >= config.close_words_min_word_length}
+        for key, unique_word in words_nlp.items():
+            # IF WORD DOES NOT OCCOUR ENOUGH TIMES WE DONT NEED TO CHECK IF ITS OCCOURENCES ARE CLOSE
+            if len(unique_word.occourences) < config.close_words_min_frequency + 1:
+                continue
+            for idx, word_occource in enumerate(unique_word.occourences):
+                repetitions = []
+                for possible_repetition in unique_word.occourences[idx + 1:len(unique_word.occourences) + 1]:
+                    if possible_repetition.i - word_occource.i <= config.close_words_min_distance_between_words:
+                        repetitions.append(word_occource)
+                        repetitions.append(possible_repetition)
+                    else:
+                        break
+                if len(repetitions) > config.close_words_min_frequency:
+                    if key not in close_words:
+                        close_words[key] = set()
+                    close_words[key].update(repetitions)
+        return dict(sorted(close_words.items(), key=lambda item: len(item[1]), reverse=True))
+
     # METHOD THAT REMOVES ACCENTS FROM STRING
     @staticmethod
     def remove_accents(text):
@@ -57,7 +101,7 @@ class Service:
 
     # METHOD THAT ADDS ALL EXTENSION DATA IN SINGLE PASS OVER ALL TOKENS
     @staticmethod
-    def fill_custom_data(doc: Doc):
+    def fill_custom_data(doc: Doc, config: Config):
         word_pattern = re.compile("\\w+")
         words = []
         lemmas = {}
@@ -84,7 +128,27 @@ class Service:
         doc._.total_words = len(words)
         doc._.total_unique_words = len(unique_words)
         doc._.total_pages = round(doc._.total_chars / 1800, 2)
+        for sentence in doc.sents:
+            words = [word for word in sentence if
+                     word._.is_word and len(word.text) >= config.long_sentence_min_word_length]
+            if len(words) > config.long_sentence_words_mid:
+                if len(words) > config.long_sentence_words_high:
+                    sentence._.is_long_sentence = True
+                else:
+                    sentence._.is_mid_sentence = True
         return doc
+
+    @staticmethod
+    def find_multiple_spaces(doc: Doc):
+        return re.finditer(PATTERN_MULTIPLE_SPACES, doc.text)
+
+    @staticmethod
+    def find_multiple_punctuation(doc: Doc):
+        return re.finditer(PATTERN_MULTIPLE_PUNCTUACTION, doc.text)
+
+    @staticmethod
+    def find_trailing_spaces(doc: Doc):
+        return re.finditer(PATTERN_TRAILING_SPACES, doc.text, re.MULTILINE)
 
     @staticmethod
     def spellcheck(spellcheck_dictionary: Hunspell, doc: Doc):
