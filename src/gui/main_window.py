@@ -87,7 +87,6 @@ class MainWindow:
         # LOAD CONFIG
         self.config = Service.load_config(CONFIG_FILE_PATH)
         # INIT GUI
-        # TODO: Remove anything that does not have to be in self and move that var only to local
         # MAIN FRAME
         main_frame = tk.Frame(self.root)
         main_frame.pack(expand=1, fill=tk.BOTH, side=tk.LEFT)
@@ -106,8 +105,8 @@ class MainWindow:
                                            style='arrowless.Vertical.TScrollbar', takefocus=False)
         text_editor_scroll.pack(side=tk.RIGHT, fill=tk.Y)
         # BOTTOM PANEL WITH TEXT SIZE
-        self.bottom_panel = tk.Frame(text_editor_frame, background=MID_BLUE, height=20)
-        self.bottom_panel.pack(fill=tk.BOTH, side=tk.BOTTOM)
+        bottom_panel = tk.Frame(text_editor_frame, background=MID_BLUE, height=20)
+        bottom_panel.pack(fill=tk.BOTH, side=tk.BOTTOM)
         # LEFT PANEL CONTENTS
         self.introspection_text = tk.Text(left_side_panel, highlightthickness=0, bd=0, wrap=tk.WORD, state=tk.DISABLED,
                                           width=30, background=PRIMARY_BLUE, foreground=TEXT_COLOR_WHITE, height=15,
@@ -184,50 +183,50 @@ class MainWindow:
         self.word_freq_text.pack(fill=tk.BOTH, expand=1, pady=10, padx=10)
         right_side_frame_scroll.config(command=self.word_freq_text.yview)
         # BOTTOM PANEL CONTENTS
-        char_count_info_label = tk.Label(self.bottom_panel, text="Počet znakov s medzerami:", anchor='sw',
+        char_count_info_label = tk.Label(bottom_panel, text="Počet znakov s medzerami:", anchor='sw',
                                          justify='left', background=MID_BLUE, foreground=TEXT_COLOR_WHITE,
                                          font=(HELVETICA_FONT_NAME, TEXT_SIZE_BOTTOM_BAR))
         char_count_info_label.pack(side=tk.LEFT, padx=(5, 0), pady=5)
-        self.char_count_info_value = tk.Label(self.bottom_panel, text="0", anchor='sw', justify='left',
+        self.char_count_info_value = tk.Label(bottom_panel, text="0", anchor='sw', justify='left',
                                               background=MID_BLUE, foreground=TEXT_COLOR_WHITE,
                                               font=(HELVETICA_FONT_NAME, TEXT_SIZE_BOTTOM_BAR))
         self.char_count_info_value.pack(side=tk.LEFT, padx=0, pady=5)
-        tk.Label(self.bottom_panel, text="Počet slov:", anchor='sw', justify='left',
+        tk.Label(bottom_panel, text="Počet slov:", anchor='sw', justify='left',
                  background=MID_BLUE, foreground=TEXT_COLOR_WHITE,
                  font=(HELVETICA_FONT_NAME, TEXT_SIZE_BOTTOM_BAR)).pack(
             side=tk.LEFT, padx=(5, 0), pady=5
         )
-        self.word_count_info_value = tk.Label(self.bottom_panel, text="0", anchor='sw', justify='left',
+        self.word_count_info_value = tk.Label(bottom_panel, text="0", anchor='sw', justify='left',
                                               background=MID_BLUE, foreground=TEXT_COLOR_WHITE,
                                               font=(HELVETICA_FONT_NAME, TEXT_SIZE_BOTTOM_BAR))
         self.word_count_info_value.pack(side=tk.LEFT, padx=0, pady=5)
-        tk.Label(self.bottom_panel, text="Počet normostrán:", anchor='sw', justify='left',
+        tk.Label(bottom_panel, text="Počet normostrán:", anchor='sw', justify='left',
                  background=MID_BLUE, foreground=TEXT_COLOR_WHITE,
                  font=(HELVETICA_FONT_NAME, TEXT_SIZE_BOTTOM_BAR)).pack(
             side=tk.LEFT, padx=(5, 0), pady=5
         )
-        self.page_count_info_value = tk.Label(self.bottom_panel, text="0", anchor='sw', justify='left',
+        self.page_count_info_value = tk.Label(bottom_panel, text="0", anchor='sw', justify='left',
                                               background=MID_BLUE, foreground=TEXT_COLOR_WHITE,
                                               font=(HELVETICA_FONT_NAME, TEXT_SIZE_BOTTOM_BAR))
         self.page_count_info_value.pack(side=tk.LEFT, padx=0, pady=5)
-        tk.Label(self.bottom_panel, text="Štylistická zložitosť textu:", anchor='sw', justify='left',
+        tk.Label(bottom_panel, text="Štylistická zložitosť textu:", anchor='sw', justify='left',
                  background=MID_BLUE, foreground=TEXT_COLOR_WHITE,
                  font=(HELVETICA_FONT_NAME, TEXT_SIZE_BOTTOM_BAR)).pack(
             side=tk.LEFT, padx=(5, 0), pady=5
         )
-        self.readability_value = tk.Label(self.bottom_panel, text=f"0 / {READABILITY_MAX_VALUE}", anchor='sw',
+        self.readability_value = tk.Label(bottom_panel, text=f"0 / {READABILITY_MAX_VALUE}", anchor='sw',
                                           justify='left',
                                           background=MID_BLUE, foreground=TEXT_COLOR_WHITE,
                                           font=(HELVETICA_FONT_NAME, TEXT_SIZE_BOTTOM_BAR))
         self.readability_value.pack(side=tk.LEFT, padx=0, pady=5)
-        self.editor_text_size_input = ttk.Spinbox(self.bottom_panel, from_=1, to=30, width=10,
+        self.editor_text_size_input = ttk.Spinbox(bottom_panel, from_=1, to=30, width=10,
                                                   font=(HELVETICA_FONT_NAME, TEXT_SIZE_BOTTOM_BAR),
                                                   style='info.TSpinbox', takefocus=False,
                                                   command=lambda: self.set_text_size(self.editor_text_size_input.get()))
         self.editor_text_size_input.set(self.text_size)
         self.editor_text_size_input.bind("<Return>", lambda e: self.set_text_size(self.editor_text_size_input.get()))
         self.editor_text_size_input.pack(side=tk.RIGHT)
-        tk.Label(self.bottom_panel, text="Veľkosť textu v editore:", anchor='sw', justify='left',
+        tk.Label(bottom_panel, text="Veľkosť textu v editore:", anchor='sw', justify='left',
                  background=MID_BLUE, foreground=TEXT_COLOR_WHITE,
                  font=(HELVETICA_FONT_NAME, TEXT_SIZE_BOTTOM_BAR)).pack(
             side=tk.RIGHT, padx=(5, 0), pady=5
