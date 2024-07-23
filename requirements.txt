@@ -7,3 +7,4 @@ cyhunspell @ https://github.com/MSeal/cython_hunspell/archive/refs/tags/2.0.3.ta
 svglib~=1.5.1
 reportlab~=4.2.2
 pytest~=8.2.2
+pythes @ git+https://github.com/MartinHlavna/pythes
