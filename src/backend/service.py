@@ -12,6 +12,10 @@ from src.domain.config import Config
 from src.domain.unique_word import UniqueWord
 from src.const.grammar_error_types import *
 from src.const.values import *
+from src.utils import Utils
+
+with open(Utils.resource_path('data_files/misstagged_words.json'), 'r', encoding='utf-8') as file:
+    MISSTAGGED_WORDS = json.load(file)
 
 
 # MAIN BACKEND LOGIC IMPLEMENTATION
@@ -129,8 +133,7 @@ class Service:
             if (doc[target].pos_ == "DET" or doc[target].pos_ == "PRON") and target_morph.get("Case") != "Nom":
                 continue
             # KNOWN MISTAGS
-            # TODO: Maybe we can move these mistagged word to separate data files
-            if doc[target].lower_ == "ony":
+            if doc[target].lower_ in MISSTAGGED_WORDS:
                 continue
             if doc[target].pos_ == "NOUN" and (target_morph.get("Gender") != "Masc" or target_morph.get("Case") != "Nom"):
                 continue
