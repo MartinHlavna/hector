@@ -35,7 +35,7 @@ jobs:
       run: sudo apt install -y autoconf libtool gettext autopoint
     - name: Install hunspell requirements for macOS
       if: matrix.os == 'macos-latest'
-      run: brew install automake autoconf gettext libtool
+      run: brew install automake autoconf libtool
     - name: Install dependencies
       run: |
         python -m pip install --upgrade pip
