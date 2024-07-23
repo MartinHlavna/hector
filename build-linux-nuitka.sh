@@ -7,7 +7,8 @@ rm -rf build.hector && python3 -m nuitka hector.py  \
   --include-package=hunspell \
   --include-package-data=hunspell \
   --include-module=fsspec.implementations.github \
-  --include-data-dir=images=images
+  --include-data-dir=images=images \
+  --include-data-dir=data_files=data_files
 
 
 #--user-package-configuration-file=nuitka-config.yaml

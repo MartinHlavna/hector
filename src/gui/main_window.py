@@ -1,4 +1,5 @@
 import io
+import json
 import math
 import platform
 import random
@@ -30,95 +31,11 @@ EDITOR_LOGO_WIDTH = 300
 ENABLE_DEBUG_DEP_IMAGE = False
 VERSION = "0.6.2 Alfa"
 
-# TODO: Move to data file
-POS_TAG_TRANSLATIONS = {
-    "ADJ": "prídavné meno",
-    "ADP": "predložka",
-    "ADV": "príslovka",
-    "AUX": "pomocné sloveso",
-    "CCONJ": "priraďovacia spojka",
-    "DET": "zámeno",
-    "INTJ": "citoslovce",
-    "NOUN": "podstatné meno",
-    "NUM": "číslovka",
-    "PART": "častica",
-    "PRON": "zámeno",
-    "PROPN": "vlastné meno",
-    "PUNCT": "interpunkcia",
-    "SCONJ": "podraďovacia spojka",
-    "SYM": "symbol",
-    "VERB": "sloveso",
-    "X": "iné"
-}
+with open(Utils.resource_path('data_files/pos_tag_translations.json'), 'r', encoding='utf-8') as file:
+    POS_TAG_TRANSLATIONS = json.load(file)
 
-DEP_TAG_TRANSLATION = {
-    "acl": "modifikátor podstatného mena",
-    "acl:relcl": "modifikátor relatívnej vety",
-    "advcl": "modifikátor príslovkovej vety",
-    "advcl:relcl": "modifikátor relatívnej príslovkovej vety",
-    "advmod": "príslovkový modifikátor",
-    "advmod:emph": "zdôrazňujúce slovo",
-    "advmod:lmod": "príslovkový modifikátor",
-    "amod": "adjektívny modifikátor",
-    "appos": "apozitívny modifikátor",
-    "aux": "pomocné sloveso",
-    "aux:pass": "pomocné sloveso v pasíve",
-    "case": "markovanie pádu",
-    "cc": "priradzovacia spojka",
-    "cc:preconj": "predspojka",
-    "ccomp": "klauzálny doplnok",
-    "clf": "klasifikátor",
-    "compound": "zložený",
-    "compound:lvc": "zložené sloveso",
-    "compound:prt": "frázová slovesná častica",
-    "compound:redup": "reduplikovaná zloženina",
-    "compound:svc": "slovesné zloženina",
-    "conj": "spojka",
-    "cop": "kopula",
-    "csubj": "klauzálny podmet",
-    "csubj:outer": "klauzálny podmet vp vonkajšej klauzule",
-    "csubj:pass": "klauzálny pasívny podmet",
-    "dep": "nešpecifikovaná závislosť",
-    "det": "determiner (člen alebo zámeno)",
-    "det:numgov": "zámenový kvantifikátor určujúci pád podstatného mena",
-    "det:nummod": "zámenový kvantifikátor zhodujúci sa v páde s podstatným menom",
-    "det:poss": "privlastňovací determiner",
-    "discourse": "diskurzívny prvok",
-    "dislocated": "dislokované prvky",
-    "expl": "expletívum",
-    "expl:impers": "nepersónálne expletívum",
-    "expl:pass": "reflexívne zámeno použité v reflexívnom pasíve",
-    "expl:pv": "reflexívne clitikum s inherentne reflexívnym slovesom",
-    "fixed": "fixný viacslovný výraz",
-    "flat": "plochý výraz",
-    "flat:foreign": "cudzie slová",
-    "flat:name": "mená",
-    "goeswith": "patrí s",
-    "iobj": "nepriamy objekt",
-    "list": "zoznam",
-    "mark": "marker",
-    "nmod": "nominálny modifikátor",
-    "nmod:poss": "privlastňovací nominálny modifikátor",
-    "nmod:tmod": "časový modifikátor",
-    "nsubj": "nominálny podmet",
-    "nsubj:outer": "nominálny podmet vo vonkajšej klauzule",
-    "nsubj:pass": "pasívny nominálny podmet",
-    "nummod": "číselný modifikátor",
-    "nummod:gov": "číselný modifikátor určujúci pád podstatného mena",
-    "obj": "objekt",
-    "obl": "oblikačný nominál",
-    "obl:agent": "agentový modifikátor",
-    "obl:arg": "oblikačný argument",
-    "obl:lmod": "lokatívny modifikátor",
-    "obl:tmod": "časový modifikátor",
-    "orphan": "sirota",
-    "parataxis": "parataxis",
-    "punct": "interpunkcia",
-    "reparandum": "prekonaná dysfluentnosť",
-    "root": "koreň vety",
-    "vocative": "vokatív",
-    "xcomp": "otvorený klauzálny doplnok"
-}
+with open(Utils.resource_path('data_files/dep_tag_translations.json'), 'r', encoding='utf-8') as file:
+    DEP_TAG_TRANSLATION = json.load(file)
 
 
 # TODO: Move anything non gui related to service and separate backend and frontend logic

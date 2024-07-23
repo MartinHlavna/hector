@@ -1,0 +1,19 @@
+{
+  "ADJ": "prídavné meno",
+  "ADP": "predložka",
+  "ADV": "príslovka",
+  "AUX": "pomocné sloveso",
+  "CCONJ": "priraďovacia spojka",
+  "DET": "zámeno",
+  "INTJ": "citoslovce",
+  "NOUN": "podstatné meno",
+  "NUM": "číslovka",
+  "PART": "častica",
+  "PRON": "zámeno",
+  "PROPN": "vlastné meno",
+  "PUNCT": "interpunkcia",
+  "SCONJ": "podraďovacia spojka",
+  "SYM": "symbol",
+  "VERB": "sloveso",
+  "X": "iné"
+}

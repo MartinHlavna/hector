@@ -52,7 +52,7 @@ jobs:
           include-package: ttkthemes,cacheman,hunspell
           include-package-data: ttkthemes,hunspell
           include-module: fsspec.implementations.github
-          include-data-dir: images=images
+          include-data-dir: images=images,data_files=data_files
       - name: Upload Artifacts
         uses: actions/upload-artifact@v4
         with:

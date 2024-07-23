@@ -8,4 +8,5 @@ python.exe -m nuitka hector.py  ^
   --include-package=hunspell ^
   --include-package-data=hunspell ^
   --include-module=fsspec.implementations.github ^
-  --include-data-dir=images=images
+  --include-data-dir=images=images ^
+  --include-data-dir=data_files=data_files
