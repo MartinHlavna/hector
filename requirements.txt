@@ -8,3 +8,4 @@ svglib~=1.5.1
 reportlab~=4.2.2
 pytest~=8.2.2
 pythes @ git+https://github.com/MartinHlavna/pythes
+tkinter-autoscrollbar @ git+https://github.com/MartinHlavna/tkinter-autoscrollbar

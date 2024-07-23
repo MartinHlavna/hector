@@ -15,7 +15,7 @@ from spacy import displacy
 from spacy.tokens import Doc
 from svglib.svglib import svg2rlg
 from hunspell import Hunspell
-from autoscrollbar import AutoScrollbar
+from tkinter_autoscrollbar import AutoScrollbar
 from pythes import PyThes
 from src.backend.service import Service
 from src.const.colors import *
