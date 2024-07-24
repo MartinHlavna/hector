@@ -372,10 +372,29 @@ class MainWindow:
             # NOTE
             # In tk, there is problem with scrolling so we default to using on big text to dispaly frequencies
             # There is way of making canvas with scrollregion but this is more performant
-            close_words_value_text = "\n".join(
-                [f"{word.lower()}\t\t{len(close_words[word])}x" for word in close_words]
-            )
-            MainWindow.set_text(self.close_words_text, close_words_value_text)
+            self.close_words_text.config(state=tk.NORMAL)
+            self.close_words_text.delete(1.0, tk.END)
+            start_char = 0
+            for word in close_words:
+                word_text = f"{word.lower()}\t\t{len(close_words[word])}x\n"
+                tag_name = f"{CLOSE_WORD_PREFIX}{word}"
+
+                # Insert the text
+                self.close_words_text.insert(tk.END, word_text)
+
+                # Add the tag to the inserted text
+                start_index = f"1.0 + {start_char} chars"
+                end_index = f"1.0 + {start_char + len(word_text)} chars"
+                self.close_words_text.tag_add(tag_name, start_index, end_index)
+                self.close_words_text.tag_add(CLOSE_WORD_TAG_NAME, start_index, end_index)
+                start_char += len(word_text)
+                self.bind_tag_mouse_event(tag_name,
+                                          self.close_words_text,
+                                          lambda e: self.highlight_same_word(e, self.close_words_text, False),
+                                          lambda e: self.unhighlight_same_word(e)
+                                          )
+            self.close_words_text.config(state=tk.DISABLED)
+
             for word in close_words.items():
                 key = word[0]
                 for occ in word[1]:
@@ -394,9 +413,9 @@ class MainWindow:
                                                 font=(HELVETICA_FONT_NAME, self.text_size + 2, BOLD_FONT))
 
     # BIND MOUSE ENTER AND MOUSE LEAVE EVENTS
-    def bind_tag_mouse_event(self, tag_name, on_enter, on_leave):
-        self.text_editor.tag_bind(tag_name, "<Enter>", on_enter)
-        self.text_editor.tag_bind(tag_name, "<Leave>", on_leave)
+    def bind_tag_mouse_event(self, tag_name, text, on_enter, on_leave):
+        text.tag_bind(tag_name, "<Enter>", on_enter)
+        text.tag_bind(tag_name, "<Leave>", on_leave)
 
     def highlight_grammar_error(self, event):
         # Získanie indexu myši
@@ -419,17 +438,19 @@ class MainWindow:
                     self.show_tooltip(event, f'Slovo by malo končiť na ýsi.\n\nNávrhy: {span.root.text[:-3] + "ýsi"}')
 
     # HIGHLIGHT SAME WORD ON MOUSE OVER
-    def highlight_same_word(self, event):
+    def highlight_same_word(self, event, trigger, with_tooltip=True):
         self.unhighlight_same_word(event)
         # Získanie indexu myši
-        mouse_index = self.text_editor.index(f"@{event.x},{event.y}")
+        mouse_index = trigger.index(f"@{event.x},{event.y}")
         # Získanie všetkých tagov na pozícii myši
-        tags_at_mouse = self.text_editor.tag_names(mouse_index)
-        self.show_tooltip(event, 'Toto slovo sa opakuje viackrát na krátkom úseku')
+        tags_at_mouse = trigger.tag_names(mouse_index)
+        if with_tooltip:
+            self.show_tooltip(event, 'Toto slovo sa opakuje viackrát na krátkom úseku')
         for tag in tags_at_mouse:
             if tag.startswith(CLOSE_WORD_PREFIX):
                 self.highlighted_close_word = tag
                 self.text_editor.tag_config(tag, background="black", foreground="white")
+                self.close_words_text.tag_config(tag, background="black", foreground="white")
 
     # REMOVE HIGHLIGHTING FROM SAME WORD ON MOUSE OVER END
     def unhighlight_same_word(self, event):
@@ -437,6 +458,7 @@ class MainWindow:
         if self.highlighted_close_word is not None and len(self.highlighted_close_word) > 0:
             original_color = self.close_word_colors.get(self.highlighted_close_word, "")
             self.text_editor.tag_config(self.highlighted_close_word, background="", foreground=original_color)
+            self.close_words_text.tag_config(self.highlighted_close_word, background="", foreground="")
 
     def show_tooltip(self, event, text):
         if self.tooltip:
@@ -516,32 +538,40 @@ class MainWindow:
         self.text_editor.tag_config(CURRENT_SEARCH_RESULT_TAG_NAME, background=CURRENT_SEARCH_RESULT_HIGHLIGHT_COLOR)
         self.text_editor.tag_config(GRAMMAR_ERROR_TAG_NAME, underline=True, underlinefg="red")
         self.text_editor.tag_raise("sel")
+        self.close_words_text.tag_raise("sel")
         # MOUSE BINDINGS
         self.bind_tag_mouse_event(CLOSE_WORD_TAG_NAME,
-                                  lambda e: self.highlight_same_word(e),
+                                  self.text_editor,
+                                  lambda e: self.highlight_same_word(e, self.text_editor),
                                   lambda e: self.unhighlight_same_word(e)
                                   )
         self.bind_tag_mouse_event(GRAMMAR_ERROR_TAG_NAME,
+                                  self.text_editor,
                                   lambda e: self.highlight_grammar_error(e),
                                   lambda e: self.hide_tooltip(e)
                                   )
         self.bind_tag_mouse_event(TRAILING_SPACES_TAG_NAME,
+                                  self.text_editor,
                                   lambda e: self.show_tooltip(e, f'Zbytočná medzera na konci odstavca.'),
                                   lambda e: self.hide_tooltip(e)
                                   )
         self.bind_tag_mouse_event(LONG_SENTENCE_TAG_NAME_MID,
+                                  self.text_editor,
                                   lambda e: self.show_tooltip(e, f'Táto veta je trochu dlhšia.'),
                                   lambda e: self.hide_tooltip(e)
                                   )
         self.bind_tag_mouse_event(LONG_SENTENCE_TAG_NAME_HIGH,
+                                  self.text_editor,
                                   lambda e: self.show_tooltip(e, f'Táto veta je dlhá.'),
                                   lambda e: self.hide_tooltip(e)
                                   )
         self.bind_tag_mouse_event(MULTIPLE_PUNCTUATION_TAG_NAME,
+                                  self.text_editor,
                                   lambda e: self.show_tooltip(e, f'Viacnásobná interpunkcia.'),
                                   lambda e: self.hide_tooltip(e)
                                   )
         self.bind_tag_mouse_event(MULTIPLE_SPACES_TAG_NAME,
+                                  self.text_editor,
                                   lambda e: self.show_tooltip(e, f'Viacnásobná medzera.'),
                                   lambda e: self.hide_tooltip(e)
                                   )

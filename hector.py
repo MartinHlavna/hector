@@ -37,10 +37,10 @@ main_window = MainWindow(root, nlp, dictionaries["spellcheck"], dictionaries["th
 main_window.start_main_loop()
 
 # TODO LEVEL A (production features):
+# Importing other document types like doc, docx, rtf, ...
 
 # TODO LEVEL B (nice to have features): Consider adding:
 # Heatmap?
 # Commas analysis based on some NLP apporach?
-# On mouse over in left/ride panel word, highlight words in editor
 # Right click context menu with analysis options on selected text
-# Importing other document types like doc, docx, rtf, ...
+# On mouse over in right panel word, highlight words in editor
