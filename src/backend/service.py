@@ -102,7 +102,7 @@ class Service:
             os.mkdir(DICTIONARY_DIR)
         if not os.path.isdir(SK_DICTIONARY_DIR):
             os.mkdir(SK_DICTIONARY_DIR)
-            fs = fsspec.filesystem("github", org="LibreOffice", repo="dictionaries", token=github_token, user=github_user)
+            fs = fsspec.filesystem("github", org="LibreOffice", repo="dictionaries", token=github_token, username=github_user)
             fs.get(fs.ls("sk_SK"), SK_DICTIONARY_DIR, recursive=True)
             fs = fsspec.filesystem("github", org="sk-spell", repo="hunspell-sk", token=github_token)
             fs.get(fs.ls("/"), SK_SPELL_DICTIONARY_DIR, recursive=True)
