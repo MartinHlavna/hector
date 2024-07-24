@@ -11,7 +11,7 @@ def setup_teardown(request):
     """
     # Initialization code, if needed
     nlp = Service.initialize_nlp()
-    dictionaries = Service.initialize_dictionaries(github_token=request.config.option.github_token)
+    dictionaries = Service.initialize_dictionaries(github_token=request.config.option.github_token, github_user=request.config.option.github_user)
     spellcheck_dictionary = dictionaries["spellcheck"]
     thesaurus = dictionaries["thesaurus"]
     yield nlp, spellcheck_dictionary, thesaurus
@@ -20,3 +20,4 @@ def setup_teardown(request):
 
 def pytest_addoption(parser):
     parser.addoption("--github_token", action="store", default=None)
+    parser.addoption("--github_user", action="store", default=None)
