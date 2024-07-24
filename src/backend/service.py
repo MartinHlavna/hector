@@ -1,17 +1,28 @@
 import json
 import os
 import re
+import shutil
 import string
+import tarfile
 import unicodedata
+import urllib
 
+import fsspec
+import spacy
 from hunspell import Hunspell
+from pythes import PyThes
+from spacy.lang.char_classes import LIST_ELLIPSES, LIST_ICONS, ALPHA_LOWER, ALPHA_UPPER, CONCAT_QUOTES, ALPHA
 from spacy.matcher import DependencyMatcher
-from spacy.tokens import Doc
+from spacy.tokenizer import Tokenizer
+from spacy.tokens import Doc, Token, Span
+from spacy.util import compile_infix_regex
 
+from src.const.grammar_error_types import *
+from src.const.paths import DATA_DIRECTORY, SPACY_MODELS_DIR, SK_SPACY_MODEL_DIR, DICTIONARY_DIR, SK_DICTIONARY_DIR, \
+    SK_SPELL_DICTIONARY_DIR
+from src.const.values import *
 from src.domain.config import Config
 from src.domain.unique_word import UniqueWord
-from src.const.grammar_error_types import *
-from src.const.values import *
 from src.utils import Utils
 
 PATTERN_TRAILING_SPACES = r' +$'
@@ -26,6 +37,80 @@ with open(Utils.resource_path('data_files/misstagged_words.json'), 'r', encoding
 
 # MAIN BACKEND LOGIC IMPLEMENTATION
 class Service:
+    # FUNCTION THAT INTIALIZES NLP ENGINE
+    @staticmethod
+    def initialize_nlp():
+        # INITIALIZE NLP ENGINE
+        spacy.util.set_data_path = Utils.resource_path('lib/site-packages/spacy/data')
+        if not os.path.isdir(DATA_DIRECTORY):
+            os.mkdir(DATA_DIRECTORY)
+        if not os.path.isdir(SPACY_MODELS_DIR):
+            os.mkdir(SPACY_MODELS_DIR)
+        if not os.path.isdir(SK_SPACY_MODEL_DIR):
+            os.mkdir(SK_SPACY_MODEL_DIR)
+            archive_file_name = os.path.join(SPACY_MODELS_DIR, f'{SPACY_MODEL_NAME_WITH_VERSION}.tar.gz')
+            with urllib.request.urlopen(SPACY_MODEL_LINK) as response, open(archive_file_name, 'wb') as out_file:
+                shutil.copyfileobj(response, out_file)
+            with tarfile.open(archive_file_name) as tar_file:
+                tar_file.extractall(SK_SPACY_MODEL_DIR)
+            os.remove(archive_file_name)
+        nlp = spacy.load(os.path.join(
+            SK_SPACY_MODEL_DIR,
+            SPACY_MODEL_NAME_WITH_VERSION,
+            SPACY_MODEL_NAME,
+            SPACY_MODEL_NAME_WITH_VERSION)
+        )
+        # CUSTOM TOKENIZER THAT TREATS HYPTHENATED WORDS AS SINGLE TOKEN
+        infixes = (
+                LIST_ELLIPSES
+                + LIST_ICONS
+                + [
+                    r"(?<=[0-9])[+\-\*^](?=[0-9-])",
+                    r"(?<=[{al}{q}])\.(?=[{au}{q}])".format(
+                        al=ALPHA_LOWER, au=ALPHA_UPPER, q=CONCAT_QUOTES
+                    ),
+                    r"(?<=[{a}]),(?=[{a}])".format(a=ALPHA),
+                    # OVERRIDE: r"(?<=[{a}])(?:{h})(?=[{a}])".format(a=ALPHA, h=HYPHENS),
+                    r"(?<=[{a}0-9])[:<>=/](?=[{a}])".format(a=ALPHA),
+                ]
+        )
+        infix_re = compile_infix_regex(infixes)
+        nlp.tokenizer = Tokenizer(nlp.vocab, prefix_search=nlp.tokenizer.prefix_search,
+                                  suffix_search=nlp.tokenizer.suffix_search,
+                                  infix_finditer=infix_re.finditer,
+                                  token_match=nlp.tokenizer.token_match,
+                                  rules=nlp.Defaults.tokenizer_exceptions)
+        # SPACY EXTENSIONS
+        Token.set_extension("is_word", default=False, force=True)
+        Token.set_extension("grammar_error_type", default=False, force=True)
+        Token.set_extension("has_grammar_error", default=False, force=True)
+        Doc.set_extension("words", default=[], force=True)
+        Doc.set_extension("unique_words", default=[], force=True)
+        Doc.set_extension("lemmas", default=[], force=True)
+        Doc.set_extension("total_chars", default=0, force=True)
+        Doc.set_extension("total_words", default=0, force=True)
+        Doc.set_extension("total_unique_words", default=0, force=True)
+        Doc.set_extension("total_pages", default=0, force=True)
+        Span.set_extension("is_mid_sentence", default=False, force=True)
+        Span.set_extension("is_long_sentence", default=False, force=True)
+        return nlp
+
+    # FUNCTION THAT INTIALIZES NLP DICTIONARIES
+    @staticmethod
+    def initialize_dictionaries():
+        if not os.path.isdir(DICTIONARY_DIR):
+            os.mkdir(DICTIONARY_DIR)
+        if not os.path.isdir(SK_DICTIONARY_DIR):
+            os.mkdir(SK_DICTIONARY_DIR)
+            fs = fsspec.filesystem("github", org="LibreOffice", repo="dictionaries")
+            fs.get(fs.ls("sk_SK"), SK_DICTIONARY_DIR, recursive=True)
+            fs = fsspec.filesystem("github", org="sk-spell", repo="hunspell-sk")
+            fs.get(fs.ls("/"), SK_SPELL_DICTIONARY_DIR, recursive=True)
+        return {
+            "spellcheck": Hunspell('sk_SK', hunspell_data_dir=SK_SPELL_DICTIONARY_DIR),
+            "thesaurus": PyThes(os.path.join(SK_DICTIONARY_DIR, "th_sk_SK_v2.dat"))
+        }
+
     # FUNCTION THAT LOADS CONFIG FROM FILE
     @staticmethod
     def load_config(path: string):
@@ -199,7 +284,8 @@ class Service:
             # KNOWN MISTAGS
             if doc[target].lower_ in MISSTAGGED_WORDS:
                 continue
-            if doc[target].pos_ == "NOUN" and (target_morph.get("Gender") != "Masc" or target_morph.get("Case") != "Nom"):
+            if doc[target].pos_ == "NOUN" and (
+                    target_morph.get("Gender") != "Masc" or target_morph.get("Case") != "Nom"):
                 continue
             modifiers = [doc[modifier]]
             # IF MODIFIER CONJUNTS ANY OTHER MODIFIERS WE NEED TO APPLY SAME RULE FOR ALL
@@ -212,16 +298,17 @@ class Service:
                     modifiers.append(child)
             for mod in modifiers:
                 modifier_morph = mod.morph.to_dict()
-                print(mod, doc[target])
                 if target_morph.get("Number") == "Plur" and mod.lower_.endswith("ý"):
                     mod._.has_grammar_error = True
                     mod._.grammar_error_type = GRAMMAR_ERROR_TYPE_WRONG_Y_SUFFIX
                 elif target_morph.get("Number") == "Plur" and mod.lower_.endswith("ýsi"):
                     mod._.has_grammar_error = True
                     mod._.grammar_error_type = GRAMMAR_ERROR_TYPE_WRONG_YSI_SUFFIX
-                elif target_morph.get("Number") == "Sing" and mod.lower_.endswith("í") and modifier_morph.get("Degree") == "Pos":
+                elif target_morph.get("Number") == "Sing" and mod.lower_.endswith("í") and modifier_morph.get(
+                        "Degree") == "Pos":
                     mod._.has_grammar_error = True
                     mod._.grammar_error_type = GRAMMAR_ERROR_TYPE_WRONG_I_SUFFIX
-                elif target_morph.get("Number") == "Sing" and mod.lower_.endswith("ísi") and modifier_morph.get("Degree") == "Pos":
+                elif target_morph.get("Number") == "Sing" and mod.lower_.endswith("ísi") and modifier_morph.get(
+                        "Degree") == "Pos":
                     mod._.has_grammar_error = True
                     mod._.grammar_error_type = GRAMMAR_ERROR_TYPE_WRONG_ISI_SUFFIX
