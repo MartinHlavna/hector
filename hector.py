@@ -1,24 +1,8 @@
-import shutil
-import tarfile
 import tkinter as tk
-import urllib
 
-import fsspec
-import spacy
-from hunspell import Hunspell
-from spacy.lang.char_classes import LIST_ELLIPSES, LIST_ICONS, ALPHA_LOWER, ALPHA_UPPER, ALPHA
-from spacy.lang.sl.punctuation import CONCAT_QUOTES
-from spacy.tokenizer import Tokenizer
-from spacy.tokens import Doc, Span
-from spacy.tokens.token import Token
-from spacy.util import compile_infix_regex
 from ttkthemes import ThemedTk
 
-from pythes import PyThes
-
 from src.backend.service import Service
-from src.const.paths import *
-from src.const.values import *
 from src.gui.main_window import MainWindow
 from src.gui.splash_window import SplashWindow
 from src.utils import Utils
