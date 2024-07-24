@@ -97,14 +97,14 @@ class Service:
 
     # FUNCTION THAT INTIALIZES NLP DICTIONARIES
     @staticmethod
-    def initialize_dictionaries():
+    def initialize_dictionaries(github_token=None):
         if not os.path.isdir(DICTIONARY_DIR):
             os.mkdir(DICTIONARY_DIR)
         if not os.path.isdir(SK_DICTIONARY_DIR):
             os.mkdir(SK_DICTIONARY_DIR)
-            fs = fsspec.filesystem("github", org="LibreOffice", repo="dictionaries")
+            fs = fsspec.filesystem("github", org="LibreOffice", repo="dictionaries", token=github_token)
             fs.get(fs.ls("sk_SK"), SK_DICTIONARY_DIR, recursive=True)
-            fs = fsspec.filesystem("github", org="sk-spell", repo="hunspell-sk")
+            fs = fsspec.filesystem("github", org="sk-spell", repo="hunspell-sk", token=github_token)
             fs.get(fs.ls("/"), SK_SPELL_DICTIONARY_DIR, recursive=True)
         return {
             "spellcheck": Hunspell('sk_SK', hunspell_data_dir=SK_SPELL_DICTIONARY_DIR),

@@ -59,22 +59,6 @@ päť päť päť päť päť
 TEST_TEXT_6 = "Moja malá palička."
 TEST_TEXT_6_NON_ACCENTED = "Moja mala palicka."
 
-
-@pytest.fixture
-def setup_teardown():
-    """
-    Fixture to set up and tear down test context.
-    Yields control back to the test function and performs cleanup after the test function is done.
-    """
-    # Initialization code, if needed
-    nlp = Service.initialize_nlp()
-    dictionaries = Service.initialize_dictionaries()
-    spellcheck_dictionary = dictionaries["spellcheck"]
-    thesaurus = dictionaries["thesaurus"]
-    yield nlp, spellcheck_dictionary, thesaurus
-    # Cleanup code, if needed
-
-
 # TEST CORRECTLY INITIALIZED VARS
 def test_initialization(setup_teardown):
     assert isinstance(setup_teardown[0], Slovak)
