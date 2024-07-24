@@ -82,7 +82,7 @@ class Service:
                                   rules=nlp.Defaults.tokenizer_exceptions)
         # SPACY EXTENSIONS
         Token.set_extension("is_word", default=False, force=True)
-        Token.set_extension("grammar_error_type", default=False, force=True)
+        Token.set_extension("grammar_error_type", default=None, force=True)
         Token.set_extension("has_grammar_error", default=False, force=True)
         Doc.set_extension("words", default=[], force=True)
         Doc.set_extension("unique_words", default=[], force=True)
@@ -128,61 +128,6 @@ class Service:
     def save_config(c: Config, path: string):
         with open(path, 'w') as file:
             json.dump(c.to_dict(), file, indent=4)
-
-    # FUNCTION THAT CALCULATE READABILITY INDICES
-    @staticmethod
-    def evaluate_readability(doc: Doc):
-        if doc._.total_words <= 1:
-            return 0
-        type_to_token_ratio = doc._.total_words / doc._.total_unique_words
-        average_sentence_length = doc._.total_words / sum(1 for _ in doc.sents)
-        average_word_length = doc._.total_chars / doc._.total_words / 2
-        mistrik_index = READABILITY_MAX_VALUE - ((average_sentence_length * average_word_length) / type_to_token_ratio)
-        return READABILITY_MAX_VALUE - max(0.0, round(mistrik_index, 0))
-
-    # METHOD THAT COMPUTES WORD FREQUENCIES
-    @staticmethod
-    def compute_word_frequencies(doc: Doc, config: Config):
-        x = doc._.unique_words
-        if config.repeated_words_use_lemma:
-            x = doc._.lemmas
-        words = {k: v for (k, v) in x.items() if
-                 len(k) >= config.repeated_words_min_word_length and len(
-                     v.occourences) >= config.repeated_words_min_word_frequency}
-        return sorted(words.values(), key=lambda x: len(x.occourences), reverse=True)
-
-    # METHOD THAT EVALUATES CLOSE WORDS
-    @staticmethod
-    def evaluate_close_words(doc: Doc, config: Config):
-        close_words = {}
-        x = doc._.unique_words
-        if config.close_words_use_lemma:
-            x = doc._.lemmas
-        words_nlp = {k: v for (k, v) in x.items() if
-                     len(k) >= config.close_words_min_word_length}
-        for key, unique_word in words_nlp.items():
-            # IF WORD DOES NOT OCCOUR ENOUGH TIMES WE DONT NEED TO CHECK IF ITS OCCOURENCES ARE CLOSE
-            if len(unique_word.occourences) < config.close_words_min_frequency + 1:
-                continue
-            for idx, word_occource in enumerate(unique_word.occourences):
-                repetitions = []
-                for possible_repetition in unique_word.occourences[idx + 1:len(unique_word.occourences) + 1]:
-                    if possible_repetition.i - word_occource.i <= config.close_words_min_distance_between_words:
-                        repetitions.append(word_occource)
-                        repetitions.append(possible_repetition)
-                    else:
-                        break
-                if len(repetitions) > config.close_words_min_frequency:
-                    if key not in close_words:
-                        close_words[key] = set()
-                    close_words[key].update(repetitions)
-        return dict(sorted(close_words.items(), key=lambda item: len(item[1]), reverse=True))
-
-    # METHOD THAT REMOVES ACCENTS FROM STRING
-    @staticmethod
-    def remove_accents(text):
-        nfkd_form = unicodedata.normalize('NFD', text)
-        return ''.join([c for c in nfkd_form if not unicodedata.combining(c)])
 
     # METHOD THAT ADDS ALL EXTENSION DATA IN SINGLE PASS OVER ALL TOKENS
     @staticmethod
@@ -312,3 +257,58 @@ class Service:
                         "Degree") == "Pos":
                     mod._.has_grammar_error = True
                     mod._.grammar_error_type = GRAMMAR_ERROR_TYPE_WRONG_ISI_SUFFIX
+
+    # FUNCTION THAT CALCULATE READABILITY INDICES
+    @staticmethod
+    def evaluate_readability(doc: Doc):
+        if doc._.total_words <= 1:
+            return 0
+        type_to_token_ratio = doc._.total_words / doc._.total_unique_words
+        average_sentence_length = doc._.total_words / sum(1 for _ in doc.sents)
+        average_word_length = doc._.total_chars / doc._.total_words / 2
+        mistrik_index = READABILITY_MAX_VALUE - ((average_sentence_length * average_word_length) / type_to_token_ratio)
+        return READABILITY_MAX_VALUE - max(0.0, round(mistrik_index, 0))
+
+    # METHOD THAT COMPUTES WORD FREQUENCIES
+    @staticmethod
+    def compute_word_frequencies(doc: Doc, config: Config):
+        x = doc._.unique_words
+        if config.repeated_words_use_lemma:
+            x = doc._.lemmas
+        words = {k: v for (k, v) in x.items() if
+                 len(k) >= config.repeated_words_min_word_length and len(
+                     v.occourences) >= config.repeated_words_min_word_frequency}
+        return sorted(words.values(), key=lambda x: len(x.occourences), reverse=True)
+
+    # METHOD THAT EVALUATES CLOSE WORDS
+    @staticmethod
+    def evaluate_close_words(doc: Doc, config: Config):
+        close_words = {}
+        x = doc._.unique_words
+        if config.close_words_use_lemma:
+            x = doc._.lemmas
+        words_nlp = {k: v for (k, v) in x.items() if
+                     len(k) >= config.close_words_min_word_length}
+        for key, unique_word in words_nlp.items():
+            # IF WORD DOES NOT OCCOUR ENOUGH TIMES WE DONT NEED TO CHECK IF ITS OCCOURENCES ARE CLOSE
+            if len(unique_word.occourences) < config.close_words_min_frequency + 1:
+                continue
+            for idx, word_occource in enumerate(unique_word.occourences):
+                repetitions = []
+                for possible_repetition in unique_word.occourences[idx + 1:len(unique_word.occourences) + 1]:
+                    if possible_repetition.i - word_occource.i <= config.close_words_min_distance_between_words:
+                        repetitions.append(word_occource)
+                        repetitions.append(possible_repetition)
+                    else:
+                        break
+                if len(repetitions) > config.close_words_min_frequency:
+                    if key not in close_words:
+                        close_words[key] = set()
+                    close_words[key].update(repetitions)
+        return dict(sorted(close_words.items(), key=lambda item: len(item[1]), reverse=True))
+
+    # METHOD THAT REMOVES ACCENTS FROM STRING
+    @staticmethod
+    def remove_accents(text):
+        nfkd_form = unicodedata.normalize('NFD', text)
+        return ''.join([c for c in nfkd_form if not unicodedata.combining(c)])
