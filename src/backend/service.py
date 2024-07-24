@@ -104,7 +104,7 @@ class Service:
             os.mkdir(SK_DICTIONARY_DIR)
             fs = fsspec.filesystem("github", org="LibreOffice", repo="dictionaries", token=github_token, username=github_user)
             fs.get(fs.ls("sk_SK"), SK_DICTIONARY_DIR, recursive=True)
-            fs = fsspec.filesystem("github", org="sk-spell", repo="hunspell-sk", token=github_token)
+            fs = fsspec.filesystem("github", org="sk-spell", repo="hunspell-sk", token=github_token, username=github_user)
             fs.get(fs.ls("/"), SK_SPELL_DICTIONARY_DIR, recursive=True)
         return {
             "spellcheck": Hunspell('sk_SK', hunspell_data_dir=SK_SPELL_DICTIONARY_DIR),
