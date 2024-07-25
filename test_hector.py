@@ -150,5 +150,16 @@ def test_remove_accents(setup_teardown):
     assert Service.remove_accents(TEST_TEXT_6) == TEST_TEXT_6_NON_ACCENTED
 
 
+def test_file_imports():
+    txt = Service.import_document("test_files/sample.txt")
+    docx = Service.import_document("test_files/sample.docx")
+    odt = Service.import_document("test_files/sample.odt")
+    rtf = Service.import_document("test_files/sample.rtf")
+    assert len(txt) > 0
+    assert len(docx) > 0
+    assert len(odt) > 0
+    assert len(rtf) > 0
+
+
 if __name__ == '__main__':
     pytest.main()

@@ -9,6 +9,7 @@ import urllib
 
 import fsspec
 import spacy
+import pypandoc
 from hunspell import Hunspell
 from pythes import PyThes
 from spacy.lang.char_classes import LIST_ELLIPSES, LIST_ICONS, ALPHA_LOWER, ALPHA_UPPER, CONCAT_QUOTES, ALPHA
@@ -312,3 +313,13 @@ class Service:
     def remove_accents(text):
         nfkd_form = unicodedata.normalize('NFD', text)
         return ''.join([c for c in nfkd_form if not unicodedata.combining(c)])
+
+    @staticmethod
+    def import_document(file_path):
+        if file_path.endswith(".txt"):
+            with open(file_path, 'r', encoding='utf-8') as file:
+                return file.read()
+        extra_args = (
+            '--wrap=none',
+        )
+        return pypandoc.convert_file(file_path, 'plain', extra_args=extra_args)

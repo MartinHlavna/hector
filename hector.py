@@ -37,7 +37,6 @@ main_window = MainWindow(root, nlp, dictionaries["spellcheck"], dictionaries["th
 main_window.start_main_loop()
 
 # TODO LEVEL A (production features):
-# Importing other document types like doc, docx, rtf, ...
 
 # TODO LEVEL B (nice to have features): Consider adding:
 # Heatmap?

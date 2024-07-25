@@ -482,13 +482,18 @@ class MainWindow:
 
     # LOAD TEXT FILE
     def load_file(self):
-        file_path = filedialog.askopenfilename(filetypes=[("Textové súbory", "*.txt")])
-        if file_path:
-            with open(file_path, 'r', encoding='utf-8') as file:
-                text = file.read()
-                self.text_editor.delete(1.0, tk.END)
-                self.text_editor.insert(tk.END, text)
-                self.analyze_text(True)
+        file_path = filedialog.askopenfilename(
+            filetypes=[
+                ("Textové súbory", "*.txt"),
+                ("Microsoft Word 2007+ dokumenty", "*.docx"),
+                ("OpenOffice dokument", "*.odt"),
+                ("RTF dokumenty", "*.rtf"),
+            ]
+        )
+        text = Service.import_document(file_path)
+        self.text_editor.delete(1.0, tk.END)
+        self.text_editor.insert(tk.END, text)
+        self.analyze_text(True)
 
     # SAVE TEXT FILE
     def save_file(self):
