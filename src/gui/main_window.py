@@ -26,6 +26,9 @@ from src.const.tags import *
 from src.const.values import *
 from src.utils import Utils
 
+# A4 SIZE IN INCHES. WE LATER USE DPI TO SET EDITOR WIDTH
+A4_SIZE_INCHES = 8.27
+
 EDITOR_LOGO_HEIGHT = 300
 EDITOR_LOGO_WIDTH = 300
 ENABLE_DEBUG_DEP_IMAGE = False
@@ -45,8 +48,8 @@ class MainWindow:
         r.overrideredirect(False)
         style = ttk.Style(self.root)
         # CUSTOM SCROLLBAR
-        style.configure("Vertical.TScrollbar", gripcount=0, troughcolor=PRIMARY_BLUE, bordercolor=PRIMARY_BLUE,
-                        background=LIGHT_BLUE, lightcolor=LIGHT_BLUE, darkcolor=MID_BLUE)
+        style.configure("Vertical.TScrollbar", gripcount=0, troughcolor=PRIMARY_COLOR, bordercolor=PRIMARY_COLOR,
+                        background=ACCENT_COLOR, lightcolor=ACCENT_COLOR, darkcolor=ACCENT_2_COLOR)
 
         style.layout('arrowless.Vertical.TScrollbar',
                      [('Vertical.Scrollbar.trough',
@@ -90,25 +93,25 @@ class MainWindow:
         main_frame = tk.Frame(self.root)
         main_frame.pack(expand=1, fill=tk.BOTH, side=tk.LEFT)
         # LEFT SCROLLABLE SIDE PANEL WITH FREQUENT WORDS
-        left_side_panel = tk.Frame(main_frame, width=300, relief=tk.FLAT, borderwidth=1, background=PRIMARY_BLUE)
+        left_side_panel = tk.Frame(main_frame, width=300, relief=tk.FLAT, borderwidth=1, background=PRIMARY_COLOR)
         left_side_panel.pack(fill=tk.BOTH, side=tk.LEFT, expand=0)
         # RIGHT SCROLLABLE SIDE PANEL WITH FREQUENT WORDS
-        right_side_panel = tk.Frame(main_frame, width=200, relief=tk.FLAT, borderwidth=1, background=PRIMARY_BLUE)
+        right_side_panel = tk.Frame(main_frame, width=200, relief=tk.FLAT, borderwidth=1, background=PRIMARY_COLOR)
         right_side_panel.pack(fill=tk.BOTH, side=tk.RIGHT)
         # MIDDLE TEXT EDITOR WINDOW
-        text_editor_frame = tk.Frame(main_frame, background=TEXT_EDITOR_BG, borderwidth=0)
+        text_editor_frame = tk.Frame(main_frame, background="#A0A0A0", borderwidth=0)
         text_editor_frame.pack(expand=1, fill=tk.BOTH)
-        text_editor_scroll_frame = tk.Frame(text_editor_frame, width=10, relief=tk.FLAT, background=PRIMARY_BLUE)
+        text_editor_scroll_frame = tk.Frame(text_editor_frame, width=10, relief=tk.FLAT, background=PRIMARY_COLOR)
         text_editor_scroll_frame.pack(side=tk.RIGHT, fill=tk.Y)
         text_editor_scroll = AutoScrollbar(text_editor_scroll_frame, orient='vertical',
                                            style='arrowless.Vertical.TScrollbar', takefocus=False)
         text_editor_scroll.pack(side=tk.RIGHT, fill=tk.Y)
         # BOTTOM PANEL WITH TEXT SIZE
-        bottom_panel = tk.Frame(text_editor_frame, background=MID_BLUE, height=20)
+        bottom_panel = tk.Frame(text_editor_frame, background=ACCENT_2_COLOR, height=20)
         bottom_panel.pack(fill=tk.BOTH, side=tk.BOTTOM)
         # LEFT PANEL CONTENTS
         self.introspection_text = tk.Text(left_side_panel, highlightthickness=0, bd=0, wrap=tk.WORD, state=tk.DISABLED,
-                                          width=30, background=PRIMARY_BLUE, foreground=TEXT_COLOR_WHITE, height=15,
+                                          width=30, background=PRIMARY_COLOR, foreground=TEXT_COLOR_WHITE, height=15,
                                           font=(HELVETICA_FONT_NAME, 9))
         if ENABLE_DEBUG_DEP_IMAGE:
             self.dep_image_holder = ttk.Label(left_side_panel, width=30)
@@ -118,47 +121,53 @@ class MainWindow:
         self.introspection_text.pack(fill=tk.X, pady=10, padx=10, side=tk.BOTTOM)
         separator = ttk.Separator(left_side_panel, orient='horizontal')
         separator.pack(fill=tk.X, padx=10, side=tk.BOTTOM)
-        tk.Label(left_side_panel, pady=10, background=PRIMARY_BLUE, foreground=TEXT_COLOR_WHITE,
+        tk.Label(left_side_panel, pady=10, background=PRIMARY_COLOR, foreground=TEXT_COLOR_WHITE,
                  text="Introspekcia",
                  font=(HELVETICA_FONT_NAME, TEXT_SIZE_SECTION_HEADER), anchor='n',
                  justify='left').pack(side=tk.BOTTOM)
-        tk.Label(left_side_panel, pady=10, background=PRIMARY_BLUE, foreground=TEXT_COLOR_WHITE,
+        tk.Label(left_side_panel, pady=10, background=PRIMARY_COLOR, foreground=TEXT_COLOR_WHITE,
                  text="Často sa opakujúce slová",
                  font=(HELVETICA_FONT_NAME, TEXT_SIZE_SECTION_HEADER), anchor='n',
                  justify='left').pack()
         separator = ttk.Separator(left_side_panel, orient='horizontal')
         separator.pack(fill=tk.X, padx=10)
-        left_side_panel_scroll_frame = tk.Frame(left_side_panel, width=10, relief=tk.FLAT, background=PRIMARY_BLUE)
+        left_side_panel_scroll_frame = tk.Frame(left_side_panel, width=10, relief=tk.FLAT, background=PRIMARY_COLOR)
         left_side_panel_scroll_frame.pack(side=tk.RIGHT, fill=tk.Y)
         left_side_frame_scroll = AutoScrollbar(left_side_panel_scroll_frame, orient='vertical',
                                                style='arrowless.Vertical.TScrollbar', takefocus=False)
         left_side_frame_scroll.pack(side=tk.RIGHT, fill=tk.Y)
         self.close_words_text = tk.Text(left_side_panel, highlightthickness=0, bd=0, wrap=tk.WORD, state=tk.DISABLED,
-                                        width=20, background=PRIMARY_BLUE, foreground=TEXT_COLOR_WHITE,
+                                        width=20, background=PRIMARY_COLOR, foreground=TEXT_COLOR_WHITE,
                                         yscrollcommand=left_side_frame_scroll.set)
         self.close_words_text.pack(fill=tk.BOTH, expand=1, pady=10, padx=10)
         left_side_frame_scroll.config(command=self.close_words_text.yview)
         # MIDDLE TEXT EDITOR CONTENTS
-        self.text_editor = tk.Text(text_editor_frame, wrap=tk.WORD, relief=tk.FLAT, highlightthickness=0,
-                                   yscrollcommand=text_editor_scroll.set, background=TEXT_EDITOR_BG, borderwidth=0)
-        self.text_editor.config(font=(HELVETICA_FONT_NAME, self.text_size))
-        self.text_editor.pack(expand=1, fill=tk.BOTH, padx=5, pady=5)
+        dpi = self.root.winfo_fpixels('1i')
+        text_editor_outer_frame = tk.Frame(text_editor_frame, borderwidth=0, width=int(A4_SIZE_INCHES * dpi),
+                                           relief=tk.RAISED, background=TEXT_EDITOR_BG)
+        text_editor_outer_frame.pack(expand=True, fill=tk.Y, padx=5, pady=10,)
+        self.text_editor = tk.Text(text_editor_outer_frame, wrap=tk.WORD, relief=tk.RAISED, highlightthickness=0,
+                                   yscrollcommand=text_editor_scroll.set, background=TEXT_EDITOR_BG, borderwidth=0,
+                                   spacing1=1.2, spacing2=1.2, spacing3=1.2)
+        self.text_editor.config(font=(HELVETICA_FONT_NAME, self.text_size), )
+        self.text_editor.pack(expand=1, fill=tk.BOTH, padx=20, pady=20)
+        text_editor_outer_frame.pack_propagate(False)
         image = Image.open(Utils.resource_path("images/hector-logo.png"))
         logo = ImageTk.PhotoImage(image.resize((EDITOR_LOGO_WIDTH, EDITOR_LOGO_HEIGHT)))
         self.logo_holder = ttk.Label(text_editor_frame, image=logo, background=TEXT_EDITOR_BG)
         self.logo_holder.image = logo
         text_editor_scroll.config(command=self.text_editor.yview)
         # RIGHT PANEL CONTENTS
-        tk.Label(right_side_panel, pady=10, background=PRIMARY_BLUE, foreground=TEXT_COLOR_WHITE,
+        tk.Label(right_side_panel, pady=10, background=PRIMARY_COLOR, foreground=TEXT_COLOR_WHITE,
                  text="Hľadať", font=(HELVETICA_FONT_NAME, TEXT_SIZE_SECTION_HEADER),
                  anchor='n', justify='left').pack(fill=tk.X)
-        search_frame = tk.Frame(right_side_panel, relief=tk.FLAT, background=PRIMARY_BLUE)
+        search_frame = tk.Frame(right_side_panel, relief=tk.FLAT, background=PRIMARY_COLOR)
         search_frame.pack(fill=tk.X, padx=0)
-        prev_search_button = tk.Label(search_frame, text="⮝", background=PRIMARY_BLUE, foreground=TEXT_COLOR_WHITE,
+        prev_search_button = tk.Label(search_frame, text="⮝", background=PRIMARY_COLOR, foreground=TEXT_COLOR_WHITE,
                                       cursor="hand2")
         prev_search_button.pack(side=tk.RIGHT, padx=2)
         prev_search_button.bind("<Button-1>", self.prev_search)
-        next_search_button = tk.Label(search_frame, text="⮟", background=PRIMARY_BLUE, foreground=TEXT_COLOR_WHITE,
+        next_search_button = tk.Label(search_frame, text="⮟", background=PRIMARY_COLOR, foreground=TEXT_COLOR_WHITE,
                                       cursor="hand2")
         next_search_button.pack(side=tk.RIGHT, padx=2)
         next_search_button.bind("<Button-1>", self.next_search)
@@ -167,55 +176,55 @@ class MainWindow:
         self.search_field.bind('<Return>', self.next_search)
         self.search_field.bind('<Shift-Return>', self.prev_search)
         self.search_field.pack(padx=0)
-        tk.Label(right_side_panel, pady=10, background=PRIMARY_BLUE, foreground=TEXT_COLOR_WHITE,
+        tk.Label(right_side_panel, pady=10, background=PRIMARY_COLOR, foreground=TEXT_COLOR_WHITE,
                  text="Často použité slová", font=(HELVETICA_FONT_NAME, TEXT_SIZE_SECTION_HEADER),
                  anchor='n', justify='left').pack()
         ttk.Separator(right_side_panel, orient='horizontal').pack(fill=tk.X, padx=10)
-        right_side_panel_scroll_frame = tk.Frame(right_side_panel, width=10, relief=tk.FLAT, background=PRIMARY_BLUE)
+        right_side_panel_scroll_frame = tk.Frame(right_side_panel, width=10, relief=tk.FLAT, background=PRIMARY_COLOR)
         right_side_panel_scroll_frame.pack(side=tk.RIGHT, fill=tk.Y)
         right_side_frame_scroll = AutoScrollbar(right_side_panel_scroll_frame, orient='vertical',
                                                 style='arrowless.Vertical.TScrollbar', takefocus=False)
         right_side_frame_scroll.pack(side=tk.RIGHT, fill=tk.Y)
         self.word_freq_text = tk.Text(right_side_panel, highlightthickness=0, bd=0, wrap=tk.WORD, state=tk.DISABLED,
-                                      width=20, background=PRIMARY_BLUE, foreground=TEXT_COLOR_WHITE,
+                                      width=20, background=PRIMARY_COLOR, foreground=TEXT_COLOR_WHITE,
                                       yscrollcommand=right_side_frame_scroll.set)
         self.word_freq_text.pack(fill=tk.BOTH, expand=1, pady=10, padx=10)
         right_side_frame_scroll.config(command=self.word_freq_text.yview)
         # BOTTOM PANEL CONTENTS
         char_count_info_label = tk.Label(bottom_panel, text="Počet znakov s medzerami:", anchor='sw',
-                                         justify='left', background=MID_BLUE, foreground=TEXT_COLOR_WHITE,
+                                         justify='left', background=ACCENT_2_COLOR, foreground=TEXT_COLOR_WHITE,
                                          font=(HELVETICA_FONT_NAME, TEXT_SIZE_BOTTOM_BAR))
         char_count_info_label.pack(side=tk.LEFT, padx=(5, 0), pady=5)
         self.char_count_info_value = tk.Label(bottom_panel, text="0", anchor='sw', justify='left',
-                                              background=MID_BLUE, foreground=TEXT_COLOR_WHITE,
+                                              background=ACCENT_2_COLOR, foreground=TEXT_COLOR_WHITE,
                                               font=(HELVETICA_FONT_NAME, TEXT_SIZE_BOTTOM_BAR))
         self.char_count_info_value.pack(side=tk.LEFT, padx=0, pady=5)
         tk.Label(bottom_panel, text="Počet slov:", anchor='sw', justify='left',
-                 background=MID_BLUE, foreground=TEXT_COLOR_WHITE,
+                 background=ACCENT_2_COLOR, foreground=TEXT_COLOR_WHITE,
                  font=(HELVETICA_FONT_NAME, TEXT_SIZE_BOTTOM_BAR)).pack(
             side=tk.LEFT, padx=(5, 0), pady=5
         )
         self.word_count_info_value = tk.Label(bottom_panel, text="0", anchor='sw', justify='left',
-                                              background=MID_BLUE, foreground=TEXT_COLOR_WHITE,
+                                              background=ACCENT_2_COLOR, foreground=TEXT_COLOR_WHITE,
                                               font=(HELVETICA_FONT_NAME, TEXT_SIZE_BOTTOM_BAR))
         self.word_count_info_value.pack(side=tk.LEFT, padx=0, pady=5)
         tk.Label(bottom_panel, text="Počet normostrán:", anchor='sw', justify='left',
-                 background=MID_BLUE, foreground=TEXT_COLOR_WHITE,
+                 background=ACCENT_2_COLOR, foreground=TEXT_COLOR_WHITE,
                  font=(HELVETICA_FONT_NAME, TEXT_SIZE_BOTTOM_BAR)).pack(
             side=tk.LEFT, padx=(5, 0), pady=5
         )
         self.page_count_info_value = tk.Label(bottom_panel, text="0", anchor='sw', justify='left',
-                                              background=MID_BLUE, foreground=TEXT_COLOR_WHITE,
+                                              background=ACCENT_2_COLOR, foreground=TEXT_COLOR_WHITE,
                                               font=(HELVETICA_FONT_NAME, TEXT_SIZE_BOTTOM_BAR))
         self.page_count_info_value.pack(side=tk.LEFT, padx=0, pady=5)
         tk.Label(bottom_panel, text="Štylistická zložitosť textu:", anchor='sw', justify='left',
-                 background=MID_BLUE, foreground=TEXT_COLOR_WHITE,
+                 background=ACCENT_2_COLOR, foreground=TEXT_COLOR_WHITE,
                  font=(HELVETICA_FONT_NAME, TEXT_SIZE_BOTTOM_BAR)).pack(
             side=tk.LEFT, padx=(5, 0), pady=5
         )
         self.readability_value = tk.Label(bottom_panel, text=f"0 / {READABILITY_MAX_VALUE}", anchor='sw',
                                           justify='left',
-                                          background=MID_BLUE, foreground=TEXT_COLOR_WHITE,
+                                          background=ACCENT_2_COLOR, foreground=TEXT_COLOR_WHITE,
                                           font=(HELVETICA_FONT_NAME, TEXT_SIZE_BOTTOM_BAR))
         self.readability_value.pack(side=tk.LEFT, padx=0, pady=5)
         self.editor_text_size_input = ttk.Spinbox(bottom_panel, from_=1, to=30, width=10,
@@ -226,26 +235,26 @@ class MainWindow:
         self.editor_text_size_input.bind("<Return>", lambda e: self.set_text_size(self.editor_text_size_input.get()))
         self.editor_text_size_input.pack(side=tk.RIGHT)
         tk.Label(bottom_panel, text="Veľkosť textu v editore:", anchor='sw', justify='left',
-                 background=MID_BLUE, foreground=TEXT_COLOR_WHITE,
+                 background=ACCENT_2_COLOR, foreground=TEXT_COLOR_WHITE,
                  font=(HELVETICA_FONT_NAME, TEXT_SIZE_BOTTOM_BAR)).pack(
             side=tk.RIGHT, padx=(5, 0), pady=5
         )
         # TOP MENU
-        self.menu_bar = tk.Menu(self.root, background=PRIMARY_BLUE, foreground=TEXT_COLOR_WHITE, border=1)
+        self.menu_bar = tk.Menu(self.root, background=PRIMARY_COLOR, foreground=TEXT_COLOR_WHITE, border=1)
         self.root.config(menu=self.menu_bar)
         # FILE MENU
-        self.file_menu = tk.Menu(self.menu_bar, tearoff=0, background=PRIMARY_BLUE, foreground=TEXT_COLOR_WHITE,
+        self.file_menu = tk.Menu(self.menu_bar, tearoff=0, background=PRIMARY_COLOR, foreground=TEXT_COLOR_WHITE,
                                  font=(HELVETICA_FONT_NAME, TEXT_SIZE_MENU))
         self.file_menu.add_command(label="Načítať súbor", command=self.load_file)
         self.file_menu.add_command(label="Uložiť súbor", command=self.save_file)
         self.menu_bar.add_cascade(label="Súbor", menu=self.file_menu)
         # SETTINGS MENU
-        self.settings_menu = tk.Menu(self.menu_bar, tearoff=0, background=PRIMARY_BLUE, foreground=TEXT_COLOR_WHITE,
+        self.settings_menu = tk.Menu(self.menu_bar, tearoff=0, background=PRIMARY_COLOR, foreground=TEXT_COLOR_WHITE,
                                      font=(HELVETICA_FONT_NAME, TEXT_SIZE_MENU))
         self.settings_menu.add_command(label="Parametre analýzy", command=self.show_settings)
         self.menu_bar.add_cascade(label="Nastavenia", menu=self.settings_menu)
         # HELP MENU
-        self.help_menu = tk.Menu(self.menu_bar, tearoff=0, background=PRIMARY_BLUE, foreground=TEXT_COLOR_WHITE,
+        self.help_menu = tk.Menu(self.menu_bar, tearoff=0, background=PRIMARY_COLOR, foreground=TEXT_COLOR_WHITE,
                                  font=(HELVETICA_FONT_NAME, TEXT_SIZE_MENU))
         self.help_menu.add_command(label="O programe", command=self.show_about)
         self.help_menu.add_command(label="Dokumentácia", command=lambda: webbrowser.open(DOCUMENTATION_LINK))
@@ -471,7 +480,7 @@ class MainWindow:
         self.tooltip.wm_overrideredirect(True)
         self.tooltip.wm_geometry(f"+{x}+{y}")
         # Add content to the tooltip
-        label = tk.Label(self.tooltip, text=f"{text}", background=LIGHT_BLUE, relief="solid", borderwidth=1,
+        label = tk.Label(self.tooltip, text=f"{text}", background=ACCENT_COLOR, relief="solid", borderwidth=1,
                          justify="left", padx=5, pady=5)
         label.pack()
 
@@ -526,6 +535,11 @@ class MainWindow:
         # CLEAR TAGS
         for tag in self.text_editor.tag_names():
             self.text_editor.tag_delete(tag)
+        # SETUP PARAGRAPH TAGGING
+        for paragraph in self.doc._.paragraphs:
+            start_index = f"1.0 + {paragraph.start_char} chars"
+            end_index = f"1.0 + {paragraph.end_char} chars"
+            self.text_editor.tag_add(PARAGRAPH_TAG_NAME, start_index, end_index)
         # RUN ANALYSIS FUNCTIONS
         self.display_word_frequencies(self.doc)
         self.display_size_info(self.doc)
@@ -534,6 +548,7 @@ class MainWindow:
         self.highlight_multiple_issues(self.doc)
         self.run_spellcheck(self.doc)
         # CONFIG TAGS
+        self.text_editor.tag_config(PARAGRAPH_TAG_NAME, lmargin1="20")
         self.text_editor.tag_config(LONG_SENTENCE_TAG_NAME_MID, background=LONG_SENTENCE_HIGHLIGHT_COLOR_MID)
         self.text_editor.tag_config(LONG_SENTENCE_TAG_NAME_HIGH, background=LONG_SENTENCE_HIGHLIGHT_COLOR_HIGH)
         self.text_editor.tag_config(TRAILING_SPACES_TAG_NAME, background="red")
@@ -691,7 +706,7 @@ class MainWindow:
             screen_height = self.text_editor.winfo_height()
             x = screen_width / 2 - (EDITOR_LOGO_WIDTH / 2)
             y = screen_height / 2 - (EDITOR_LOGO_HEIGHT / 2)
-            self.logo_holder.place(x=x, y=y)
+            # self.logo_holder.place(x=x, y=y)
 
     # SELECT ALL TEXT
     def select_all(self, event=None):
@@ -748,7 +763,8 @@ class MainWindow:
 
         row = 0
         # Frequent words settings
-        tk.Label(settings_window, text="Často použité slová", font=(HELVETICA_FONT_NAME, 12, BOLD_FONT), anchor='w').grid(
+        tk.Label(settings_window, text="Často použité slová", font=(HELVETICA_FONT_NAME, 12, BOLD_FONT),
+                 anchor='w').grid(
             row=row, column=0, columnspan=1, padx=(10, 80), pady=(10, 2), sticky='w'
         )
         frequent_words_var = tk.BooleanVar(value=self.config.enable_frequent_words)
@@ -760,7 +776,8 @@ class MainWindow:
             row=row, column=0, padx=10, pady=2, sticky='w'
         )
         frequent_words_use_lemma_var = tk.BooleanVar(value=self.config.repeated_words_use_lemma)
-        frequent_words_use_lemma_var_checkbox = ttk.Checkbutton(settings_window, text="Zapnuté", variable=frequent_words_use_lemma_var)
+        frequent_words_use_lemma_var_checkbox = ttk.Checkbutton(settings_window, text="Zapnuté",
+                                                                variable=frequent_words_use_lemma_var)
         frequent_words_use_lemma_var_checkbox.grid(row=row, column=1, padx=(6, 10), pady=2, sticky='w')
 
         row += 1
@@ -784,7 +801,8 @@ class MainWindow:
 
         # Long sentences settings
         row += 1
-        tk.Label(settings_window, text="Zvýrazňovanie dlhých viet", font=(HELVETICA_FONT_NAME, 12, BOLD_FONT), anchor='w').grid(
+        tk.Label(settings_window, text="Zvýrazňovanie dlhých viet", font=(HELVETICA_FONT_NAME, 12, BOLD_FONT),
+                 anchor='w').grid(
             row=row, column=0, columnspan=1, padx=(10, 80), pady=(10, 2), sticky='w'
         )
         long_sentences_var = tk.BooleanVar(value=self.config.enable_long_sentences)
@@ -826,7 +844,8 @@ class MainWindow:
 
         # Multiple spaces settings
         row += 1
-        tk.Label(settings_window, text="Zvýrazňovanie viacnásobných medzier ", font=(HELVETICA_FONT_NAME, 12, BOLD_FONT), anchor='w').grid(
+        tk.Label(settings_window, text="Zvýrazňovanie viacnásobných medzier ",
+                 font=(HELVETICA_FONT_NAME, 12, BOLD_FONT), anchor='w').grid(
             row=row, column=0, columnspan=1, padx=(10, 80), pady=(10, 2), sticky='w'
         )
         multiple_spaces_var = tk.BooleanVar(value=self.config.enable_multiple_spaces)
@@ -835,16 +854,19 @@ class MainWindow:
 
         # Multiple punctuation settings
         row += 1
-        tk.Label(settings_window, text="Zvýrazňovanie viacnásobnej interpunkcie", font=(HELVETICA_FONT_NAME, 12, BOLD_FONT), anchor='w').grid(
+        tk.Label(settings_window, text="Zvýrazňovanie viacnásobnej interpunkcie",
+                 font=(HELVETICA_FONT_NAME, 12, BOLD_FONT), anchor='w').grid(
             row=row, column=0, columnspan=1, padx=(10, 80), pady=(10, 2), sticky='w'
         )
         multiple_punctuation_var = tk.BooleanVar(value=self.config.enable_multiple_punctuation)
-        multiple_punctuation_checkbox = ttk.Checkbutton(settings_window, text="Zapnuté", variable=multiple_punctuation_var)
+        multiple_punctuation_checkbox = ttk.Checkbutton(settings_window, text="Zapnuté",
+                                                        variable=multiple_punctuation_var)
         multiple_punctuation_checkbox.grid(row=row, column=1, padx=(6, 10), pady=2, sticky='w')
 
         # Trailing spaces settings
         row += 1
-        tk.Label(settings_window, text="Zvýrazňovanie medzier na konci odstavca", font=(HELVETICA_FONT_NAME, 12, BOLD_FONT), anchor='w').grid(
+        tk.Label(settings_window, text="Zvýrazňovanie medzier na konci odstavca",
+                 font=(HELVETICA_FONT_NAME, 12, BOLD_FONT), anchor='w').grid(
             row=row, column=0, columnspan=1, padx=(10, 80), pady=(10, 2), sticky='w'
         )
         trailing_spaces_var = tk.BooleanVar(value=self.config.enable_trailing_spaces)
@@ -853,7 +875,8 @@ class MainWindow:
 
         # Close words settings
         row += 1
-        tk.Label(settings_window, text="Často sa opakujúce slová", font=(HELVETICA_FONT_NAME, 12, BOLD_FONT), anchor='w').grid(
+        tk.Label(settings_window, text="Často sa opakujúce slová", font=(HELVETICA_FONT_NAME, 12, BOLD_FONT),
+                 anchor='w').grid(
             row=row, column=0, columnspan=1, padx=(10, 80), pady=(10, 2), sticky='w'
         )
         close_words_var = tk.BooleanVar(value=self.config.enable_close_words)
@@ -865,7 +888,8 @@ class MainWindow:
             row=row, column=0, padx=10, pady=2, sticky='w'
         )
         close_words_use_lemma_var = tk.BooleanVar(value=self.config.close_words_use_lemma)
-        close_words_use_lemma_var_checkbox = ttk.Checkbutton(settings_window, text="Zapnuté", variable=close_words_use_lemma_var)
+        close_words_use_lemma_var_checkbox = ttk.Checkbutton(settings_window, text="Zapnuté",
+                                                             variable=close_words_use_lemma_var)
         close_words_use_lemma_var_checkbox.grid(row=row, column=1, padx=(6, 10), pady=2, sticky='w')
 
         row += 1
@@ -900,7 +924,8 @@ class MainWindow:
 
         # Spellcheck
         row += 1
-        tk.Label(settings_window, text="Kontrola gramatiky", font=(HELVETICA_FONT_NAME, 12, BOLD_FONT), anchor='w').grid(
+        tk.Label(settings_window, text="Kontrola gramatiky", font=(HELVETICA_FONT_NAME, 12, BOLD_FONT),
+                 anchor='w').grid(
             row=row, column=0, columnspan=1, padx=(10, 80), pady=(10, 2), sticky='w'
         )
         spellcheck_var = tk.BooleanVar(value=self.config.enable_spellcheck)

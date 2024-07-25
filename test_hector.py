@@ -8,7 +8,7 @@ from src.backend.service import Service
 from src.const.grammar_error_types import GRAMMAR_ERROR_TYPE_MISSPELLED_WORD, GRAMMAR_ERROR_TYPE_WRONG_Y_SUFFIX
 from src.domain.config import Config
 
-TEST_TEXT_1 = 'Toto je testovací text. Toto je veta.'
+TEST_TEXT_1 = 'Toto je testovací text.\nToto je veta.'
 TEST_TEXT_2 = 'Toto  je testovací text. Toto      je veta. Haló! A toto je čo?! '
 TEST_TEXT_3 = 'Afto išlo po ceste. Tamtý chlapci sú pekný.'
 TEST_TEXT_4 = """
@@ -83,6 +83,7 @@ def test_custom_extenstions(setup_teardown):
     assert len(doc._.words) == 7 and doc._.total_words == 7
     assert len(doc._.unique_words) == 5 and doc._.total_unique_words == 5
     assert len(doc._.lemmas) == 5
+    assert len(doc._.paragraphs) == 2
     assert doc._.total_chars == len(TEST_TEXT_1)
     assert 0 < doc._.total_pages < 1
 

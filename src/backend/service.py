@@ -86,6 +86,7 @@ class Service:
         Token.set_extension("grammar_error_type", default=None, force=True)
         Token.set_extension("has_grammar_error", default=False, force=True)
         Doc.set_extension("words", default=[], force=True)
+        Doc.set_extension("paragraphs", default=[], force=True)
         Doc.set_extension("unique_words", default=[], force=True)
         Doc.set_extension("lemmas", default=[], force=True)
         Doc.set_extension("total_chars", default=0, force=True)
@@ -135,9 +136,15 @@ class Service:
     def fill_custom_data(doc: Doc, config: Config):
         word_pattern = re.compile("\\w+")
         words = []
+        paragraphs = []
+        cur_paragraph_start = 0
         lemmas = {}
         unique_words = {}
         for token in doc:
+            if token.is_space and token.text.count('\n') > 0:
+                paragraphs.append(doc[cur_paragraph_start:token.i])
+                cur_paragraph_start = token.i
+
             token._.is_word = re.match(word_pattern, token.lower_) is not None
             if token._.is_word:
                 words.append(token)
@@ -152,6 +159,9 @@ class Service:
                     lemmas[lemma] = unique_lemma
                 unique_word.occourences.append(token)
                 unique_lemma.occourences.append(token)
+        if len(doc) > cur_paragraph_start:
+            paragraphs.append(doc[cur_paragraph_start:])
+        doc._.paragraphs = paragraphs
         doc._.words = words
         doc._.unique_words = unique_words
         doc._.lemmas = lemmas

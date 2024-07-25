@@ -19,15 +19,15 @@ class SplashWindow:
         self.root.geometry("+%d+%d" % (x, y))
         self.root.overrideredirect(True)
         # MAIN FRAME
-        self.main_frame = tk.Frame(self.root, background=PRIMARY_BLUE)
+        self.main_frame = tk.Frame(self.root, background=PRIMARY_COLOR)
         self.main_frame.pack(expand=1, fill=tk.BOTH, side=tk.LEFT)
         image = Image.open(Utils.resource_path("images/hector-logo.png"))
         logo = ImageTk.PhotoImage(image.resize((300, 300)))
 
-        logo_holder = ttk.Label(self.main_frame, image=logo, background=PRIMARY_BLUE)
+        logo_holder = ttk.Label(self.main_frame, image=logo, background=PRIMARY_COLOR)
         logo_holder.image = logo
         logo_holder.pack()
-        self.status = tk.Label(self.main_frame, text="inicializujem...", background=PRIMARY_BLUE,
+        self.status = tk.Label(self.main_frame, text="inicializujem...", background=PRIMARY_COLOR,
                                font=(HELVETICA_FONT_NAME, 10), foreground="#ffffff")
         self.status.pack()
         # required to make window show before the program gets to the mainloop
