@@ -9,4 +9,4 @@ reportlab~=4.2.2
 pytest~=8.2.2
 pythes @ git+https://github.com/MartinHlavna/pythes
 tkinter-autoscrollbar @ git+https://github.com/MartinHlavna/tkinter-autoscrollbar
-pypandoc~=1.13
+pypandoc_binary~=1.13
