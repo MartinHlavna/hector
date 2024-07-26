@@ -17,7 +17,16 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu-latest, windows-latest, macos-latest]
+        include:
+          - os: ubuntu-latest
+            artifact_name: hector.bin
+            asset_name: hector-linux.bin
+          - os: windows-latest
+            artifact_name: hector.exe
+            asset_name: hector-windows.exe
+          - os: macos-latest
+            artifact_name: hector.bin
+            asset_name: hector-macos.bin
 
     runs-on: ${{ matrix.os }}
 
@@ -67,7 +76,7 @@ jobs:
         uses: svenstaro/upload-release-action@v2
         with:
           repo_token: ${{ secrets.GITHUB_TOKEN }}
-          file: build/hector.*
+          file: build/${{matrix.artifact_name}}
+          asset_name: ${{ matrix.asset_name }}
           tag: ${{ github.ref }}
-          file_glob: true
           overwrite: true

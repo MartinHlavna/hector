@@ -32,7 +32,7 @@ A4_SIZE_INCHES = 8.27
 EDITOR_LOGO_HEIGHT = 300
 EDITOR_LOGO_WIDTH = 300
 ENABLE_DEBUG_DEP_IMAGE = False
-VERSION = "0.7.0 Alfa"
+VERSION = "0.7.1 Alfa"
 
 with open(Utils.resource_path('data_files/pos_tag_translations.json'), 'r', encoding='utf-8') as file:
     POS_TAG_TRANSLATIONS = json.load(file)
