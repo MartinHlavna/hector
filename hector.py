@@ -1,3 +1,5 @@
+import ctypes
+import platform
 import tkinter as tk
 
 from ttkthemes import ThemedTk
@@ -18,6 +20,8 @@ try:
 except:
     pass
 
+if platform.system() == 'Windows':
+    ctypes.windll.shcore.SetProcessDpiAwareness(True)
 
 root = ThemedTk(theme="clam")
 root.title("Hector")

@@ -3,6 +3,7 @@
 
 # Hector
 ![hector logo](https://github.com/MartinHlavna/hector/blob/main/images/hector-logo-white-bg.png?raw=true)
+![hector screen](https://github.com/MartinHlavna/hector/blob/main/screenshots/hector.png?raw=true)
 ## O programe
 Hector je jednoduchý nástroj pre autorov textov, ktorého cieľom je poskytnúť základnú štylistickú podporu. Je to plne konfigurovateľný nástroj, ktorý automaticky analyzuje a vyhodnocuje text. Cieľom programu nie je dodať zoznam problémov, ktoré má autor určite opraviť, ale len zvýrazniť potenciálne problematické časti. Konečné rozhodnutie je vždy na autorovi.
 ## Funkcie programu

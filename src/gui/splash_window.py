@@ -21,7 +21,7 @@ class SplashWindow:
         # MAIN FRAME
         self.main_frame = tk.Frame(self.root, background=PRIMARY_COLOR)
         self.main_frame.pack(expand=1, fill=tk.BOTH, side=tk.LEFT)
-        image = Image.open(Utils.resource_path("images/hector-logo.png"))
+        image = Image.open(Utils.resource_path("images/hector-logo-white-text.png"))
         logo = ImageTk.PhotoImage(image.resize((300, 300)))
 
         logo_holder = ttk.Label(self.main_frame, image=logo, background=PRIMARY_COLOR)
