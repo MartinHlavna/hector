@@ -16,7 +16,7 @@ jobs:
     permissions: write-all
     strategy:
       matrix:
-        os: [ubuntu-latest, windows-latest] #FIXME: macos-latest
+        os: [ubuntu-latest, windows-latest, macos-latest]
 
     runs-on: ${{ matrix.os }}
 
@@ -38,6 +38,9 @@ jobs:
       - name: Install hunspell dependencies for linux
         if: matrix.os == 'ubuntu-latest'
         run: sudo apt install -y autoconf libtool gettext autopoint
+      - name: Install hunspell requirements for macOS
+        if: matrix.os == 'macos-latest'
+        run: brew install automake autoconf libtool
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
@@ -60,6 +63,7 @@ jobs:
           path: |
             build/*.bin
             build/*.exe
+            build/*.app/**/*
           compression-level: 0 #NUITKA ALREADY COMPRESSES
       - name: Upload binary to release
         if: |
