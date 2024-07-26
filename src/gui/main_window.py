@@ -1,6 +1,7 @@
 import io
 import json
 import math
+import os.path
 import platform
 import random
 import re
@@ -32,12 +33,12 @@ A4_SIZE_INCHES = 8.27
 EDITOR_LOGO_HEIGHT = 300
 EDITOR_LOGO_WIDTH = 300
 ENABLE_DEBUG_DEP_IMAGE = False
-VERSION = "0.7.1 Alfa"
+VERSION = "0.7.2 Alfa"
 
-with open(Utils.resource_path('data_files/pos_tag_translations.json'), 'r', encoding='utf-8') as file:
+with open(Utils.resource_path(os.path.join('data_files', 'pos_tag_translations.json')), 'r', encoding='utf-8') as file:
     POS_TAG_TRANSLATIONS = json.load(file)
 
-with open(Utils.resource_path('data_files/dep_tag_translations.json'), 'r', encoding='utf-8') as file:
+with open(Utils.resource_path(os.path.join('data_files', 'dep_tag_translations.json')), 'r', encoding='utf-8') as file:
     DEP_TAG_TRANSLATION = json.load(file)
 
 
