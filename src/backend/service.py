@@ -33,7 +33,7 @@ PATTERN_MULTIPLE_PUNCTUACTION = r'([!?.,:;]){2,}'
 PATTERN_MULTIPLE_SPACES = r' {2,}'
 
 with open(Utils.resource_path(os.path.join('data_files', 'misstagged_words.json')), 'r', encoding='utf-8') as file:
-    DEP_TAG_TRANSLATION = json.load(file)
+    MISSTAGGED_WORDS = json.load(file)
 
 # MAIN BACKEND LOGIC IMPLEMENTATION
 class Service:
