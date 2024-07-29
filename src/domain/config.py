@@ -14,7 +14,7 @@ class Config:
         # MINIMAL LENGTH OF WORD FOR IT TO APPEAR IN FREQUENT WORDS SECTION
         self.repeated_words_min_word_length = data.get('repeated_words_min_word_length', 3)
         # MINIMAL NUMBER OF WORD REPETITIONS FOR IT TO APPEAR IN REPEATED WORDS SECTION
-        self.repeated_words_min_word_frequency = data.get('repeated_words_min_word_frequency', 2)
+        self.repeated_words_min_word_frequency = data.get('repeated_words_min_word_frequency', 10)
         # SENTENCE IS CONSIDERED MID LONG IF IT HAS MORE WORDS THAN THIS CONFIG
         self.long_sentence_words_mid = data.get('long_sentence_words_mid', 8)
         # SENTENCE IS CONSIDERED HIGH LONG IF IT HAS MORE WORDS THAN THIS CONFIG
@@ -28,7 +28,7 @@ class Config:
         # MINIMAL DISTANCE BETWEEN REPEATED WORDS
         self.close_words_min_distance_between_words = data.get('close_words_min_distance_between_words', 100)
         # MINIMAL FREQUENCY FOR REPEATED WORD TO BE HIGHLIGHTED
-        self.close_words_min_frequency = data.get('close_words_min_frequency', 3)
+        self.close_words_min_frequency = data.get('close_words_min_frequency', 2)
         # ENABLE FREQUENT WORDS SIDE PANEL
         self.enable_frequent_words = data.get('enable_frequent_words', True)
         # ENABLE HIGHLIGHTING OF LONG SENTENCES
