@@ -1,7 +1,6 @@
 import io
 import json
 import math
-import os.path
 import platform
 import random
 import re
@@ -11,13 +10,14 @@ from tkinter import filedialog, ttk
 
 import spacy
 from PIL import ImageTk, Image
+from hunspell import Hunspell
+from pythes import PyThes
 from reportlab.graphics import renderPM
 from spacy import displacy
 from spacy.tokens import Doc
 from svglib.svglib import svg2rlg
-from hunspell import Hunspell
 from tkinter_autoscrollbar import AutoScrollbar
-from pythes import PyThes
+
 from src.backend.service import Service
 from src.const.colors import *
 from src.const.fonts import *
@@ -26,7 +26,6 @@ from src.const.paths import *
 from src.const.tags import *
 from src.const.values import *
 from src.utils import Utils
-
 
 # A4 SIZE IN INCHES. WE LATER USE DPI TO SET EDITOR WIDTH
 A4_SIZE_INCHES = 8.27
@@ -615,9 +614,7 @@ class MainWindow:
     # RUN ANALYSIS ONE SECOND AFTER LAST CHANGE
     def analyze_text_debounced(self, event=None):
         if self.analyze_text_debounce_timer is not None:
-            print('canceling timer')
             self.root.after_cancel(self.analyze_text_debounce_timer)
-        print('setting timer')
         self.analyze_text_debounce_timer = self.root.after(NLP_DEBOUNCE_LENGTH, self.analyze_text)
 
     def introspect(self, event=None):
