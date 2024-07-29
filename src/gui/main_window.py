@@ -27,11 +27,13 @@ from src.const.tags import *
 from src.const.values import *
 from src.utils import Utils
 
+
 # A4 SIZE IN INCHES. WE LATER USE DPI TO SET EDITOR WIDTH
 A4_SIZE_INCHES = 8.27
 
 EDITOR_LOGO_HEIGHT = 300
 EDITOR_LOGO_WIDTH = 300
+NLP_DEBOUNCE_LENGTH = 500
 ENABLE_DEBUG_DEP_IMAGE = False
 VERSION = "0.7.2 Alfa"
 
@@ -529,7 +531,8 @@ class MainWindow:
         self.last_match_index = 0
         # GET TEXT FROM EDITOR
         # RUN ANALYSIS
-        if abs(self.doc._.total_chars - len(text)) < 20 and self.config.enable_partial_nlp:
+        print('Going to run analysis')
+        if len(text) > 100 and abs(self.doc._.total_chars - len(text)) < 20 and self.config.enable_partial_nlp:
             # PARTIAL NLP
             possible_carret = self.text_editor.count("1.0", self.text_editor.index(tk.INSERT), "chars")
             if possible_carret is not None:
@@ -612,8 +615,10 @@ class MainWindow:
     # RUN ANALYSIS ONE SECOND AFTER LAST CHANGE
     def analyze_text_debounced(self, event=None):
         if self.analyze_text_debounce_timer is not None:
+            print('canceling timer')
             self.root.after_cancel(self.analyze_text_debounce_timer)
-        self.analyze_text_debounce_timer = self.root.after(1000, self.analyze_text)
+        print('setting timer')
+        self.analyze_text_debounce_timer = self.root.after(NLP_DEBOUNCE_LENGTH, self.analyze_text)
 
     def introspect(self, event=None):
         possible_carret = self.text_editor.count("1.0", self.text_editor.index(tk.INSERT), "chars")
