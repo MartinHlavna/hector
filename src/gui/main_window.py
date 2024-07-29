@@ -34,7 +34,7 @@ EDITOR_LOGO_HEIGHT = 300
 EDITOR_LOGO_WIDTH = 300
 NLP_DEBOUNCE_LENGTH = 500
 ENABLE_DEBUG_DEP_IMAGE = False
-VERSION = "0.7.2 Alfa"
+VERSION = "0.8.0 Alfa"
 
 with open(Utils.resource_path(os.path.join('data_files', 'pos_tag_translations.json')), 'r', encoding='utf-8') as file:
     POS_TAG_TRANSLATIONS = json.load(file)
@@ -946,6 +946,8 @@ class MainWindow:
 
         # SAVE BUTTON
         row += 1
+        # TODO: Ability to revert to default config
+        # Buttons should be ordered via platform guidelines and open make sure dialog
         ttk.Button(settings_window, text="Uložiť", command=save_settings).grid(
             row=row, column=1, columnspan=2, padx=10, pady=10, sticky='w'
         )
