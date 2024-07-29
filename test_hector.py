@@ -246,6 +246,7 @@ def test_readability(setup_teardown):
 def test_word_frequencies(setup_teardown):
     nlp = setup_teardown[0]
     c = Config()
+    c.repeated_words_min_word_frequency = 1
     doc = Service.full_nlp(TEST_TEXT_5, nlp, NLP_BATCH_SIZE, c)
     word_frequencies = Service.compute_word_frequencies(doc, c)
     assert len(word_frequencies) == 5
