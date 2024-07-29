@@ -146,9 +146,10 @@ class MainWindow:
         dpi = self.root.winfo_fpixels('1i')
         text_editor_outer_frame = tk.Frame(text_editor_frame, borderwidth=0, width=int(A4_SIZE_INCHES * dpi),
                                            relief=tk.RAISED, background=TEXT_EDITOR_BG)
-        text_editor_outer_frame.pack(expand=True, fill=tk.Y, padx=5, pady=10,)
+        text_editor_outer_frame.pack(expand=True, fill=tk.Y, padx=5, pady=10, )
         self.text_editor = tk.Text(text_editor_outer_frame, wrap=tk.WORD, relief=tk.RAISED, highlightthickness=0,
-                                   yscrollcommand=text_editor_scroll.set, background=TEXT_EDITOR_BG, foreground=EDITOR_TEXT_COLOR, borderwidth=0,
+                                   yscrollcommand=text_editor_scroll.set, background=TEXT_EDITOR_BG,
+                                   foreground=EDITOR_TEXT_COLOR, borderwidth=0,
                                    spacing1=1.2, spacing2=1.2, spacing3=1.2)
         self.text_editor.config(font=(HELVETICA_FONT_NAME, self.text_size), )
         self.text_editor.pack(expand=1, fill=tk.BOTH, padx=20, pady=20)
@@ -479,7 +480,8 @@ class MainWindow:
         self.tooltip.wm_overrideredirect(True)
         self.tooltip.wm_geometry(f"+{x}+{y}")
         # Add content to the tooltip
-        label = tk.Label(self.tooltip, text=f"{text}", background=ACCENT_COLOR, foreground=PANEL_TEXT_COLOR, relief="solid", borderwidth=1,
+        label = tk.Label(self.tooltip, text=f"{text}", background=ACCENT_COLOR, foreground=PANEL_TEXT_COLOR,
+                         relief="solid", borderwidth=1,
                          justify="left", padx=5, pady=5)
         label.pack()
 
@@ -527,9 +529,19 @@ class MainWindow:
         self.last_match_index = 0
         # GET TEXT FROM EDITOR
         # RUN ANALYSIS
-        # TODO: Evaluate if we can run partial NLP only on changed parts
-        self.doc = Doc.from_docs(list(self.nlp.pipe([text], batch_size=NLP_BATCH_SIZE)))
-        Service.fill_custom_data(self.doc, self.config)
+        if abs(self.doc._.total_chars - len(text)) < 20 and self.config.enable_partial_nlp:
+            # PARTIAL NLP
+            possible_carret = self.text_editor.count("1.0", self.text_editor.index(tk.INSERT), "chars")
+            if possible_carret is not None:
+                carret_position = possible_carret[0]
+                self.doc = Service.partial_nlp(text, self.doc, self.nlp, self.config, carret_position)
+            else:
+                # FALLBACK TO FULL NLP
+                self.doc = Service.full_nlp(text, self.nlp, NLP_BATCH_SIZE, self.config)
+        else:
+            # FULL NLP
+            # FALLBACK TO FULL NLP
+            self.doc = Service.full_nlp(text, self.nlp, NLP_BATCH_SIZE, self.config)
         # CLEAR TAGS
         for tag in self.text_editor.tag_names():
             self.text_editor.tag_delete(tag)
@@ -722,7 +734,7 @@ class MainWindow:
     def show_settings(self):
         settings_window = tk.Toplevel(self.root)
         settings_window.title("Nastavenia")
-        self.configure_modal(settings_window, height=580)
+        self.configure_modal(settings_window, height=620, width=650)
 
         # SAVE SETTINGS
         def save_settings():
@@ -743,6 +755,7 @@ class MainWindow:
             self.config.close_words_min_frequency = int(close_words_min_frequency_entry.get())
             self.config.enable_close_words = close_words_var.get()
             self.config.enable_spellcheck = spellcheck_var.get()
+            self.config.enable_partial_nlp = partial_nlp_var.get()
             Service.save_config(self.config, CONFIG_FILE_PATH)
             self.analyze_text(True)  # Reanalyze text after saving settings
             settings_window.destroy()
@@ -917,6 +930,17 @@ class MainWindow:
         spellcheck_var = tk.BooleanVar(value=self.config.enable_spellcheck)
         spellcheck_checkbox = ttk.Checkbutton(settings_window, text="Zapnuté", variable=spellcheck_var)
         spellcheck_checkbox.grid(row=row, column=1, padx=(6, 10), pady=2, sticky='w')
+
+        # PARTIAL NLP
+        row += 1
+        tk.Label(settings_window, text="Optimalizácia výkonu pri drobných zmenách textu",
+                 font=(HELVETICA_FONT_NAME, 12, BOLD_FONT),
+                 anchor='w').grid(
+            row=row, column=0, columnspan=1, padx=(10, 80), pady=(10, 2), sticky='w'
+        )
+        partial_nlp_var = tk.BooleanVar(value=self.config.enable_partial_nlp)
+        partial_nlp_checkbox = ttk.Checkbutton(settings_window, text="Zapnuté", variable=partial_nlp_var)
+        partial_nlp_checkbox.grid(row=row, column=1, padx=(6, 10), pady=2, sticky='w')
 
         # SAVE BUTTON
         row += 1

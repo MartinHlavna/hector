@@ -43,6 +43,8 @@ class Config:
         self.enable_close_words = data.get('enable_close_words', True)
         # ENABLE SPELLCHECK
         self.enable_spellcheck = data.get('enable_spellcheck', True)
+        # ENABLE PARTIAL NLP
+        self.enable_partial_nlp = data.get('enable_partial_nlp', True)
 
     def to_dict(self):
         """
@@ -67,5 +69,6 @@ class Config:
             "enable_multiple_punctuation": self.enable_multiple_punctuation,
             "enable_trailing_spaces": self.enable_trailing_spaces,
             "enable_close_words": self.enable_close_words,
-            "enable_spellcheck": self.enable_spellcheck
+            "enable_spellcheck": self.enable_spellcheck,
+            "enable_partial_nlp": self.enable_partial_nlp
         }

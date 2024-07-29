@@ -84,6 +84,7 @@ class Service:
         Token.set_extension("is_word", default=False, force=True)
         Token.set_extension("grammar_error_type", default=None, force=True)
         Token.set_extension("has_grammar_error", default=False, force=True)
+        Token.set_extension("paragraph", default=None, force=True)
         Doc.set_extension("words", default=[], force=True)
         Doc.set_extension("paragraphs", default=[], force=True)
         Doc.set_extension("unique_words", default=[], force=True)
@@ -130,6 +131,45 @@ class Service:
         with open(path, 'w') as file:
             json.dump(c.to_dict(), file, indent=4)
 
+    # METHOD THAT RUNS FULL NLP
+    @staticmethod
+    def full_nlp(text, nlp: spacy, batch_size, config: Config):
+        doc = Doc.from_docs(list(nlp.pipe([text], batch_size=batch_size)), nlp)
+        Service.fill_custom_data(doc, config)
+        return doc
+
+    # METHOD THAT RUNS PARTIAL NLP BASED ON PARAGRAPHS AROUND CARRET POSITION
+    @staticmethod
+    def partial_nlp(text, original_doc: Doc, nlp: spacy, config: Config, carret_position):
+        span = original_doc.char_span(carret_position, carret_position, alignment_mode='expand')
+        if span is not None:
+            changed_paragraph = span.root._.paragraph
+        else:
+            changed_paragraph = original_doc[len(original_doc) - 1]._.paragraph
+        first_token = changed_paragraph[0]
+        last_token = changed_paragraph[len(changed_paragraph) - 1]
+        start = changed_paragraph.start_char
+        end = changed_paragraph.end_char
+        if first_token.i > 0:
+            nbor = first_token.nbor(-1)
+            start = nbor._.paragraph.start_char
+            first_token = nbor._.paragraph[0]
+        if last_token.i < len(original_doc) - 1:
+            nbor = last_token.nbor(1)
+            end = nbor._.paragraph.end_char
+            last_token = nbor._.paragraph[len(nbor._.paragraph) - 1]
+        changed_portion_of_text = text[start:(end + len(text) - original_doc._.total_chars)]
+        partial_document = nlp(changed_portion_of_text)
+        documents = []
+        if first_token.i > 0:
+            documents.append(original_doc[:first_token.i].as_doc())
+        documents.append(partial_document)
+        if last_token.i < len(original_doc) - 1:
+            documents.append(original_doc[last_token.i + 1:].as_doc())
+        doc = Doc.from_docs(documents, ensure_whitespace=False)
+        Service.fill_custom_data(doc, config)
+        return doc
+
     # METHOD THAT ADDS ALL EXTENSION DATA IN SINGLE PASS OVER ALL TOKENS
     @staticmethod
     def fill_custom_data(doc: Doc, config: Config):
@@ -141,8 +181,11 @@ class Service:
         unique_words = {}
         for token in doc:
             if token.is_space and token.text.count('\n') > 0:
-                paragraphs.append(doc[cur_paragraph_start:token.i])
+                paragraph = doc[cur_paragraph_start:token.i]
+                paragraphs.append(paragraph)
                 cur_paragraph_start = token.i
+                for t in paragraph:
+                    t._.paragraph = paragraph
 
             token._.is_word = re.match(word_pattern, token.lower_) is not None
             if token._.is_word:
@@ -159,7 +202,10 @@ class Service:
                 unique_word.occourences.append(token)
                 unique_lemma.occourences.append(token)
         if len(doc) > cur_paragraph_start:
-            paragraphs.append(doc[cur_paragraph_start:])
+            paragraph = doc[cur_paragraph_start:]
+            paragraphs.append(paragraph)
+            for t in paragraph:
+                t._.paragraph = paragraph
         doc._.paragraphs = paragraphs
         doc._.words = words
         doc._.unique_words = unique_words
