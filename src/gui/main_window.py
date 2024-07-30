@@ -6,7 +6,7 @@ import random
 import re
 import tkinter as tk
 import webbrowser
-from tkinter import filedialog, ttk
+from tkinter import filedialog, ttk, messagebox
 
 import spacy
 from PIL import ImageTk, Image
@@ -25,6 +25,7 @@ from src.const.grammar_error_types import *
 from src.const.paths import *
 from src.const.tags import *
 from src.const.values import *
+from src.domain.config import Config
 from src.utils import Utils
 
 # A4 SIZE IN INCHES. WE LATER USE DPI TO SET EDITOR WIDTH
@@ -736,7 +737,7 @@ class MainWindow:
     def show_settings(self):
         settings_window = tk.Toplevel(self.root)
         settings_window.title("Nastavenia")
-        self.configure_modal(settings_window, height=620, width=650)
+        self.configure_modal(settings_window, height=620, width=750)
 
         # SAVE SETTINGS
         def save_settings():
@@ -761,6 +762,17 @@ class MainWindow:
             Service.save_config(self.config, CONFIG_FILE_PATH)
             self.analyze_text(True)  # Reanalyze text after saving settings
             settings_window.destroy()
+
+        # RESET SETTINGS
+        def reset_settings():
+            should_reset = messagebox.askyesno("Obnoviť pôvodné",
+                                               "Pokračovaním obnovíte pôvodné nastavenia programu. Skutočne chcwete "
+                                               "pokračovať?")
+            if should_reset:
+                self.config = Config()
+                Service.save_config(self.config, CONFIG_FILE_PATH)
+                self.analyze_text(True)  # Reanalyze text after saving settings
+                settings_window.destroy()
 
         row = 0
         # Frequent words settings
@@ -946,10 +958,17 @@ class MainWindow:
 
         # SAVE BUTTON
         row += 1
-        # TODO: Ability to revert to default config
-        # Buttons should be ordered via platform guidelines and open make sure dialog
+
+        save_btn_col = 2
+        revert_btn_col = 1
+        if platform.system() == 'Windows':
+            save_btn_col = 1
+            revert_btn_col = 2
         ttk.Button(settings_window, text="Uložiť", command=save_settings).grid(
-            row=row, column=1, columnspan=2, padx=10, pady=10, sticky='w'
+            row=row, column=save_btn_col, columnspan=1, padx=10, pady=10, sticky='w'
+        )
+        ttk.Button(settings_window, text="Obnoviť pôvodné", command=reset_settings).grid(
+            row=row, column=revert_btn_col, columnspan=1, padx=10, pady=10, sticky='w'
         )
 
     # SHOW ABOUT DIALOG
