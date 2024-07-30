@@ -531,7 +531,6 @@ class MainWindow:
         self.last_match_index = 0
         # GET TEXT FROM EDITOR
         # RUN ANALYSIS
-        print('Going to run analysis')
         if len(text) > 100 and abs(self.doc._.total_chars - len(text)) < 20 and self.config.enable_partial_nlp:
             # PARTIAL NLP
             possible_carret = self.text_editor.count("1.0", self.text_editor.index(tk.INSERT), "chars")
