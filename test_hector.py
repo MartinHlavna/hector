@@ -184,19 +184,19 @@ def test_partial_nlp(setup_teardown):
     doc1 = Service.partial_nlp(TEST_TEXT_4_CHANGE_AT_START, original_doc, nlp, Config(), 6)
     assert doc1 is not None
     assert isinstance(doc1, Doc)
-    assert doc1._.total_chars == len(TEST_TEXT_4_CHANGE_AT_START)
+    assert doc1._.total_chars == len(TEST_TEXT_4_CHANGE_AT_START.replace('\n', ''))
     assert doc1.text == TEST_TEXT_4_CHANGE_AT_START
     doc2 = Service.partial_nlp(TEST_TEXT_4_CHANGE_AT_END, original_doc, nlp, Config(),
                                len(TEST_TEXT_4_CHANGE_AT_END) - 1)
     assert doc2 is not None
     assert isinstance(doc2, Doc)
-    assert doc2._.total_chars == len(TEST_TEXT_4_CHANGE_AT_END)
+    assert doc2._.total_chars == len(TEST_TEXT_4_CHANGE_AT_END.replace('\n', ''))
     assert doc2.text == TEST_TEXT_4_CHANGE_AT_END
     doc3 = Service.partial_nlp(TEST_TEXT_4_CHANGE_IN_MID, original_doc, nlp, Config(),
                                897)
     assert doc3 is not None
     assert isinstance(doc3, Doc)
-    assert doc3._.total_chars == len(TEST_TEXT_4_CHANGE_AT_END)
+    assert doc3._.total_chars == len(TEST_TEXT_4_CHANGE_AT_END.replace('\n', ''))
     assert doc3.text == TEST_TEXT_4_CHANGE_IN_MID
 
 
@@ -209,7 +209,7 @@ def test_custom_extenstions(setup_teardown):
     assert len(doc._.unique_words) == 5 and doc._.total_unique_words == 5
     assert len(doc._.lemmas) == 5
     assert len(doc._.paragraphs) == 2
-    assert doc._.total_chars == len(TEST_TEXT_1)
+    assert doc._.total_chars == len(TEST_TEXT_1.replace('\n', ''))
     assert 0 < doc._.total_pages < 1
 
 

@@ -158,7 +158,7 @@ class Service:
             nbor = last_token.nbor(1)
             end = nbor._.paragraph.end_char
             last_token = nbor._.paragraph[len(nbor._.paragraph) - 1]
-        changed_portion_of_text = text[start:(end + len(text) - original_doc._.total_chars)]
+        changed_portion_of_text = text[start:(end + len(text) - len(original_doc.text))]
         partial_document = nlp(changed_portion_of_text)
         documents = []
         if first_token.i > 0:
@@ -210,7 +210,7 @@ class Service:
         doc._.words = words
         doc._.unique_words = unique_words
         doc._.lemmas = lemmas
-        doc._.total_chars = len(doc.text)
+        doc._.total_chars = len(doc.text.replace('\n', ''))
         doc._.total_words = len(words)
         doc._.total_unique_words = len(unique_words)
         doc._.total_pages = round(doc._.total_chars / 1800, 2)

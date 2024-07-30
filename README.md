@@ -154,6 +154,10 @@ Odstrániť medzery na konci odstavcov.
 * Momentálne je viacero slov chybne označených ako preklepových, pretože kvalita open source slovníkov nedosahuje kvality komerčných riešení. V prípade, že ich cete zlepšiť, odporúčam zapojiť sa do projektu [sk-spell](https://sk-spell.sk.cx/hunspell-sk).
 * Vyhodnocovanie í/ý má momentálne tiež svoje limity. V prípade, že  nájdete chybu, vytvorete [hlásenie chyby](https://github.com/MartinHlavna/hector/issues/new), alebo napíšte na info@martinhlavna.sk 
 
+### Počet znakov, slov a normostrán
+Hector v spodnom statusa riadku zobrazuje informačný počet znakov, slov a normostrán.
+* Znaky sú počítané bez „Enterov“, tak, ako to počíta aj MS Word, prípadne iné textové procesory. Webové formuláre môžu teda ukázať vyšši počet znakov.
+* Normostrany sú počítané zaužívaným vzorcom 1800 znakov na normostranu.
 
 ### Štylistická zložitosť textu
 
