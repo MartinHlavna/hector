@@ -76,6 +76,7 @@ a voči nemu aplikuje aj ostatné reštrukcie (napr. základný tvar od "sú" je
 | Zapnuté                        | Umožnuje zapnúť, alebo vypnúť funkcionalitu                                                                   | Zapnuté          | 
 | Porovnávať základný tvar slova | Prísnejšie vyhodnocovanie, ktoré ignoruje skloňovanie a časovanie slova                                       | Vypnuté          |
 | Minimálna dĺžka slova          | Umožnuje určiť dĺžku slov, ktoré sa zobrazujú v pravom paneli.                                                | 3 znaky          | 
+| Minimálna vzdialenosť slov     | Požadovaná medzera medzi jednotlivými výskytmi rovnakého slova                                                | 100 slov         |
 | Minimálny počet opakovaní      | Slovo sa zobrazí v ľavom paneli, len ak sa opakuje aspoň toľkotokrát (berú sa do úvahy iba jednotlivé zhluky) | 2 opakovania     | 
 
 #### Odporúčanie
