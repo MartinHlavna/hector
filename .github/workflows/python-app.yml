@@ -25,11 +25,11 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu-latest, windows-latest, macos-latest, macos-13, macos-12] #macos-12 because macos-latest is arm64 only and we also need to support intell CPUs
+        os: [ubuntu-latest, windows-latest, macos-latest, macos-13] #macos-13 because macos-latest is arm64 only and we also need to support intell CPUs
     runs-on: ${{ matrix.os }}
     steps:
     - uses: actions/checkout@v4
-    - name: Set up Python 3.10
+    - name: Set up Python 3.11
       uses: actions/setup-python@v5
       with:
         python-version: "3.10"
