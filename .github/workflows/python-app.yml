@@ -43,7 +43,7 @@ jobs:
       run: sudo apt install -y autoconf libtool gettext autopoint
     - name: Install requirements for macOS
       if: matrix.os == 'macos-latest' || matrix.os == 'macos-13'
-      run: brew install automake autoconf libtool tcl-tk
+      run: brew install automake autoconf libtool
     - name: Setup tmate session
       uses: mxschmitt/action-tmate@v3
       if: ${{ github.event_name == 'workflow_dispatch' && inputs.debug_enabled }}
