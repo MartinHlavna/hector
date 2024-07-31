@@ -46,7 +46,7 @@ jobs:
       - name: Install hunspell dependencies for linux
         if: matrix.os == 'ubuntu-latest'
         run: sudo apt install -y autoconf libtool gettext autopoint
-      - name: Install hunspell requirements for macOS
+      - name: Install requirements for macOS
         if: matrix.os == 'macos-latest' || matrix.os == 'macos-13'
         run: brew install automake autoconf libtool tcl-tk
       - name: Install dependencies

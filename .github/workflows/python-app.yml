@@ -10,6 +10,12 @@ on:
   pull_request:
     branches: [ "main" ]
   workflow_dispatch:
+    inputs:
+      debug_enabled:
+        type: boolean
+        description: 'Run the build with tmate debugging enabled (https://github.com/marketplace/actions/debugging-with-tmate)'
+        required: false
+        default: false
 
 permissions:
   contents: read
@@ -19,7 +25,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu-latest, windows-latest, macos-latest]
+        os: [ubuntu-latest, windows-latest, macos-latest, macos-13] #macos-13 because macos-latest is arm64 only and we also need to support intell CPUs
     runs-on: ${{ matrix.os }}
     steps:
     - uses: actions/checkout@v4
@@ -34,9 +40,12 @@ jobs:
     - name: Install hunspell requirements for linux
       if: matrix.os == 'ubuntu-latest'
       run: sudo apt install -y autoconf libtool gettext autopoint
-    - name: Install hunspell requirements for macOS
-      if: matrix.os == 'macos-latest'
-      run: brew install automake autoconf libtool
+    - name: Install requirements for macOS
+      if: matrix.os == 'macos-latest' || matrix.os == 'macos-13'
+      run: brew install automake autoconf libtool tcl-tk
+    - name: Setup tmate session
+      uses: mxschmitt/action-tmate@v3
+      if: ${{ github.event_name == 'workflow_dispatch' && inputs.debug_enabled }}
     - name: Install dependencies
       run: |
         python -m pip install --upgrade pip
