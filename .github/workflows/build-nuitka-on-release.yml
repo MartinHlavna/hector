@@ -77,7 +77,7 @@ jobs:
       - name: Upload Artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: ${{ matrix.asset_name }} Build
+          name: ${{ matrix.asset_name }}.zip
           path: |
             build/*.bin
             build/*.exe
