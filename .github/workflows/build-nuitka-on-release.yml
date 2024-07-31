@@ -70,7 +70,7 @@ jobs:
           include-package-data: ttkthemes,hunspell
           include-module: fsspec.implementations.github
           include-data-dir: images=images,data_files=data_files
-          windows-disable-console: true
+          disable-console: true
           windows-icon-from-ico: images/hector-icon-white-edge.png
           macos-app-icon: images/hector-icon-white-edge.png
           macos-create-app-bundle: true
