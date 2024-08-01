@@ -57,6 +57,14 @@ jobs:
         python -m pip install --upgrade pip
         pip install flake8 pytest
         pip install -r requirements.txt
+        pip freeze > requirements.-all.txt
+    - name: Check package licences
+      id: license_check_report
+      uses: pilosus/action-pip-license-checker@v2
+      with:
+        requirements: 'requirements-all.txt'
+        fail: 'Other'
+        exclude: '(?i)^(pylint|aio[-_]*).*'
     - name: Lint with flake8
       run: |
         # stop the build if there are Python syntax errors or undefined names
