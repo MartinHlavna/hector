@@ -7,6 +7,7 @@ rm -rf build.hector && python3 -m nuitka hector.py  \
   --include-package=hunspell \
   --include-package-data=hunspell \
   --include-module=fsspec.implementations.github \
+  --include-module=spacy.lexeme \
   --include-data-dir=images=images \
   --include-data-dir=data_files=data_files
 

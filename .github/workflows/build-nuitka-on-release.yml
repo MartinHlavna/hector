@@ -68,7 +68,7 @@ jobs:
           enable-plugins: tk-inter
           include-package: ttkthemes,cacheman,hunspell
           include-package-data: ttkthemes,hunspell
-          include-module: fsspec.implementations.github
+          include-module: fsspec.implementations.github,spacy.lexeme
           include-data-dir: images=images,data_files=data_files
           disable-console: true
           windows-icon-from-ico: images/hector-icon-white-edge.png

@@ -8,6 +8,7 @@ python.exe -m nuitka hector.py  ^
   --include-package=hunspell ^
   --include-package-data=hunspell ^
   --include-module=fsspec.implementations.github ^
+  --include-module=spacy.lexeme ^
   --include-data-dir=images=images ^
   --include-data-dir=data_files=data_files ^
   --windows-icon-from-ico=images/hector-icon-white-edge.png
