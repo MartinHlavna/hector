@@ -73,7 +73,7 @@ jobs:
         verbose: 1
     - name: Save licence check report
       if: ${{ !cancelled() && matrix.os == 'ubuntu-latest' }}
-      run: echo "${{ steps.license_check_report.outputs.report }}" > license-report.json
+      run: echo '${{ steps.license_check_report.outputs.report }}' > license-report.json
     - name: Upload license check report artifact
       if: ${{ !cancelled() && matrix.os == 'ubuntu-latest' }}
       uses: actions/upload-artifact@v3
