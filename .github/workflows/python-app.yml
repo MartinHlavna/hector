@@ -57,7 +57,7 @@ jobs:
         python -m pip install --upgrade pip
         pip install flake8 pytest
         pip install -r requirements.txt
-        pip freeze > requirements.-all.txt
+        pip freeze > requirements-all.txt
     - name: Check package licences
       if: matrix.os == 'ubuntu-latest'
       id: license_check_report
