@@ -6,16 +6,12 @@ if "NUITKA_ONEFILE_PARENT" in os.environ:
     # If the application is compiled using nuitka it sets enviroment value
     WORKING_DIRECTORY = os.path.dirname(sys.argv[0])
     RUN_DIRECTORY = os.path.dirname(sys.executable)
-    print('app is compiled')
 elif getattr(sys, 'frozen', False):
     # If the application is run as a bundle, the PyInstaller bootloader
     # extends the sys module by a flag frozen=True
     WORKING_DIRECTORY = os.path.dirname(sys.executable)
-    # noinspection PyUnresolvedReferences
-    RUN_DIRECTORY = sys._MEIPASS
-    print('app is frozen')
+    RUN_DIRECTORY = os.path.dirname(sys.executable)
 else:
-    print('app is running from source')
     WORKING_DIRECTORY = os.getcwd()
     RUN_DIRECTORY = os.getcwd()
 

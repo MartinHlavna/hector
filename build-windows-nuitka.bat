@@ -1,5 +1,6 @@
 python.exe -m nuitka hector.py  ^
-  --standalone --onefile ^
+  --standalone ^
+  --onefile ^
   --enable-plugin=tk-inter ^
   --include-package=ttkthemes ^
   --include-package=ttkthemes ^

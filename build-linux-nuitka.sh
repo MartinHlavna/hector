@@ -1,5 +1,5 @@
 rm -rf build.hector && python3 -m nuitka hector.py  \
-  --standalone --onefile \
+  --standalone \
   --enable-plugin=tk-inter \
   --include-package=ttkthemes \
   --include-package-data=ttkthemes \
@@ -9,7 +9,8 @@ rm -rf build.hector && python3 -m nuitka hector.py  \
   --include-module=fsspec.implementations.github \
   --include-module=spacy.lexeme \
   --include-data-dir=images=images \
-  --include-data-dir=data_files=data_files
+  --include-data-dir=data_files=data_files \
+  --onefile
 
 
 #--user-package-configuration-file=nuitka-config.yaml
