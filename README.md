@@ -11,6 +11,8 @@
 Ak by sa niekto chcel aktívne zapojiť do projektu, tak momentálne by sa najviac hodilo, ak by niekto vedel otestovať a dotiahnuť implementáciu na macOS. Žiaľ nemám k dispozícií zariadenie, na ktorom by som to vedel plnohodnotne otestovať.
 
 ## NA STIAHNUTIE
+Windows: [0.9.0 Beta](https://github.com/MartinHlavna/hector/releases/download/v.0.9.0-beta/hector-windows-amd64.exe)
+Linux: [0.9.0 Beta](https://github.com/MartinHlavna/hector/releases/download/v.0.9.0-beta/hector-linux-amd64.exe)
 
 ## O programe
 
