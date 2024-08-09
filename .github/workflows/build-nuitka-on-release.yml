@@ -24,12 +24,12 @@ jobs:
           - os: windows-latest
             artifact_name: hector.exe
             asset_name: hector-windows-amd64.exe
-          - os: macos-latest
-            artifact_name: hector.bin
-            asset_name: hector-macos-arm64.bin
-          - os: macos-13
-            artifact_name: hector.bin
-            asset_name: hector-macos-amd64.bin
+#          - os: macos-latest
+#            artifact_name: hector.bin
+#            asset_name: hector-macos-arm64.bin
+#          - os: macos-13
+#            artifact_name: hector.bin
+#            asset_name: hector-macos-amd64.bin
 
     runs-on: ${{ matrix.os }}
 

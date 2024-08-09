@@ -6,6 +6,12 @@
 ![hector logo](https://github.com/MartinHlavna/hector/blob/main/images/hector-logo-white-bg.png?raw=true)
 ![hector screen](https://github.com/MartinHlavna/hector/blob/main/screenshots/hector.png?raw=true)
 
+
+## HELP WANTED
+Ak by sa niekto chcel aktívne zapojiť do projektu, tak momentálne by sa najviac hodilo, ak by niekto vedel otestovať a dotiahnuť implementáciu na macOS. Žiaľ nemám k dispozícií zariadenie, na ktorom by som to vedel plnohodnotne otestovať.
+
+## NA STIAHNUTIE
+
 ## O programe
 
 Hector je jednoduchý nástroj pre autorov textov, ktorého cieľom je poskytnúť základnú štylistickú podporu. Je to plne
