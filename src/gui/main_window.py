@@ -35,7 +35,7 @@ EDITOR_LOGO_HEIGHT = 300
 EDITOR_LOGO_WIDTH = 300
 NLP_DEBOUNCE_LENGTH = 500
 ENABLE_DEBUG_DEP_IMAGE = False
-VERSION = "0.9.0 Beta"
+VERSION = "0.9.1 Beta"
 
 with open(Utils.resource_path(os.path.join('data_files', 'pos_tag_translations.json')), 'r', encoding='utf-8') as file:
     POS_TAG_TRANSLATIONS = json.load(file)
@@ -736,7 +736,7 @@ class MainWindow:
     def show_settings(self):
         settings_window = tk.Toplevel(self.root)
         settings_window.title("Nastavenia")
-        self.configure_modal(settings_window, height=620, width=750)
+        self.configure_modal(settings_window, height=650, width=780)
 
         # SAVE SETTINGS
         def save_settings():
