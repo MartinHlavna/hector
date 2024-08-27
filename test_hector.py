@@ -226,7 +226,6 @@ def test_find_multiple_punctuation(setup_teardown):
 
 
 def test_spellcheck(setup_teardown):
-    # TODO: Make more robust test on spellcheck
     nlp = setup_teardown[0]
     hunspell = setup_teardown[1]
     doc = Service.full_nlp(TEST_TEXT_3, nlp, NLP_BATCH_SIZE, Config())

@@ -39,11 +39,3 @@ splash.update_status("inicializujem textový processor...")
 splash.close()
 main_window = MainWindow(root, nlp, dictionaries["spellcheck"], dictionaries["thesaurus"])
 main_window.start_main_loop()
-
-# TODO LEVEL A (production features):
-
-# TODO LEVEL B (nice to have features): Consider adding:
-# Heatmap?
-# Commas analysis based on some NLP apporach?
-# Right click context menu with analysis options on selected text
-# On mouse over in right panel word, highlight words in editor
