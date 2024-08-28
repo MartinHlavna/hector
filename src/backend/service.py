@@ -18,10 +18,11 @@ from spacy.tokenizer import Tokenizer
 from spacy.tokens import Doc, Token, Span
 from spacy.util import compile_infix_regex
 
-from src.const.grammar_error_types import *
+from src.const.grammar_error_types import GRAMMAR_ERROR_TYPE_MISSPELLED_WORD, GRAMMAR_ERROR_TYPE_WRONG_Y_SUFFIX, \
+    GRAMMAR_ERROR_TYPE_WRONG_YSI_SUFFIX, GRAMMAR_ERROR_TYPE_WRONG_I_SUFFIX, GRAMMAR_ERROR_TYPE_WRONG_ISI_SUFFIX
 from src.const.paths import DATA_DIRECTORY, SPACY_MODELS_DIR, SK_SPACY_MODEL_DIR, DICTIONARY_DIR, SK_DICTIONARY_DIR, \
     SK_SPELL_DICTIONARY_DIR
-from src.const.values import *
+from src.const.values import SPACY_MODEL_NAME_WITH_VERSION, SPACY_MODEL_LINK, SPACY_MODEL_NAME, READABILITY_MAX_VALUE
 from src.domain.config import Config
 from src.domain.unique_word import UniqueWord
 from src.utils import Utils

@@ -1,8 +1,9 @@
 import tkinter as tk
 from tkinter import ttk
 from PIL import ImageTk, Image
-from src.const.colors import *
-from src.const.fonts import *
+
+from src.const.colors import PRIMARY_COLOR
+from src.const.fonts import HELVETICA_FONT_NAME
 from src.utils import Utils
 
 

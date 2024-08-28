@@ -1,6 +1,7 @@
 import io
 import json
 import math
+import os
 import platform
 import random
 import re
@@ -19,12 +20,18 @@ from svglib.svglib import svg2rlg
 from tkinter_autoscrollbar import AutoScrollbar
 
 from src.backend.service import Service
-from src.const.colors import *
-from src.const.fonts import *
-from src.const.grammar_error_types import *
-from src.const.paths import *
-from src.const.tags import *
-from src.const.values import *
+from src.const.colors import PRIMARY_COLOR, ACCENT_COLOR, ACCENT_2_COLOR, TEXT_EDITOR_FRAME_BG, PANEL_TEXT_COLOR, \
+    TEXT_EDITOR_BG, EDITOR_TEXT_COLOR, CLOSE_WORDS_PALLETE, LONG_SENTENCE_HIGHLIGHT_COLOR_MID, \
+    LONG_SENTENCE_HIGHLIGHT_COLOR_HIGH, SEARCH_RESULT_HIGHLIGHT_COLOR, CURRENT_SEARCH_RESULT_HIGHLIGHT_COLOR
+from src.const.fonts import HELVETICA_FONT_NAME, TEXT_SIZE_SECTION_HEADER, TEXT_SIZE_BOTTOM_BAR, TEXT_SIZE_MENU, \
+    BOLD_FONT
+from src.const.grammar_error_types import GRAMMAR_ERROR_TYPE_MISSPELLED_WORD, GRAMMAR_ERROR_TYPE_WRONG_Y_SUFFIX, \
+    GRAMMAR_ERROR_TYPE_WRONG_I_SUFFIX, GRAMMAR_ERROR_TYPE_WRONG_YSI_SUFFIX, GRAMMAR_ERROR_TYPE_WRONG_ISI_SUFFIX
+from src.const.paths import CONFIG_FILE_PATH
+from src.const.tags import CLOSE_WORD_PREFIX, LONG_SENTENCE_TAG_NAME_HIGH, LONG_SENTENCE_TAG_NAME_MID, \
+    PARAGRAPH_TAG_NAME, TRAILING_SPACES_TAG_NAME, MULTIPLE_PUNCTUATION_TAG_NAME, MULTIPLE_SPACES_TAG_NAME, \
+    SEARCH_RESULT_TAG_NAME, CURRENT_SEARCH_RESULT_TAG_NAME, GRAMMAR_ERROR_TAG_NAME, CLOSE_WORD_TAG_NAME
+from src.const.values import READABILITY_MAX_VALUE, DOCUMENTATION_LINK, NLP_BATCH_SIZE
 from src.domain.config import Config
 from src.utils import Utils
 
