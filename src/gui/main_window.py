@@ -591,27 +591,27 @@ class MainWindow:
                                   )
         self.bind_tag_mouse_event(TRAILING_SPACES_TAG_NAME,
                                   self.text_editor,
-                                  lambda e: self.show_tooltip(e, f'Zbytočná medzera na konci odstavca.'),
+                                  lambda e: self.show_tooltip(e, 'Zbytočná medzera na konci odstavca.'),
                                   lambda e: self.hide_tooltip(e)
                                   )
         self.bind_tag_mouse_event(LONG_SENTENCE_TAG_NAME_MID,
                                   self.text_editor,
-                                  lambda e: self.show_tooltip(e, f'Táto veta je trochu dlhšia.'),
+                                  lambda e: self.show_tooltip(e, 'Táto veta je trochu dlhšia.'),
                                   lambda e: self.hide_tooltip(e)
                                   )
         self.bind_tag_mouse_event(LONG_SENTENCE_TAG_NAME_HIGH,
                                   self.text_editor,
-                                  lambda e: self.show_tooltip(e, f'Táto veta je dlhá.'),
+                                  lambda e: self.show_tooltip(e, 'Táto veta je dlhá.'),
                                   lambda e: self.hide_tooltip(e)
                                   )
         self.bind_tag_mouse_event(MULTIPLE_PUNCTUATION_TAG_NAME,
                                   self.text_editor,
-                                  lambda e: self.show_tooltip(e, f'Viacnásobná interpunkcia.'),
+                                  lambda e: self.show_tooltip(e, 'Viacnásobná interpunkcia.'),
                                   lambda e: self.hide_tooltip(e)
                                   )
         self.bind_tag_mouse_event(MULTIPLE_SPACES_TAG_NAME,
                                   self.text_editor,
-                                  lambda e: self.show_tooltip(e, f'Viacnásobná medzera.'),
+                                  lambda e: self.show_tooltip(e, 'Viacnásobná medzera.'),
                                   lambda e: self.hide_tooltip(e)
                                   )
         readability = Service.evaluate_readability(self.doc)
@@ -649,7 +649,7 @@ class MainWindow:
                                       f'Slovný druh: {POS_TAG_TRANSLATIONS[self.current_instrospection_token.pos_]}\n' \
                                       f'Vetný člen: {DEP_TAG_TRANSLATION[self.current_instrospection_token.dep_.lower()]}'
                 if thes_result is not None:
-                    introspection_resut += f'\n\nSynonymá\n\n'
+                    introspection_resut += '\n\nSynonymá\n\n'
                     for mean in thes_result.mean_tuple:
                         introspection_resut += f'{mean.main}: {", ".join(mean.syn_tuple)}\n'
                 MainWindow.set_text(self.introspection_text, introspection_resut)

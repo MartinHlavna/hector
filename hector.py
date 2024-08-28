@@ -9,17 +9,6 @@ from src.gui.main_window import MainWindow
 from src.gui.splash_window import SplashWindow
 from src.utils import Utils
 
-# WE CAN MOVE OVER TO PYTHON SPLASH INSTEAD OF IMAGE NOW
-nativeSplashOpened = False
-# noinspection PyBroadException
-try:
-    import pyi_splash
-
-    pyi_splash.update_text('inicializujem ...')
-    nativeSplashOpened = True
-except:
-    pass
-
 if platform.system() == 'Windows':
     ctypes.windll.shcore.SetProcessDpiAwareness(True)
 
@@ -29,9 +18,6 @@ photo = tk.PhotoImage(file=Utils.resource_path('images/hector-icon.png'))
 root.wm_iconphoto(True, photo)
 splash = SplashWindow(root)
 splash.update_status("sťahujem a inicializujem jazykový model...")
-# WE CAN MOVE OVER TO PYTHON SPLASH INSTEAD OF IMAGE NOW
-if nativeSplashOpened:
-    pyi_splash.close()
 nlp = Service.initialize_nlp()
 splash.update_status("sťahujem a inicializujem slovník...")
 dictionaries = Service.initialize_dictionaries()

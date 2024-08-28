@@ -11,7 +11,8 @@ def setup_teardown(request):
     """
     # Initialization code, if needed
     nlp = Service.initialize_nlp()
-    dictionaries = Service.initialize_dictionaries(github_token=request.config.option.github_token, github_user=request.config.option.github_user)
+    dictionaries = Service.initialize_dictionaries(github_token=request.config.option.github_token,
+                                                   github_user=request.config.option.github_user)
     spellcheck_dictionary = dictionaries["spellcheck"]
     thesaurus = dictionaries["thesaurus"]
     yield nlp, spellcheck_dictionary, thesaurus
