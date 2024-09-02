@@ -1,5 +1,7 @@
 CLOSE_WORD_PREFIX = "close_word_"
+FREQUENT_WORD_PREFIX = "frequent_word_"
 CLOSE_WORD_TAG_NAME = "close_word"
+FREQUENT_WORD_TAG_NAME = "frequent_word"
 GRAMMAR_ERROR_TAG_NAME = "grammar_error"
 MULTIPLE_PUNCTUATION_TAG_NAME = "multiple_punctuation"
 TRAILING_SPACES_TAG_NAME = "trailing_spaces"

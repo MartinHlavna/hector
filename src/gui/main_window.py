@@ -30,7 +30,8 @@ from src.const.grammar_error_types import GRAMMAR_ERROR_TYPE_MISSPELLED_WORD, GR
 from src.const.paths import CONFIG_FILE_PATH
 from src.const.tags import CLOSE_WORD_PREFIX, LONG_SENTENCE_TAG_NAME_HIGH, LONG_SENTENCE_TAG_NAME_MID, \
     PARAGRAPH_TAG_NAME, TRAILING_SPACES_TAG_NAME, MULTIPLE_PUNCTUATION_TAG_NAME, MULTIPLE_SPACES_TAG_NAME, \
-    SEARCH_RESULT_TAG_NAME, CURRENT_SEARCH_RESULT_TAG_NAME, GRAMMAR_ERROR_TAG_NAME, CLOSE_WORD_TAG_NAME
+    SEARCH_RESULT_TAG_NAME, CURRENT_SEARCH_RESULT_TAG_NAME, GRAMMAR_ERROR_TAG_NAME, CLOSE_WORD_TAG_NAME, \
+    FREQUENT_WORD_PREFIX, FREQUENT_WORD_TAG_NAME
 from src.const.values import READABILITY_MAX_VALUE, DOCUMENTATION_LINK, NLP_BATCH_SIZE
 from src.domain.config import Config
 from src.utils import Utils
@@ -85,7 +86,7 @@ class MainWindow:
         self.last_search = ''
         self.last_match_index = 0
         # CLOSE WORD, THAT IS CURRENTLY HIGHLIGHTED
-        self.highlighted_close_word = ''
+        self.highlighted_word = ''
         # TOOLTIP WINDOW
         self.tooltip = None
         # DEFAULT NLP DOCUMENT INITIALIZED ON EMPTY TEXT
@@ -338,10 +339,35 @@ class MainWindow:
         # NOTE
         # In tk, there is problem with scrolling so we default to using on big text to dispaly frequencies
         # There is way of making canvas with scrollregion but this is more performant
-        frequent_words_text = "\n".join(
-            [f"{word.text}\t\t{len(word.occourences)}x" for word in word_counts]
-        )
-        MainWindow.set_text(self.word_freq_text, frequent_words_text)
+        self.word_freq_text.config(state=tk.NORMAL)
+        self.word_freq_text.delete(1.0, tk.END)
+        start_char = 0
+        for word in word_counts:
+            word_text = f"{word.text}\t\t{len(word.occourences)}x\n"
+            tag_name = f"{FREQUENT_WORD_PREFIX}{word.text}"
+
+            # Insert the text
+            self.word_freq_text.insert(tk.END, word_text)
+
+            # Add the tag to the inserted text
+            start_index = f"1.0 + {start_char} chars"
+            end_index = f"1.0 + {start_char + len(word_text)} chars"
+            self.word_freq_text.tag_add(tag_name, start_index, end_index)
+            self.word_freq_text.tag_add(FREQUENT_WORD_TAG_NAME, start_index, end_index)
+            start_char += len(word_text)
+            self.bind_tag_mouse_event(tag_name,
+                                      self.word_freq_text,
+                                      lambda e: self.highlight_same_word(e, self.word_freq_text, False,
+                                                                         tag_prefix=FREQUENT_WORD_PREFIX),
+                                      lambda e: self.unhighlight_same_word(e)
+                                      )
+        self.word_freq_text.config(state=tk.DISABLED)
+        # ADD TAG TO ALL OCCOURENCES
+        for word in word_counts:
+            for occourence in word.occourences:
+                start_index = f"1.0 + {occourence.idx} chars"
+                end_index = f"1.0 + {occourence.idx + len(occourence.lower_)} chars"
+                self.text_editor.tag_add(f'{FREQUENT_WORD_PREFIX}{word.text}', start_index, end_index)
 
     # HIGHLIGHT LONG SENTENCES
     def highlight_long_sentences(self, doc: Doc):
@@ -456,7 +482,7 @@ class MainWindow:
                     self.show_tooltip(event, f'Slovo by malo končiť na ýsi.\n\nNávrhy: {span.root.text[:-3] + "ýsi"}')
 
     # HIGHLIGHT SAME WORD ON MOUSE OVER
-    def highlight_same_word(self, event, trigger, with_tooltip=True):
+    def highlight_same_word(self, event, trigger, with_tooltip=True, tag_prefix=CLOSE_WORD_PREFIX):
         self.unhighlight_same_word(event)
         # Získanie indexu myši
         mouse_index = trigger.index(f"@{event.x},{event.y}")
@@ -465,18 +491,20 @@ class MainWindow:
         if with_tooltip:
             self.show_tooltip(event, 'Toto slovo sa opakuje viackrát na krátkom úseku')
         for tag in tags_at_mouse:
-            if tag.startswith(CLOSE_WORD_PREFIX):
-                self.highlighted_close_word = tag
-                self.text_editor.tag_config(tag, background="black", foreground="white")
-                self.close_words_text.tag_config(tag, background="black", foreground="white")
+            if tag.startswith(tag_prefix):
+                self.highlighted_word = tag
+                self.text_editor.tag_config(tag, background="white", foreground="black")
+                self.close_words_text.tag_config(tag, background="white", foreground="black")
+                self.word_freq_text.tag_config(tag, background="white", foreground="black")
 
     # REMOVE HIGHLIGHTING FROM SAME WORD ON MOUSE OVER END
     def unhighlight_same_word(self, event):
         self.hide_tooltip(event)
-        if self.highlighted_close_word is not None and len(self.highlighted_close_word) > 0:
-            original_color = self.close_word_colors.get(self.highlighted_close_word, "")
-            self.text_editor.tag_config(self.highlighted_close_word, background="", foreground=original_color)
-            self.close_words_text.tag_config(self.highlighted_close_word, background="", foreground="")
+        if self.highlighted_word is not None and len(self.highlighted_word) > 0:
+            original_color = self.close_word_colors.get(self.highlighted_word, "")
+            self.text_editor.tag_config(self.highlighted_word, background="", foreground=original_color)
+            self.close_words_text.tag_config(self.highlighted_word, background="", foreground="")
+            self.word_freq_text.tag_config(self.highlighted_word, background="", foreground="")
 
     def show_tooltip(self, event, text):
         if self.tooltip:
@@ -560,9 +588,9 @@ class MainWindow:
             end_index = f"1.0 + {paragraph.end_char} chars"
             self.text_editor.tag_add(PARAGRAPH_TAG_NAME, start_index, end_index)
         # RUN ANALYSIS FUNCTIONS
-        self.display_word_frequencies(self.doc)
         self.display_size_info(self.doc)
         self.highlight_long_sentences(self.doc)
+        self.display_word_frequencies(self.doc)
         self.highlight_close_words(self.doc)
         self.highlight_multiple_issues(self.doc)
         self.run_spellcheck(self.doc)
@@ -578,6 +606,7 @@ class MainWindow:
         self.text_editor.tag_config(GRAMMAR_ERROR_TAG_NAME, underline=True, underlinefg="red")
         self.text_editor.tag_raise("sel")
         self.close_words_text.tag_raise("sel")
+        self.word_freq_text.tag_raise("sel")
         # MOUSE BINDINGS
         self.bind_tag_mouse_event(CLOSE_WORD_TAG_NAME,
                                   self.text_editor,
