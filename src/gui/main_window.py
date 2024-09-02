@@ -743,7 +743,7 @@ class MainWindow:
     def show_settings(self):
         settings_window = tk.Toplevel(self.root)
         settings_window.title("Nastavenia")
-        self.configure_modal(settings_window, height=650, width=780)
+        self.configure_modal(settings_window, height=700, width=780)
 
         # SAVE SETTINGS
         def save_settings():
