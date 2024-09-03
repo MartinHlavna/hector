@@ -43,7 +43,7 @@ EDITOR_LOGO_HEIGHT = 300
 EDITOR_LOGO_WIDTH = 300
 NLP_DEBOUNCE_LENGTH = 500
 ENABLE_DEBUG_DEP_IMAGE = False
-VERSION = "0.9.1 Beta"
+VERSION = "0.9.2 Beta"
 
 with open(Utils.resource_path(os.path.join('data_files', 'pos_tag_translations.json')), 'r', encoding='utf-8') as file:
     POS_TAG_TRANSLATIONS = json.load(file)
