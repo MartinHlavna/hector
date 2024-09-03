@@ -11,8 +11,8 @@
 Ak by sa niekto chcel aktívne zapojiť do projektu, tak momentálne by sa najviac hodilo, ak by niekto vedel otestovať a dotiahnuť implementáciu na macOS. Žiaľ nemám k dispozícií zariadenie, na ktorom by som to vedel plnohodnotne otestovať.
 
 ## NA STIAHNUTIE
-Windows: [0.9.1 Beta](https://github.com/MartinHlavna/hector/releases/download/v.0.9.1-beta/hector-windows-amd64.exe)
-Linux: [0.9.1 Beta](https://github.com/MartinHlavna/hector/releases/download/v.0.9.1-beta/hector-linux-amd64.bin)
+Windows: [0.9.1 Beta](https://github.com/MartinHlavna/hector/releases/download/v.0.9.2-beta/hector-windows-amd64.exe)
+Linux: [0.9.1 Beta](https://github.com/MartinHlavna/hector/releases/download/v.0.9.2-beta/hector-linux-amd64.bin)
 
 ## O programe
 
@@ -50,8 +50,9 @@ Autor by sa mal snažiť o vhodnú kombináciu dlhých a krátkych viet, aby dos
 
 ### Často použité slová
 
-Hector v pravom paneli zobrazuje informáciu o počte výskytu daného slova. V prípade, že je v nastaveniach zapnutá
-voľba "používať základný tvar slova," tak program v pravom stĺpci zobrazuje základné tvary slov. Napríklad budú všetky
+Hector v pravom paneli zobrazuje informáciu o počte výskytu daného slova. Nájdením myši na slovo sa v editore zvýrazní. Kliknutím sa editor presunie na daný výskyt smerom dopredu. Takýmto spôsobom je možné jednoducho hľadať problémové slová.
+
+V prípade, že je v nastaveniach zapnutá voľba "používať základný tvar slova," tak program v pravom stĺpci zobrazuje základné tvary slov. Napríklad budú všetky
 slová, "ktorý" "ktorá" "ktoré" započítané, ako výskyty slova "ktorý"
 
 #### Možnosti prispôsobenia
@@ -71,8 +72,10 @@ Ak sa niektoré slovo opakuje výrazne veľakrát, autor môže zvážiť jeho n
 
 Hector v ľavom paneli zobrazuje slová, ktorá sa opakujú „blízko seba“. Na rozdiel od pravého panelu sú v tomto zozname
 iba slová, ktorých výskyty sú bliźšie, ako definovaná hodnota (napr. ak sa slovo zopakuje aspoň dvakrát v rozmedzí 100
-znakov). Takýmto spôsobom dokáže hector identifikovať zhluky opakujúcich sa slov. Tieto slová sú zároveň zvýraznené. Po
-prejdení myšou nad takéto slovo sa v texte zvýrazania všetky jeho výskyty.
+znakov). Takýmto spôsobom dokáže hector identifikovať zhluky opakujúcich sa slov. Tieto slová sú zároveň zvýraznené.
+
+Po prejdení myšou nad takéto slovo (buď v editore, alebo v ľavom paneli) sa v texte zvýrazania všetky jeho výskyty. Kliknutím sa editor presunie na daný výskyt smerom dopredu. Takýmto spôsobom je možné jednoducho hľadať problémové slová.
+
 V prípade, že je v nastaveniach zapnutá možnosť "porovnávať základný tvar slova," tak program používa základný tvar
 a voči nemu aplikuje aj ostatné reštrukcie (napr. základný tvar od "sú" je "byť". Ak je nastavená minimálna dĺžka slova
 3 znaky, tak program zvýrazní aj kratšie výskyty)
