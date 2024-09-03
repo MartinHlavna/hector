@@ -357,9 +357,11 @@ class MainWindow:
             start_char += len(word_text)
             self.bind_tag_mouse_event(tag_name,
                                       self.word_freq_text,
-                                      lambda e: self.highlight_same_word(e, self.word_freq_text, False,
-                                                                         tag_prefix=FREQUENT_WORD_PREFIX),
-                                      lambda e: self.unhighlight_same_word(e)
+                                      on_enter=lambda e: self.highlight_same_word(
+                                          e, self.word_freq_text, False, tag_prefix=FREQUENT_WORD_PREFIX),
+                                      on_leave=lambda e: self.unhighlight_same_word(e),
+                                      on_click=lambda e: self.jump_to_next_word_occourence(
+                                          e, self.word_freq_text, tag_prefix=FREQUENT_WORD_PREFIX)
                                       )
         self.word_freq_text.config(state=tk.DISABLED)
         # ADD TAG TO ALL OCCOURENCES
@@ -435,7 +437,9 @@ class MainWindow:
                 self.bind_tag_mouse_event(tag_name,
                                           self.close_words_text,
                                           lambda e: self.highlight_same_word(e, self.close_words_text, False),
-                                          lambda e: self.unhighlight_same_word(e)
+                                          lambda e: self.unhighlight_same_word(e),
+                                          on_click=lambda e: self.jump_to_next_word_occourence(
+                                              e, self.close_words_text, tag_prefix=CLOSE_WORD_PREFIX)
                                           )
             self.close_words_text.config(state=tk.DISABLED)
 
@@ -457,9 +461,11 @@ class MainWindow:
                                                 font=(HELVETICA_FONT_NAME, self.text_size + 2, BOLD_FONT))
 
     # BIND MOUSE ENTER AND MOUSE LEAVE EVENTS
-    def bind_tag_mouse_event(self, tag_name, text, on_enter, on_leave):
+    def bind_tag_mouse_event(self, tag_name, text, on_enter, on_leave, on_click=None):
         text.tag_bind(tag_name, "<Enter>", on_enter)
         text.tag_bind(tag_name, "<Leave>", on_leave)
+        if on_click is not None:
+            text.tag_bind(tag_name, "<Button-1>", on_click)
 
     def highlight_grammar_error(self, event):
         # Získanie indexu myši
@@ -496,6 +502,27 @@ class MainWindow:
                 self.text_editor.tag_config(tag, background="white", foreground="black")
                 self.close_words_text.tag_config(tag, background="white", foreground="black")
                 self.word_freq_text.tag_config(tag, background="white", foreground="black")
+
+    # FOCUS NEXT WORD OCCOURENCE
+    def jump_to_next_word_occourence(self, event, trigger, tag_prefix=CLOSE_WORD_PREFIX):
+        self.text_editor.focus_set()
+        # Získanie indexu myši
+        mouse_index = trigger.index(f"@{event.x},{event.y}")
+        # Získanie všetkých tagov na pozícii myši
+        tags_at_mouse = trigger.tag_names(mouse_index)
+        for tag in tags_at_mouse:
+            if tag.startswith(tag_prefix):
+                next_range = self.text_editor.tag_nextrange(tag, self.text_editor.index(tk.INSERT))
+                if not next_range:
+                    next_range = self.text_editor.tag_nextrange(tag, '0.0')
+                if next_range:
+                    self.move_carret(next_range[1])
+        return "break"
+
+    # MOVES CARRET TO DIFFERENT POSITION AND ENSURES IT IS IN FOCUS
+    def move_carret(self, index):
+        self.text_editor.see(index)
+        self.text_editor.mark_set(tk.INSERT, index)
 
     # REMOVE HIGHLIGHTING FROM SAME WORD ON MOUSE OVER END
     def unhighlight_same_word(self, event):
@@ -706,8 +733,7 @@ class MainWindow:
         start_index = f"1.0 + {start} chars"
         end_index = f"1.0 + {end} chars"
         self.text_editor.tag_add(CURRENT_SEARCH_RESULT_TAG_NAME, start_index, end_index)
-        self.text_editor.see(start_index)
-        self.text_editor.mark_set(tk.INSERT, end_index)
+        self.move_carret(end_index)
 
     # SEARCH IN TEXT EDITOR
     def search_text(self):
