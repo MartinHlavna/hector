@@ -622,7 +622,9 @@ class MainWindow:
         self.highlight_multiple_issues(self.doc)
         self.run_spellcheck(self.doc)
         # CONFIG TAGS
-        self.text_editor.tag_config(PARAGRAPH_TAG_NAME, lmargin1="20")
+        self.text_editor.tag_config(PARAGRAPH_TAG_NAME,
+                                    lmargin1=self.config.paragraph_lmargin1,
+                                    spacing3=self.config.paragraph_spacing3)
         self.text_editor.tag_config(LONG_SENTENCE_TAG_NAME_MID, background=LONG_SENTENCE_HIGHLIGHT_COLOR_MID)
         self.text_editor.tag_config(LONG_SENTENCE_TAG_NAME_HIGH, background=LONG_SENTENCE_HIGHLIGHT_COLOR_HIGH)
         self.text_editor.tag_config(TRAILING_SPACES_TAG_NAME, background="red")

@@ -45,6 +45,10 @@ class Config:
         self.enable_spellcheck = data.get('enable_spellcheck', True)
         # ENABLE PARTIAL NLP
         self.enable_partial_nlp = data.get('enable_partial_nlp', True)
+        # LEFT MARGIN OF FIRST LINE IN PARAGRAPH
+        self.paragraph_lmargin1 = data.get('paragraph_lmargin1', 20)
+        # SPACING BELLOW PARAGRAPH
+        self.paragraph_spacing3 = data.get('paragraph_spacing3', 0)
 
     def to_dict(self):
         """
@@ -70,5 +74,7 @@ class Config:
             "enable_trailing_spaces": self.enable_trailing_spaces,
             "enable_close_words": self.enable_close_words,
             "enable_spellcheck": self.enable_spellcheck,
-            "enable_partial_nlp": self.enable_partial_nlp
+            "enable_partial_nlp": self.enable_partial_nlp,
+            "paragraph_lmargin1": self.paragraph_lmargin1,
+            "paragraph_spacing3": self.paragraph_spacing3,
         }
