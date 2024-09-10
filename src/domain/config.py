@@ -104,7 +104,7 @@ class AppearanceSettings:
         if data is None:
             data = {}
         # LEFT MARGIN OF FIRST LINE IN PARAGRAPH
-        self.paragraph_lmargin1 = data.get('paragraph_lmargin1', 20)
+        self.paragraph_lmargin1 = data.get('paragraph_lmargin1', 7)
         # SPACING BELLOW PARAGRAPH
         self.paragraph_spacing3 = data.get('paragraph_spacing3', 0)
 

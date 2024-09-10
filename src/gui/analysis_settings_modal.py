@@ -14,7 +14,7 @@ class AnalysisSettingsModal:
         self.config = config
         self.on_config_change = on_config_change
         self.toplevel = tk.Toplevel(self.root)
-        self.toplevel.title("Nastavenia")
+        self.toplevel.title("Nastavenia analýzy")
         row = 0
         # Frequent words settings
         tk.Label(self.toplevel, text="Často použité slová", font=(HELVETICA_FONT_NAME, 12, BOLD_FONT),
@@ -26,7 +26,7 @@ class AnalysisSettingsModal:
         frequent_words_checkbox.grid(row=row, column=1, padx=(6, 10), pady=2, sticky='w')
 
         row += 1
-        tk.Label(self.toplevel, text="Porovnávať základný tvar slova", anchor='w').grid(
+        tk.Label(self.toplevel, text="Porovnávať z tvar slova", anchor='w').grid(
             row=row, column=0, padx=10, pady=2, sticky='w'
         )
         self.frequent_words_use_lemma_var = tk.BooleanVar(value=self.config.analysis_settings.repeated_words_use_lemma)
@@ -242,7 +242,7 @@ class AnalysisSettingsModal:
     # RESET SETTINGS
     def reset_settings(self):
         should_reset = messagebox.askyesno("Obnoviť pôvodné",
-                                           "Pokračovaním obnovíte pôvodné nastavenia programu. Skutočne chcwete "
+                                           "Pokračovaním obnovíte pôvodné nastavenia programu. Skutočne chcete "
                                            "pokračovať?")
         if should_reset:
             self.config.analysis_settings = AnalysisSettings({})

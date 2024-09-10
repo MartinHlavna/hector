@@ -34,7 +34,9 @@ from src.const.tags import CLOSE_WORD_PREFIX, LONG_SENTENCE_TAG_NAME_HIGH, LONG_
     FREQUENT_WORD_PREFIX, FREQUENT_WORD_TAG_NAME
 from src.const.values import READABILITY_MAX_VALUE, DOCUMENTATION_LINK, NLP_BATCH_SIZE
 from src.domain.config import Config, AnalysisSettings
-from src.gui.settings_modal import AnalysisSettingsModal
+from src.gui.analysis_settings_modal import AnalysisSettingsModal
+
+from src.gui.appearance_settings_modal import AppearanceSettingsModal
 from src.utils import Utils
 
 # A4 SIZE IN INCHES. WE LATER USE DPI TO SET EDITOR WIDTH
@@ -265,6 +267,7 @@ class MainWindow:
         self.settings_menu = tk.Menu(self.menu_bar, tearoff=0, background=PRIMARY_COLOR, foreground=PANEL_TEXT_COLOR,
                                      font=(HELVETICA_FONT_NAME, TEXT_SIZE_MENU))
         self.settings_menu.add_command(label="Parametre analýzy", command=self.show_analysis_settings)
+        self.settings_menu.add_command(label="Vzhľad", command=self.show_appearance_settings)
         self.menu_bar.add_cascade(label="Nastavenia", menu=self.settings_menu)
         # HELP MENU
         self.help_menu = tk.Menu(self.menu_bar, tearoff=0, background=PRIMARY_COLOR, foreground=PANEL_TEXT_COLOR,
@@ -624,8 +627,8 @@ class MainWindow:
         self.run_spellcheck(self.doc)
         # CONFIG TAGS
         self.text_editor.tag_config(PARAGRAPH_TAG_NAME,
-                                    lmargin1=self.config.appearance_settings.paragraph_lmargin1,
-                                    spacing3=self.config.appearance_settings.paragraph_spacing3)
+                                    lmargin1=f'{self.config.appearance_settings.paragraph_lmargin1}m',
+                                    spacing3=f'{self.config.appearance_settings.paragraph_spacing3}m')
         self.text_editor.tag_config(LONG_SENTENCE_TAG_NAME_MID, background=LONG_SENTENCE_HIGHLIGHT_COLOR_MID)
         self.text_editor.tag_config(LONG_SENTENCE_TAG_NAME_HIGH, background=LONG_SENTENCE_HIGHLIGHT_COLOR_HIGH)
         self.text_editor.tag_config(TRAILING_SPACES_TAG_NAME, background="red")
@@ -801,6 +804,11 @@ class MainWindow:
     def show_analysis_settings(self):
         settings_window = AnalysisSettingsModal(self.root, self.config, lambda: self.analyze_text(True))
         self.configure_modal(settings_window.toplevel, height=700, width=780)
+
+    # SHOW SETTINGS WINDOW
+    def show_appearance_settings(self):
+        settings_window = AppearanceSettingsModal(self.root, self.config, lambda: self.analyze_text(True))
+        self.configure_modal(settings_window.toplevel, height=250, width=780)
 
     # SHOW ABOUT DIALOG
     def show_about(self):
