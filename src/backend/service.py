@@ -218,9 +218,9 @@ class Service:
         doc._.total_pages = round(doc._.total_chars / 1800, 2)
         for sentence in doc.sents:
             words = [word for word in sentence if
-                     word._.is_word and len(word.text) >= config.long_sentence_min_word_length]
-            if len(words) > config.long_sentence_words_mid:
-                if len(words) > config.long_sentence_words_high:
+                     word._.is_word and len(word.text) >= config.analysis_settings.long_sentence_min_word_length]
+            if len(words) > config.analysis_settings.long_sentence_words_mid:
+                if len(words) > config.analysis_settings.long_sentence_words_high:
                     sentence._.is_long_sentence = True
                 else:
                     sentence._.is_mid_sentence = True
@@ -331,11 +331,11 @@ class Service:
     @staticmethod
     def compute_word_frequencies(doc: Doc, config: Config):
         x = doc._.unique_words
-        if config.repeated_words_use_lemma:
+        if config.analysis_settings.repeated_words_use_lemma:
             x = doc._.lemmas
         words = {k: v for (k, v) in x.items() if
-                 len(k) >= config.repeated_words_min_word_length and len(
-                     v.occourences) >= config.repeated_words_min_word_frequency}
+                 len(k) >= config.analysis_settings.repeated_words_min_word_length and len(
+                     v.occourences) >= config.analysis_settings.repeated_words_min_word_frequency}
         return sorted(words.values(), key=lambda x: len(x.occourences), reverse=True)
 
     # METHOD THAT EVALUATES CLOSE WORDS
@@ -343,23 +343,23 @@ class Service:
     def evaluate_close_words(doc: Doc, config: Config):
         close_words = {}
         x = doc._.unique_words
-        if config.close_words_use_lemma:
+        if config.analysis_settings.close_words_use_lemma:
             x = doc._.lemmas
         words_nlp = {k: v for (k, v) in x.items() if
-                     len(k) >= config.close_words_min_word_length}
+                     len(k) >= config.analysis_settings.close_words_min_word_length}
         for key, unique_word in words_nlp.items():
             # IF WORD DOES NOT OCCOUR ENOUGH TIMES WE DONT NEED TO CHECK IF ITS OCCOURENCES ARE CLOSE
-            if len(unique_word.occourences) < config.close_words_min_frequency + 1:
+            if len(unique_word.occourences) < config.analysis_settings.close_words_min_frequency + 1:
                 continue
             for idx, word_occource in enumerate(unique_word.occourences):
                 repetitions = []
                 for possible_repetition in unique_word.occourences[idx + 1:len(unique_word.occourences) + 1]:
-                    if possible_repetition.i - word_occource.i <= config.close_words_min_distance_between_words:
+                    if possible_repetition.i - word_occource.i <= config.analysis_settings.close_words_min_distance_between_words:
                         repetitions.append(word_occource)
                         repetitions.append(possible_repetition)
                     else:
                         break
-                if len(repetitions) > config.close_words_min_frequency:
+                if len(repetitions) > config.analysis_settings.close_words_min_frequency:
                     if key not in close_words:
                         close_words[key] = set()
                     close_words[key].update(repetitions)

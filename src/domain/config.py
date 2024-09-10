@@ -8,7 +8,29 @@ class Config:
         """
         if data is None:
             data = {}
+        # BACKWARDS COMPATIBILITY
+        if 'analysis_settings' not in data:
+            tmp = data
+            data = {'analysis_settings': tmp}
+        self.analysis_settings = AnalysisSettings(data.get('analysis_settings', {}))
+        self.appearance_settings = AppearanceSettings(data.get('appearance_settings', {}))
 
+    def to_dict(self):
+        """
+        Exports the current state of the object to a dictionary.
+
+        :return: Dictionary containing the current state of the object.
+        """
+        return {
+            "analysis_settings": self.analysis_settings.to_dict(),
+            "appearance_settings": self.appearance_settings.to_dict()
+        }
+
+
+class AnalysisSettings:
+    def __init__(self, data):
+        if data is None:
+            data = {}
         # USE LEMMA COMPARISION IN CLOSE_WORDS FUNCTIONALITY
         self.repeated_words_use_lemma = data.get('repeated_words_use_lemma', False)
         # MINIMAL LENGTH OF WORD FOR IT TO APPEAR IN FREQUENT WORDS SECTION
@@ -26,7 +48,10 @@ class Config:
         # USE LEMMA COMPARISION IN CLOSE_WORDS FUNCTIONALITY
         self.close_words_use_lemma = data.get('close_words_use_lemma', False)
         # MINIMAL DISTANCE BETWEEN REPEATED WORDS
-        self.close_words_min_distance_between_words = data.get('close_words_min_distance_between_words', 100)
+        self.close_words_min_distance_between_words = data.get(
+            'close_words_min_distance_between_words',
+            100
+        )
         # MINIMAL FREQUENCY FOR REPEATED WORD TO BE HIGHLIGHTED
         self.close_words_min_frequency = data.get('close_words_min_frequency', 2)
         # ENABLE FREQUENT WORDS SIDE PANEL
@@ -45,10 +70,6 @@ class Config:
         self.enable_spellcheck = data.get('enable_spellcheck', True)
         # ENABLE PARTIAL NLP
         self.enable_partial_nlp = data.get('enable_partial_nlp', True)
-        # LEFT MARGIN OF FIRST LINE IN PARAGRAPH
-        self.paragraph_lmargin1 = data.get('paragraph_lmargin1', 20)
-        # SPACING BELLOW PARAGRAPH
-        self.paragraph_spacing3 = data.get('paragraph_spacing3', 0)
 
     def to_dict(self):
         """
@@ -75,6 +96,25 @@ class Config:
             "enable_close_words": self.enable_close_words,
             "enable_spellcheck": self.enable_spellcheck,
             "enable_partial_nlp": self.enable_partial_nlp,
+        }
+
+
+class AppearanceSettings:
+    def __init__(self, data):
+        if data is None:
+            data = {}
+        # LEFT MARGIN OF FIRST LINE IN PARAGRAPH
+        self.paragraph_lmargin1 = data.get('paragraph_lmargin1', 20)
+        # SPACING BELLOW PARAGRAPH
+        self.paragraph_spacing3 = data.get('paragraph_spacing3', 0)
+
+    def to_dict(self):
+        """
+        Exports the current state of the object to a dictionary.
+
+        :return: Dictionary containing the current state of the object.
+        """
+        return {
             "paragraph_lmargin1": self.paragraph_lmargin1,
             "paragraph_spacing3": self.paragraph_spacing3,
         }
