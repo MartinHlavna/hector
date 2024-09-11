@@ -13,8 +13,8 @@ dotiahnuť implementáciu na macOS. Žiaľ nemám k dispozícií zariadenie, na 
 
 ## NA STIAHNUTIE
 
-Windows: [0.9.2 Beta](https://github.com/MartinHlavna/hector/releases/download/v.0.9.2-beta/hector-windows-amd64.exe)
-Linux: [0.9.2 Beta](https://github.com/MartinHlavna/hector/releases/download/v.0.9.2-beta/hector-linux-amd64.bin)
+Windows: [0.9.3 Beta](https://github.com/MartinHlavna/hector/releases/download/v.0.9.3-beta/hector-windows-amd64.exe)
+Linux: [0.9.3 Beta](https://github.com/MartinHlavna/hector/releases/download/v.0.9.3-beta/hector-linux-amd64.bin)
 
 ## O programe
 
