@@ -7,7 +7,7 @@ import random
 import re
 import tkinter as tk
 import webbrowser
-from tkinter import filedialog, ttk, messagebox
+from tkinter import filedialog, ttk
 
 import spacy
 from PIL import ImageTk, Image
@@ -33,9 +33,7 @@ from src.const.tags import CLOSE_WORD_PREFIX, LONG_SENTENCE_TAG_NAME_HIGH, LONG_
     SEARCH_RESULT_TAG_NAME, CURRENT_SEARCH_RESULT_TAG_NAME, GRAMMAR_ERROR_TAG_NAME, CLOSE_WORD_TAG_NAME, \
     FREQUENT_WORD_PREFIX, FREQUENT_WORD_TAG_NAME
 from src.const.values import READABILITY_MAX_VALUE, DOCUMENTATION_LINK, NLP_BATCH_SIZE
-from src.domain.config import Config, AnalysisSettings
 from src.gui.analysis_settings_modal import AnalysisSettingsModal
-
 from src.gui.appearance_settings_modal import AppearanceSettingsModal
 from src.utils import Utils
 
@@ -46,7 +44,7 @@ EDITOR_LOGO_HEIGHT = 300
 EDITOR_LOGO_WIDTH = 300
 NLP_DEBOUNCE_LENGTH = 500
 ENABLE_DEBUG_DEP_IMAGE = False
-VERSION = "0.9.2 Beta"
+VERSION = "0.9.3 Beta"
 
 with open(Utils.resource_path(os.path.join('data_files', 'pos_tag_translations.json')), 'r', encoding='utf-8') as file:
     POS_TAG_TRANSLATIONS = json.load(file)

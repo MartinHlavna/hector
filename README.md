@@ -6,11 +6,13 @@
 ![hector logo](https://github.com/MartinHlavna/hector/blob/main/images/hector-logo-white-bg.png?raw=true)
 ![hector screen](https://github.com/MartinHlavna/hector/blob/main/screenshots/hector.png?raw=true)
 
-
 ## HELP WANTED
-Ak by sa niekto chcel aktívne zapojiť do projektu, tak momentálne by sa najviac hodilo, ak by niekto vedel otestovať a dotiahnuť implementáciu na macOS. Žiaľ nemám k dispozícií zariadenie, na ktorom by som to vedel plnohodnotne otestovať.
+
+Ak by sa niekto chcel aktívne zapojiť do projektu, tak momentálne by sa najviac hodilo, ak by niekto vedel otestovať a
+dotiahnuť implementáciu na macOS. Žiaľ nemám k dispozícií zariadenie, na ktorom by som to vedel plnohodnotne otestovať.
 
 ## NA STIAHNUTIE
+
 Windows: [0.9.2 Beta](https://github.com/MartinHlavna/hector/releases/download/v.0.9.2-beta/hector-windows-amd64.exe)
 Linux: [0.9.2 Beta](https://github.com/MartinHlavna/hector/releases/download/v.0.9.2-beta/hector-linux-amd64.bin)
 
@@ -50,9 +52,12 @@ Autor by sa mal snažiť o vhodnú kombináciu dlhých a krátkych viet, aby dos
 
 ### Často použité slová
 
-Hector v pravom paneli zobrazuje informáciu o počte výskytu daného slova. Nájdením myši na slovo sa v editore zvýrazní. Kliknutím sa editor presunie na daný výskyt smerom dopredu. Takýmto spôsobom je možné jednoducho hľadať problémové slová.
+Hector v pravom paneli zobrazuje informáciu o počte výskytu daného slova. Nájdením myši na slovo sa v editore zvýrazní.
+Kliknutím sa editor presunie na daný výskyt smerom dopredu. Takýmto spôsobom je možné jednoducho hľadať problémové
+slová.
 
-V prípade, že je v nastaveniach zapnutá voľba "používať základný tvar slova," tak program v pravom stĺpci zobrazuje základné tvary slov. Napríklad budú všetky
+V prípade, že je v nastaveniach zapnutá voľba "používať základný tvar slova," tak program v pravom stĺpci zobrazuje
+základné tvary slov. Napríklad budú všetky
 slová, "ktorý" "ktorá" "ktoré" započítané, ako výskyty slova "ktorý"
 
 #### Možnosti prispôsobenia
@@ -74,7 +79,9 @@ Hector v ľavom paneli zobrazuje slová, ktorá sa opakujú „blízko seba“. 
 iba slová, ktorých výskyty sú bliźšie, ako definovaná hodnota (napr. ak sa slovo zopakuje aspoň dvakrát v rozmedzí 100
 znakov). Takýmto spôsobom dokáže hector identifikovať zhluky opakujúcich sa slov. Tieto slová sú zároveň zvýraznené.
 
-Po prejdení myšou nad takéto slovo (buď v editore, alebo v ľavom paneli) sa v texte zvýrazania všetky jeho výskyty. Kliknutím sa editor presunie na daný výskyt smerom dopredu. Takýmto spôsobom je možné jednoducho hľadať problémové slová.
+Po prejdení myšou nad takéto slovo (buď v editore, alebo v ľavom paneli) sa v texte zvýrazania všetky jeho výskyty.
+Kliknutím sa editor presunie na daný výskyt smerom dopredu. Takýmto spôsobom je možné jednoducho hľadať problémové
+slová.
 
 V prípade, že je v nastaveniach zapnutá možnosť "porovnávať základný tvar slova," tak program používa základný tvar
 a voči nemu aplikuje aj ostatné reštrukcie (napr. základný tvar od "sú" je "byť". Ak je nastavená minimálna dĺžka slova
@@ -104,42 +111,50 @@ slová. Bude treba v praxi overiť, čo je výhodnejšie.
 ### Zvýraznenie viacnásobnej medzery
 
 Viacnásobná medzera je štandardne považovaná za zbytočnú. Hector ju automaticky zvýrazní načerveno.
+
 #### Možnosti prispôsobenia
 
-| Nastavenie                     | Význam                                                                                                        | Základná hodnota |
-|--------------------------------|---------------------------------------------------------------------------------------------------------------|------------------|
-| Zapnuté                        | Umožnuje zapnúť, alebo vypnúť funkcionalitu                                                                   | Zapnuté          |
+| Nastavenie | Význam                                      | Základná hodnota |
+|------------|---------------------------------------------|------------------|
+| Zapnuté    | Umožnuje zapnúť, alebo vypnúť funkcionalitu | Zapnuté          |
 
 #### Odporúčanie
+
 Odstrániť viacnásobnú medzeru.
 
 ### Zvýraznenie viacnásobnej interpunkcie
 
 Viacnásobná interpunkcia je štandardne považovaná za zbytočnú. Hector ju automaticky zvýrazní načerveno. Výnimkou je
 bežne používaná kombinácia ?!
+
 #### Možnosti prispôsobenia
 
-| Nastavenie                     | Význam                                                                                                        | Základná hodnota |
-|--------------------------------|---------------------------------------------------------------------------------------------------------------|------------------|
-| Zapnuté                        | Umožnuje zapnúť, alebo vypnúť funkcionalitu                                                                   | Zapnuté          |
+| Nastavenie | Význam                                      | Základná hodnota |
+|------------|---------------------------------------------|------------------|
+| Zapnuté    | Umožnuje zapnúť, alebo vypnúť funkcionalitu | Zapnuté          |
 
 #### Odporúčanie
+
 Odstrániť viacnásobnú interpunkciu.
 
 ### Zvýraznenie medzier na konci odstavcov
 
 Medzery na konci odstavcov sú štandardne považované za zbytočné. Hector ich automaticky zvýrazní načerveno.
+
 #### Možnosti prispôsobenia
 
-| Nastavenie                     | Význam                                                                                                        | Základná hodnota |
-|--------------------------------|---------------------------------------------------------------------------------------------------------------|------------------|
-| Zapnuté                        | Umožnuje zapnúť, alebo vypnúť funkcionalitu                                                                   | Zapnuté          |
+| Nastavenie | Význam                                      | Základná hodnota |
+|------------|---------------------------------------------|------------------|
+| Zapnuté    | Umožnuje zapnúť, alebo vypnúť funkcionalitu | Zapnuté          |
 
 #### Odporúčanie
+
 Odstrániť medzery na konci odstavcov.
 
 ### Kontrola gramatiky
-#### Základná kontrola preklepov 
+
+#### Základná kontrola preklepov
+
 * Program automaticky porovnáva slová voči slovníku a slová, ktoré v ňom nenájde zvýrazní
 * Kvalita závisí od dostupných slovníkov
 
@@ -156,18 +171,25 @@ Odstrániť medzery na konci odstavcov.
     * Zámeno, ktoré sa viaže na podstatné meno v nominatíve jednotného čísla v mužskom rode podľa vzoru pekný (napr.
       človek, ktorý)
 
-| Nastavenie                     | Význam                                                                                                        | Základná hodnota |
-|--------------------------------|---------------------------------------------------------------------------------------------------------------|------------------|
-| Zapnuté                        | Umožnuje zapnúť, alebo vypnúť funkcionalitu                                                                   | Zapnuté          |
+| Nastavenie | Význam                                      | Základná hodnota |
+|------------|---------------------------------------------|------------------|
+| Zapnuté    | Umožnuje zapnúť, alebo vypnúť funkcionalitu | Zapnuté          |
 
 #### Odporúčanie
+
 * Opravovať gramatické chyby.
-* Momentálne je viacero slov chybne označených ako preklepových, pretože kvalita open source slovníkov nedosahuje kvality komerčných riešení. V prípade, že ich cete zlepšiť, odporúčam zapojiť sa do projektu [sk-spell](https://sk-spell.sk.cx/hunspell-sk).
-* Vyhodnocovanie í/ý má momentálne tiež svoje limity. V prípade, že  nájdete chybu, vytvorete [hlásenie chyby](https://github.com/MartinHlavna/hector/issues/new), alebo napíšte na info@martinhlavna.sk 
+* Momentálne je viacero slov chybne označených ako preklepových, pretože kvalita open source slovníkov nedosahuje
+  kvality komerčných riešení. V prípade, že ich cete zlepšiť, odporúčam zapojiť sa do
+  projektu [sk-spell](https://sk-spell.sk.cx/hunspell-sk).
+* Vyhodnocovanie í/ý má momentálne tiež svoje limity. V prípade, že nájdete chybu,
+  vytvorete [hlásenie chyby](https://github.com/MartinHlavna/hector/issues/new), alebo napíšte na info@martinhlavna.sk
 
 ### Počet znakov, slov a normostrán
+
 Hector v spodnom statusa riadku zobrazuje informačný počet znakov, slov a normostrán.
-* Znaky sú počítané bez „Enterov“, tak, ako to počíta aj MS Word, prípadne iné textové procesory. Webové formuláre môžu teda ukázať vyšši počet znakov.
+
+* Znaky sú počítané bez „Enterov“, tak, ako to počíta aj MS Word, prípadne iné textové procesory. Webové formuláre môžu
+  teda ukázať vyšši počet znakov.
 * Normostrany sú počítané zaužívaným vzorcom 1800 znakov na normostranu.
 
 ### Štylistická zložitosť textu
@@ -191,6 +213,7 @@ Nasledujúca tabuľka je odovdená od hodnôt v práci p. Mistríka na odkaze vy
 | 40 až 50  | Texty na hranici zrozumiteľnosti                             |
 
 #### Odporúčanie
+
 Samozrejme, aj tieto hodnoty treba brať len veľmi orientačne. Lyrická próza bude mať napríklad prirozdene vyššiu
 zložitosť ako naratívny príbeh, rovnako ako môže mať na text vplyv aj subjektívny štýl autora, či žánru.
 
@@ -211,6 +234,7 @@ zložitosť ako naratívny príbeh, rovnako ako môže mať na text vplyv aj sub
 * V prípade, že k základnému tvaru existujú synonymá, tak sa zobrazia aj tie
 
 #### Odporúčanie
+
 Okno má iba informačný charakter
 
 ## Ďalšie nastavenia
@@ -219,13 +243,20 @@ Okno má iba informačný charakter
 |-------------------------------------------------|---------------------------------------------------------------------------------------------------------------------------------------------------------|------------------|
 | Optimalizácia výkonu pri drobných zmenách textu | Ak má text aspoň 100 znakov a používateľ zmenil menej než 20 znakov, tak sa hector snaží optimalizovať výkon, tak, že analyzuje iba zmenenú časť textu. | Zapnuté          |
 
+## Nastavenia vzhľadu
+
+| Nastavenie                     | Význam                                                                                    | Základná hodnota |
+|--------------------------------|-------------------------------------------------------------------------------------------|------------------|
+| Odsadenie prvého riadku odseku | Veľkosť odsadenia prvého riadku v odseku. Zadaná hodnota je interpretovaná ako milimetre. | 7                |
+| Medzera za odsekom             | Veľkosť odsadenia za odsekom. Zadaná hodnota je interpretovaná ako milimetre.             | 0                |
 
 ## Spustenie programu
 
 ### Spustenie z binárneho súboru
 
 V prípade podporovaných platforiem sú k dispozícií kompletné
-spustiteľné [balíčky](https://github.com/MartinHlavna/hector/releases) vo forme binárnych súborov (napr. exe). Program stačí stiahnuť a skopírovať do vlastného priečinka.
+spustiteľné [balíčky](https://github.com/MartinHlavna/hector/releases) vo forme binárnych súborov (napr. exe). Program
+stačí stiahnuť a skopírovať do vlastného priečinka.
 
 ### Spustenie zo zdrojového kódu (napr. pre účely vývoja)
 
@@ -239,7 +270,7 @@ Nainštalovať balíčky
 sudo apt install -y autoconf libtool gettext autopoint
 ```
 
-#### Špeciálne kroky pre mac os 
+#### Špeciálne kroky pre mac os
 
 Nainštalovať balíčky
 
