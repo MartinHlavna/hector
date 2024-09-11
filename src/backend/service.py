@@ -379,4 +379,5 @@ class Service:
         extra_args = (
             '--wrap=none',
         )
-        return pypandoc.convert_file(file_path, 'plain', extra_args=extra_args)
+        text = pypandoc.convert_file(file_path, 'plain', extra_args=extra_args)
+        return os.linesep.join([s for s in text.splitlines() if s])
