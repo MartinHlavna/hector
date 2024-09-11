@@ -1,3 +1,4 @@
+import ctypes
 import io
 import json
 import math
@@ -302,6 +303,16 @@ class MainWindow:
         text.insert(tk.END, value)
         text.config(state=tk.DISABLED)
 
+    @staticmethod
+    def get_windows_scaling_factor():
+        # Windows API call to get DPI scaling (for Windows)
+        user32 = ctypes.windll.user32
+        user32.SetProcessDPIAware()  # Optional, allows Python process to be aware of the DPI
+        dpi = user32.GetDpiForSystem()
+        # Standard DPI is 96, so scale factor is based on that
+        scaling_factor = dpi / 96
+        return scaling_factor
+
     def set_text_size(self, text_size):
         self.text_size = min(30, max(1, int(text_size)))
         self.editor_text_size_input.set(self.text_size)
@@ -595,7 +606,8 @@ class MainWindow:
         self.last_match_index = 0
         # GET TEXT FROM EDITOR
         # RUN ANALYSIS
-        if len(text) > 100 and abs(len(self.doc.text) - len(text)) < 20 and self.config.analysis_settings.enable_partial_nlp:
+        if len(text) > 100 and abs(
+                len(self.doc.text) - len(text)) < 20 and self.config.analysis_settings.enable_partial_nlp:
             # PARTIAL NLP
             possible_carret = self.text_editor.count("1.0", self.text_editor.index(tk.INSERT), "chars")
             if possible_carret is not None:
@@ -801,12 +813,12 @@ class MainWindow:
     # SHOW SETTINGS WINDOW
     def show_analysis_settings(self):
         settings_window = AnalysisSettingsModal(self.root, self.config, lambda: self.analyze_text(True))
-        self.configure_modal(settings_window.toplevel, height=700, width=780)
+        self.configure_modal(settings_window.toplevel, height=630, width=780)
 
     # SHOW SETTINGS WINDOW
     def show_appearance_settings(self):
         settings_window = AppearanceSettingsModal(self.root, self.config, lambda: self.analyze_text(True))
-        self.configure_modal(settings_window.toplevel, height=250, width=780)
+        self.configure_modal(settings_window.toplevel, height=150, width=780)
 
     # SHOW ABOUT DIALOG
     def show_about(self):
@@ -840,6 +852,10 @@ class MainWindow:
             self.configure_modal(dep_window, width=dep_view.width(), height=dep_view.height())
 
     def configure_modal(self, modal, width=600, height=400):
+        if platform.system() == "Windows":
+            scaling_factor = MainWindow.get_windows_scaling_factor()
+            width = width * scaling_factor
+            height = height * scaling_factor
         modal.geometry("%dx%d" % (width, height))
         modal.resizable(False, False)
         screen_width = self.root.winfo_screenwidth()
