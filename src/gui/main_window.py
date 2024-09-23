@@ -45,7 +45,7 @@ EDITOR_LOGO_HEIGHT = 300
 EDITOR_LOGO_WIDTH = 300
 NLP_DEBOUNCE_LENGTH = 500
 ENABLE_DEBUG_DEP_IMAGE = False
-VERSION = "0.9.3 Beta"
+VERSION = "0.9.4 Beta"
 
 with open(Utils.resource_path(os.path.join('data_files', 'pos_tag_translations.json')), 'r', encoding='utf-8') as file:
     POS_TAG_TRANSLATIONS = json.load(file)
@@ -162,7 +162,7 @@ class MainWindow:
         self.text_editor = tk.Text(text_editor_outer_frame, wrap=tk.WORD, relief=tk.RAISED, highlightthickness=0,
                                    yscrollcommand=text_editor_scroll.set, background=TEXT_EDITOR_BG,
                                    foreground=EDITOR_TEXT_COLOR, borderwidth=0,
-                                   spacing1=1.2, spacing2=1.2, spacing3=1.2)
+                                   spacing1=1.2, spacing2=1.2, spacing3=1.2, undo=True, autoseparators=True, maxundo=-1)
         self.text_editor.config(font=(HELVETICA_FONT_NAME, self.text_size), )
         self.text_editor.pack(expand=1, fill=tk.BOTH, padx=20, pady=20)
         text_editor_outer_frame.pack_propagate(False)
@@ -262,6 +262,12 @@ class MainWindow:
         self.file_menu.add_command(label="Načítať súbor", command=self.load_file)
         self.file_menu.add_command(label="Uložiť súbor", command=self.save_file)
         self.menu_bar.add_cascade(label="Súbor", menu=self.file_menu)
+        # EDIT MENU
+        self.edit_menu = tk.Menu(self.menu_bar, tearoff=0, background=PRIMARY_COLOR, foreground=PANEL_TEXT_COLOR,
+                                 font=(HELVETICA_FONT_NAME, TEXT_SIZE_MENU))
+        self.edit_menu.add_command(label="Vrátiť späť", command=self.undo, accelerator="Ctrl+Z")
+        self.edit_menu.add_command(label="Znova zopakovať", command=self.redo, accelerator="Ctrl+Shift+Z")
+        self.menu_bar.add_cascade(label="Upraviť", menu=self.edit_menu)
         # SETTINGS MENU
         self.settings_menu = tk.Menu(self.menu_bar, tearoff=0, background=PRIMARY_COLOR, foreground=PANEL_TEXT_COLOR,
                                      font=(HELVETICA_FONT_NAME, TEXT_SIZE_MENU))
@@ -275,10 +281,20 @@ class MainWindow:
         self.help_menu.add_command(label="Dokumentácia", command=lambda: webbrowser.open(DOCUMENTATION_LINK))
         self.menu_bar.add_cascade(label="Pomoc", menu=self.help_menu)
         # MOUSE AND KEYBOARD BINDINGS
+        self.text_editor.unbind('<Control-z>')
+        self.text_editor.unbind('<Control-Z>')
+        self.text_editor.unbind('<Control-y>')
+        self.text_editor.unbind('<Control-Y>')
+        self.text_editor.unbind('<Control-Shift-z>')
+        self.text_editor.unbind('<Control-Shift-Z>')
         self.text_editor.bind("<KeyRelease>", self.analyze_text_debounced)
         self.text_editor.bind("<Button-1>", lambda e: self.root.after(0, self.introspect))
         self.text_editor.bind("<Control-a>", self.select_all)
         self.text_editor.bind("<Control-A>", self.select_all)
+        self.text_editor.bind("<Control-z>", self.undo)
+        self.text_editor.bind("<Control-Z>", self.undo)
+        self.text_editor.bind("<Control-Shift-z>", self.redo)
+        self.text_editor.bind("<Control-Shift-Z>", self.redo)
         self.root.bind("<Control-F>", self.focus_search)
         self.root.bind("<Control-f>", self.focus_search)
         self.root.bind("<Control-e>", self.focus_editor)
@@ -312,6 +328,12 @@ class MainWindow:
         # Standard DPI is 96, so scale factor is based on that
         scaling_factor = dpi / 96
         return scaling_factor
+
+    def get_carret_position(self):
+        possible_carret = self.text_editor.count("1.0", self.text_editor.index(tk.INSERT), "chars")
+        if possible_carret is None:
+            return None
+        return possible_carret[0]
 
     def set_text_size(self, text_size):
         self.text_size = min(30, max(1, int(text_size)))
@@ -590,6 +612,16 @@ class MainWindow:
                 text = self.text_editor.get(1.0, tk.END)
                 file.write(text)
 
+    def undo(self, event=None):
+        self.text_editor.edit_undo()
+        self.analyze_text()
+        return 'break'
+
+    def redo(self, event=None):
+        self.text_editor.edit_redo()
+        self.analyze_text()
+        return 'break'
+
     # ANALYZE TEXT
     def analyze_text(self, force_reload=False, event=None):
         # CLEAR DEBOUNCE TIMER IF ANY
@@ -609,13 +641,14 @@ class MainWindow:
         if len(text) > 100 and abs(
                 len(self.doc.text) - len(text)) < 20 and self.config.analysis_settings.enable_partial_nlp:
             # PARTIAL NLP
-            possible_carret = self.text_editor.count("1.0", self.text_editor.index(tk.INSERT), "chars")
-            if possible_carret is not None:
-                carret_position = possible_carret[0]
+            carret_position = self.get_carret_position()
+            if carret_position is not None:
                 self.doc = Service.partial_nlp(text, self.doc, self.nlp, self.config, carret_position)
+                self.text_editor.edit_separator()
             else:
                 # FALLBACK TO FULL NLP
                 self.doc = Service.full_nlp(text, self.nlp, NLP_BATCH_SIZE, self.config)
+                self.text_editor.edit_separator()
         else:
             # FULL NLP
             # FALLBACK TO FULL NLP
@@ -691,17 +724,18 @@ class MainWindow:
         self.introspect(event)
 
     # RUN ANALYSIS ONE SECOND AFTER LAST CHANGE
-    def analyze_text_debounced(self, event=None):
+    def analyze_text_debounced(self, event):
+        if event.state & 0x0004:
+            return
         if self.analyze_text_debounce_timer is not None:
             self.root.after_cancel(self.analyze_text_debounce_timer)
         self.analyze_text_debounce_timer = self.root.after(NLP_DEBOUNCE_LENGTH, self.analyze_text)
 
     def introspect(self, event=None):
-        possible_carret = self.text_editor.count("1.0", self.text_editor.index(tk.INSERT), "chars")
-        if possible_carret is None:
+        carret_position = self.get_carret_position()
+        if carret_position is None:
             MainWindow.set_text(self.introspection_text, 'Kliknite na slovo v editore')
             return
-        carret_position = possible_carret[0]
         span = self.doc.char_span(carret_position, carret_position, alignment_mode='expand')
         if span is not None and self.current_instrospection_token != span.root:
             if span.root._.is_word:
