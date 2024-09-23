@@ -5,7 +5,8 @@ from spacy.lang.sk import Slovak
 from spacy.tokens import Doc
 
 from src.backend.service import Service
-from src.const.grammar_error_types import GRAMMAR_ERROR_TYPE_MISSPELLED_WORD, GRAMMAR_ERROR_TYPE_WRONG_Y_SUFFIX
+from src.const.grammar_error_types import GRAMMAR_ERROR_TYPE_MISSPELLED_WORD, GRAMMAR_ERROR_TYPE_WRONG_Y_SUFFIX, \
+    GRAMMAR_ERROR_TYPE_WRONG_I_SUFFIX
 from src.const.values import NLP_BATCH_SIZE
 from src.domain.config import Config
 
@@ -225,17 +226,6 @@ def test_find_multiple_punctuation(setup_teardown):
     assert sum(1 for _ in Service.find_multiple_punctuation(doc)) == 1
 
 
-def test_spellcheck(setup_teardown):
-    nlp = setup_teardown[0]
-    hunspell = setup_teardown[1]
-    doc = Service.full_nlp(TEST_TEXT_3, nlp, NLP_BATCH_SIZE, Config())
-    Service.spellcheck(hunspell, doc)
-    assert doc[0]._.has_grammar_error and doc[0]._.grammar_error_type == GRAMMAR_ERROR_TYPE_MISSPELLED_WORD
-    assert not doc[1]._.has_grammar_error
-    assert doc[5]._.has_grammar_error and doc[5]._.grammar_error_type == GRAMMAR_ERROR_TYPE_WRONG_Y_SUFFIX
-    assert doc[8]._.has_grammar_error and doc[8]._.grammar_error_type == GRAMMAR_ERROR_TYPE_WRONG_Y_SUFFIX
-
-
 def test_readability(setup_teardown):
     nlp = setup_teardown[0]
     doc = Service.full_nlp(TEST_TEXT_4, nlp, NLP_BATCH_SIZE, Config())
@@ -279,6 +269,170 @@ def test_file_imports():
     assert len(docx) > 0
     assert len(odt) > 0
     assert len(rtf) > 0
+
+
+# SPELLCHECK SUITE
+def test_spellcheck_identifies_misspelled_words(setup_teardown):
+    nlp = setup_teardown[0]
+    hunspell = setup_teardown[1]
+    # Testovací text s preklepom
+    text = "Toto je príkladd textu."
+    doc = Service.full_nlp(text, nlp, NLP_BATCH_SIZE, Config())
+    Service.spellcheck(hunspell, doc)
+    # Slovo "príkladd" by malo byť označené ako preklep
+    assert doc[2].text == "príkladd"
+    assert doc[2]._.has_grammar_error
+    assert doc[2]._.grammar_error_type == GRAMMAR_ERROR_TYPE_MISSPELLED_WORD
+
+
+def test_spellcheck_ignores_correct_words(setup_teardown):
+    nlp = setup_teardown[0]
+    hunspell = setup_teardown[1]
+    text = "Toto je príklad textu."
+    doc = Service.full_nlp(text, nlp, NLP_BATCH_SIZE, Config())
+    Service.spellcheck(hunspell, doc)
+    # Žiadne slová by nemali byť označené ako chybné
+    for token in doc:
+        assert not token._.has_grammar_error
+
+
+def test_spellcheck_handles_diacritics(setup_teardown):
+    nlp = setup_teardown[0]
+    hunspell = setup_teardown[1]
+    text = "Mám rád slovenské slová s diakritikou."
+    doc = Service.full_nlp(text, nlp, NLP_BATCH_SIZE, Config())
+    Service.spellcheck(hunspell, doc)
+    # Slová s diakritikou by mali byť správne vyhodnotené
+    for token in doc:
+        assert not token._.has_grammar_error
+
+
+def test_spellcheck_identifies_unknown_words(setup_teardown):
+    nlp = setup_teardown[0]
+    hunspell = setup_teardown[1]
+    text = "Používam program Horekarpat pre vývoj aplikácií."
+    doc = Service.full_nlp(text, nlp, NLP_BATCH_SIZE, Config())
+    Service.spellcheck(hunspell, doc)
+    # Predpokladáme, že slovo "Horekarpat" nie je v slovníku
+    for token in doc:
+        if token.text == "Horekarpat":
+            assert token._.has_grammar_error
+            assert token._.grammar_error_type == GRAMMAR_ERROR_TYPE_MISSPELLED_WORD
+        else:
+            assert not token._.has_grammar_error
+
+
+def test_spellcheck_correct_usage_of_i_plural_masculine(setup_teardown):
+    nlp = setup_teardown[0]
+    hunspell = setup_teardown[1]
+    text = "Pekní chlapci prišli na návštevu."
+    doc = Service.full_nlp(text, nlp, NLP_BATCH_SIZE, Config())
+    Service.spellcheck(hunspell, doc)
+    # Slová by nemali byť označené ako chybné
+    for token in doc:
+        assert not token._.has_grammar_error
+
+
+def test_spellcheck_wrong_usage_of_y_plural_masculine(setup_teardown):
+    nlp = setup_teardown[0]
+    hunspell = setup_teardown[1]
+    text = "Pekný chlapci prišli na návštevu."
+    doc = Service.full_nlp(text, nlp, NLP_BATCH_SIZE, Config())
+    Service.spellcheck(hunspell, doc)
+    # Slovo "Pekný" je nesprávne v tomto kontexte
+    assert doc[0].text == "Pekný"
+    assert doc[0]._.has_grammar_error
+    assert doc[0]._.grammar_error_type == GRAMMAR_ERROR_TYPE_WRONG_Y_SUFFIX
+
+
+def test_spellcheck_correct_usage_of_y_singular_masculine(setup_teardown):
+    nlp = setup_teardown[0]
+    hunspell = setup_teardown[1]
+    text = "Pekný chlapec prišiel na návštevu."
+    doc = Service.full_nlp(text, nlp, NLP_BATCH_SIZE, Config())
+    Service.spellcheck(hunspell, doc)
+    # Slová by nemali byť označené ako chybné
+    for token in doc:
+        assert not token._.has_grammar_error
+
+
+def test_spellcheck_wrong_usage_of_i_singular_masculine(setup_teardown):
+    nlp = setup_teardown[0]
+    hunspell = setup_teardown[1]
+    text = "Milí chlapec prišiel na návštevu."
+    doc = Service.full_nlp(text, nlp, NLP_BATCH_SIZE, Config())
+    Service.spellcheck(hunspell, doc)
+    # Slovo "Pekní" je nesprávne v tomto kontexte
+    assert doc[0].text == "Milí"
+    assert doc[0]._.has_grammar_error
+    assert doc[0]._.grammar_error_type == GRAMMAR_ERROR_TYPE_WRONG_I_SUFFIX
+
+
+def test_spellcheck_handles_special_characters(setup_teardown):
+    nlp = setup_teardown[0]
+    hunspell = setup_teardown[1]
+    text = "Máme 20 kusov a cena je 15 € za kus."
+    doc = Service.full_nlp(text, nlp, NLP_BATCH_SIZE, Config())
+    Service.spellcheck(hunspell, doc)
+    # Čísla a symboly by nemali byť označené ako chybné
+    for token in doc:
+        if not token.is_alpha:
+            continue
+        assert not token._.has_grammar_error
+
+
+def test_spellcheck_handles_hyphenated_words(setup_teardown):
+    nlp = setup_teardown[0]
+    hunspell = setup_teardown[1]
+    text = "Červeno-biely dres je veľmi pekný."
+    doc = Service.full_nlp(text, nlp, NLP_BATCH_SIZE, Config())
+    Service.spellcheck(hunspell, doc)
+    # Skontrolujeme, či sú slová so spojovníkom správne vyhodnotené
+    for token in doc:
+        if token.text in ["Červeno-biely"]:
+            assert not token._.has_grammar_error
+
+
+def test_spellcheck_performance_on_large_text(setup_teardown):
+    nlp = setup_teardown[0]
+    hunspell = setup_teardown[1]
+    # Vygenerujeme veľký text
+    text = ("Toto je testovací text. " * 1000) + "Nesprávneslovo."
+    doc = Service.full_nlp(text, nlp, NLP_BATCH_SIZE, Config())
+    Service.spellcheck(hunspell, doc)
+    # Posledné slovo "Nesprávneslovo" by malo byť označené ako preklep
+    assert doc[-2].text == "Nesprávneslovo"  # Predpokladáme, že posledný token je bodka
+    assert doc[-2]._.has_grammar_error
+    assert doc[-2]._.grammar_error_type == GRAMMAR_ERROR_TYPE_MISSPELLED_WORD
+
+
+def test_spellcheck_optimizes_on_small_changes(setup_teardown):
+    nlp = setup_teardown[0]
+    hunspell = setup_teardown[1]
+    text = "Toto je testovací text."
+    doc = Service.full_nlp(text, nlp, NLP_BATCH_SIZE, Config())
+    Service.spellcheck(hunspell, doc)
+    # Simulujeme malú zmenu v texte
+    text_changed = "Toto je testovacíy text."
+    doc_changed = Service.partial_nlp(text_changed, doc, nlp, Config(), 10)
+    Service.spellcheck(hunspell, doc_changed)
+    # Skontrolujeme, či je iba zmenený token označený ako chybný
+    for token in doc_changed:
+        if token.text == "testovacíy":
+            assert token._.has_grammar_error
+            assert token._.grammar_error_type == GRAMMAR_ERROR_TYPE_MISSPELLED_WORD
+        else:
+            assert not token._.has_grammar_error
+
+
+def test_spellcheck_handles_empty_document(setup_teardown):
+    nlp = setup_teardown[0]
+    hunspell = setup_teardown[1]
+    text = ""
+    doc = Service.full_nlp(text, nlp, NLP_BATCH_SIZE, Config())
+    Service.spellcheck(hunspell, doc)
+    # Nemalo by dôjsť k výnimke
+    assert len(doc) == 0
 
 
 if __name__ == '__main__':
