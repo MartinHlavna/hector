@@ -409,11 +409,11 @@ def test_spellcheck_performance_on_large_text(setup_teardown):
 def test_spellcheck_optimizes_on_small_changes(setup_teardown):
     nlp = setup_teardown[0]
     hunspell = setup_teardown[1]
-    text = "Toto je testovací text."
+    text = ("Toto je text.\n" * 1000)
     doc = Service.full_nlp(text, nlp, NLP_BATCH_SIZE, Config())
     Service.spellcheck(hunspell, doc)
     # Simulujeme malú zmenu v texte
-    text_changed = "Toto je testovacíy text."
+    text_changed = "Toto je testovacíy text. "+text
     doc_changed = Service.partial_nlp(text_changed, doc, nlp, Config(), 10)
     Service.spellcheck(hunspell, doc_changed)
     # Skontrolujeme, či je iba zmenený token označený ako chybný
