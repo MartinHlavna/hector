@@ -3,7 +3,6 @@ python.exe -m nuitka hector.py  ^
   --onefile ^
   --enable-plugin=tk-inter ^
   --include-package=ttkthemes ^
-  --include-package=ttkthemes ^
   --include-package-data=ttkthemes ^
   --include-package=cacheman ^
   --include-package=hunspell ^
@@ -12,4 +11,3 @@ python.exe -m nuitka hector.py  ^
   --include-module=spacy.lexeme ^
   --include-data-dir=images=images ^
   --include-data-dir=data_files=data_files ^
-  --windows-icon-from-ico=images/hector-icon-white-edge.png

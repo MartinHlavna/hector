@@ -2,6 +2,7 @@ import ctypes
 import platform
 import tkinter as tk
 
+import pypandoc
 from ttkthemes import ThemedTk
 
 from src.backend.service import Service
@@ -21,6 +22,8 @@ splash.update_status("sťahujem a inicializujem jazykový model...")
 nlp = Service.initialize_nlp()
 splash.update_status("sťahujem a inicializujem slovník...")
 dictionaries = Service.initialize_dictionaries()
+splash.update_status("sťahujem pandoc...")
+Service.download_pandoc()
 splash.update_status("inicializujem textový processor...")
 splash.close()
 main_window = MainWindow(root, nlp, dictionaries["spellcheck"], dictionaries["thesaurus"])
