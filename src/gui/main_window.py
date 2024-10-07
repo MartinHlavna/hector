@@ -273,6 +273,8 @@ class MainWindow:
                                      font=(HELVETICA_FONT_NAME, TEXT_SIZE_MENU))
         self.settings_menu.add_command(label="Parametre analýzy", command=self.show_analysis_settings)
         self.settings_menu.add_command(label="Vzhľad", command=self.show_appearance_settings)
+        self.settings_menu.add_command(label="Exportovať", command=self.export_settings)
+        self.settings_menu.add_command(label="Importovať", command=self.import_settings)
         self.menu_bar.add_cascade(label="Nastavenia", menu=self.settings_menu)
         # HELP MENU
         self.help_menu = tk.Menu(self.menu_bar, tearoff=0, background=PRIMARY_COLOR, foreground=PANEL_TEXT_COLOR,
@@ -611,6 +613,23 @@ class MainWindow:
             with open(file_path, 'w', encoding='utf-8') as file:
                 text = self.text_editor.get(1.0, tk.END)
                 file.write(text)
+
+    # SAVE SETTINGS TO FILE
+    def export_settings(self):
+        file_path = filedialog.asksaveasfilename(defaultextension=".hector.conf",
+                                                 confirmoverwrite=True,
+                                                 filetypes=[("Nastavenia programu Hector", "*.hector.conf")])
+        if file_path:
+            with open(file_path, 'w', encoding='utf-8') as file:
+                json.dump(self.config.to_dict(), file, indent=4)
+
+    # IMPORT SETTINGS FROM A FILE
+    def import_settings(self):
+        file_path = filedialog.askopenfilename(
+            filetypes=[("Nastavenia programu Hector", "*.hector.conf")]
+        )
+        self.config = Service.load_config(file_path)
+        Service.save_config(self.config, CONFIG_FILE_PATH)
 
     def undo(self, event=None):
         self.text_editor.edit_undo()
