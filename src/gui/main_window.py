@@ -262,13 +262,13 @@ class MainWindow:
                                  font=(HELVETICA_FONT_NAME, TEXT_SIZE_MENU))
         self.file_menu.add_command(label="Načítať súbor", command=self.load_file)
         self.file_menu.add_command(label="Uložiť súbor", command=self.save_file)
-        self.menu_bar.add_cascade(label="Súbor", menu=self.file_menu)
+        self.menu_bar.add_cascade(label="Súbor", menu=self.file_menu, underline=0)
         # EDIT MENU
         self.edit_menu = tk.Menu(self.menu_bar, tearoff=0, background=PRIMARY_COLOR, foreground=PANEL_TEXT_COLOR,
                                  font=(HELVETICA_FONT_NAME, TEXT_SIZE_MENU))
         self.edit_menu.add_command(label="Vrátiť späť", command=self.undo, accelerator="Ctrl+Z")
         self.edit_menu.add_command(label="Znova zopakovať", command=self.redo, accelerator="Ctrl+Shift+Z")
-        self.menu_bar.add_cascade(label="Upraviť", menu=self.edit_menu)
+        self.menu_bar.add_cascade(label="Upraviť", menu=self.edit_menu, underline=0)
         # SETTINGS MENU
         self.settings_menu = tk.Menu(self.menu_bar, tearoff=0, background=PRIMARY_COLOR, foreground=PANEL_TEXT_COLOR,
                                      font=(HELVETICA_FONT_NAME, TEXT_SIZE_MENU))
@@ -276,13 +276,13 @@ class MainWindow:
         self.settings_menu.add_command(label="Vzhľad", command=self.show_appearance_settings)
         self.settings_menu.add_command(label="Exportovať", command=self.export_settings)
         self.settings_menu.add_command(label="Importovať", command=self.import_settings)
-        self.menu_bar.add_cascade(label="Nastavenia", menu=self.settings_menu)
+        self.menu_bar.add_cascade(label="Nastavenia", menu=self.settings_menu, underline=0)
         # HELP MENU
         self.help_menu = tk.Menu(self.menu_bar, tearoff=0, background=PRIMARY_COLOR, foreground=PANEL_TEXT_COLOR,
                                  font=(HELVETICA_FONT_NAME, TEXT_SIZE_MENU))
         self.help_menu.add_command(label="O programe", command=self.show_about)
         self.help_menu.add_command(label="Dokumentácia", command=lambda: webbrowser.open(DOCUMENTATION_LINK))
-        self.menu_bar.add_cascade(label="Pomoc", menu=self.help_menu)
+        self.menu_bar.add_cascade(label="Pomoc", menu=self.help_menu, underline=0)
         # MOUSE AND KEYBOARD BINDINGS
         self.text_editor.unbind('<Control-z>')
         self.text_editor.unbind('<Control-Z>')
