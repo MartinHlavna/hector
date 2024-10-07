@@ -6,6 +6,7 @@ import os
 import platform
 import random
 import re
+import time
 import tkinter as tk
 import webbrowser
 from tkinter import filedialog, ttk
@@ -909,6 +910,7 @@ class MainWindow:
             scaling_factor = MainWindow.get_windows_scaling_factor()
             width = width * scaling_factor
             height = height * scaling_factor
+        modal.bind('<Escape>', lambda e: modal.destroy())
         modal.geometry("%dx%d" % (width, height))
         modal.resizable(False, False)
         screen_width = self.root.winfo_screenwidth()
