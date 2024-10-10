@@ -745,7 +745,7 @@ class MainWindow:
 
     # RUN ANALYSIS ONE SECOND AFTER LAST CHANGE
     def analyze_text_debounced(self, event):
-        if event.state & 0x0004:
+        if event.state & 0x0004 and event.keysym != 'v':
             return
         if self.analyze_text_debounce_timer is not None:
             self.root.after_cancel(self.analyze_text_debounce_timer)
