@@ -44,11 +44,6 @@ jobs:
     - name: Install requirements for macOS
       if: matrix.os == 'macos-latest' || matrix.os == 'macos-13' || matrix.os == 'macos-12'
       run: brew install automake autoconf libtool
-    - name: Symlink tcl 8.6 for macos-13
-      if: matrix.os == 'macos-13'
-      run: |
-        ln -s /Users/runner/hostedtoolcache/PyPy/3.7.13/x64/lib/libtcl8.6.dylib /usr/local/lib/libtcl8.6.dylib
-        ln -s /Users/runner/hostedtoolcache/PyPy/3.7.13/x64/lib/libtk8.6.dylib /usr/local/lib/libtk8.6.dylib
     - name: Setup tmate session
       uses: mxschmitt/action-tmate@v3
       if: ${{ github.event_name == 'workflow_dispatch' && inputs.debug_enabled }}
