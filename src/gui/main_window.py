@@ -37,6 +37,7 @@ from src.const.tags import CLOSE_WORD_PREFIX, LONG_SENTENCE_TAG_NAME_HIGH, LONG_
 from src.const.values import READABILITY_MAX_VALUE, DOCUMENTATION_LINK, NLP_BATCH_SIZE
 from src.gui.analysis_settings_modal import AnalysisSettingsModal
 from src.gui.appearance_settings_modal import AppearanceSettingsModal
+from src.gui.menu import MenuItem, SimpleMenu
 from src.utils import Utils
 
 # A4 SIZE IN INCHES. WE LATER USE DPI TO SET EDITOR WIDTH
@@ -103,6 +104,29 @@ class MainWindow:
         # LOAD CONFIG
         self.config = Service.load_config(CONFIG_FILE_PATH)
         # INIT GUI
+        # TOP MENU
+        # Define menu items
+        menu_items = [
+            MenuItem(label="Súbor", underline_index=0, submenu=[
+                MenuItem(label="Načítať súbor", command=self.load_file, shortcut="<Control-o>", shortcut_label="Ctrl+O"),
+                MenuItem(label="Uložiť súbor", command=self.save_file, shortcut="<Control-s>", shortcut_label="Ctrl+S"),
+            ]),
+            MenuItem(label="Upraviť", underline_index=0, submenu=[
+                MenuItem(label="Vrátiť späť", command=self.undo, shortcut="<Control-z>", shortcut_label="Ctrl+Z"),
+                MenuItem(label="Zopakovať", command=self.redo, shortcut="<Control-Shift-z>", shortcut_label="Ctrl+Shift+Z")
+            ]),
+            MenuItem(label="Nastavenia", underline_index=0, submenu=[
+                MenuItem(label="Parametre analýzy", command=self.show_analysis_settings),
+                MenuItem(label="Vzhľad", command=self.show_appearance_settings),
+                MenuItem(label="Exportovať", command=self.export_settings),
+                MenuItem(label="Importovať", command=self.import_settings)
+            ]),
+            MenuItem(label="Pomoc", underline_index=0, submenu=[
+                MenuItem(label="O programe", command=self.show_about),
+                MenuItem(label="Dokumentácia", command=lambda: webbrowser.open(DOCUMENTATION_LINK))
+            ])
+        ]
+        self.menu_bar = SimpleMenu(self.root, menu_items, background="#3B3B3B", foreground="white")
         # MAIN FRAME
         main_frame = tk.Frame(self.root)
         main_frame.pack(expand=1, fill=tk.BOTH, side=tk.LEFT)
@@ -254,35 +278,6 @@ class MainWindow:
                  font=(HELVETICA_FONT_NAME, TEXT_SIZE_BOTTOM_BAR)).pack(
             side=tk.RIGHT, padx=(5, 0), pady=5
         )
-        # TOP MENU
-        self.menu_bar = tk.Menu(self.root, background=PRIMARY_COLOR, foreground=PANEL_TEXT_COLOR, border=1)
-        self.root.config(menu=self.menu_bar)
-        # FILE MENU
-        self.file_menu = tk.Menu(self.menu_bar, tearoff=0, background=PRIMARY_COLOR, foreground=PANEL_TEXT_COLOR,
-                                 font=(HELVETICA_FONT_NAME, TEXT_SIZE_MENU))
-        self.file_menu.add_command(label="Načítať súbor", command=self.load_file)
-        self.file_menu.add_command(label="Uložiť súbor", command=self.save_file)
-        self.menu_bar.add_cascade(label="Súbor", menu=self.file_menu, underline=0)
-        # EDIT MENU
-        self.edit_menu = tk.Menu(self.menu_bar, tearoff=0, background=PRIMARY_COLOR, foreground=PANEL_TEXT_COLOR,
-                                 font=(HELVETICA_FONT_NAME, TEXT_SIZE_MENU))
-        self.edit_menu.add_command(label="Vrátiť späť", command=self.undo, accelerator="Ctrl+Z")
-        self.edit_menu.add_command(label="Znova zopakovať", command=self.redo, accelerator="Ctrl+Shift+Z")
-        self.menu_bar.add_cascade(label="Upraviť", menu=self.edit_menu, underline=0)
-        # SETTINGS MENU
-        self.settings_menu = tk.Menu(self.menu_bar, tearoff=0, background=PRIMARY_COLOR, foreground=PANEL_TEXT_COLOR,
-                                     font=(HELVETICA_FONT_NAME, TEXT_SIZE_MENU))
-        self.settings_menu.add_command(label="Parametre analýzy", command=self.show_analysis_settings)
-        self.settings_menu.add_command(label="Vzhľad", command=self.show_appearance_settings)
-        self.settings_menu.add_command(label="Exportovať", command=self.export_settings)
-        self.settings_menu.add_command(label="Importovať", command=self.import_settings)
-        self.menu_bar.add_cascade(label="Nastavenia", menu=self.settings_menu, underline=0)
-        # HELP MENU
-        self.help_menu = tk.Menu(self.menu_bar, tearoff=0, background=PRIMARY_COLOR, foreground=PANEL_TEXT_COLOR,
-                                 font=(HELVETICA_FONT_NAME, TEXT_SIZE_MENU))
-        self.help_menu.add_command(label="O programe", command=self.show_about)
-        self.help_menu.add_command(label="Dokumentácia", command=lambda: webbrowser.open(DOCUMENTATION_LINK))
-        self.menu_bar.add_cascade(label="Pomoc", menu=self.help_menu, underline=0)
         # MOUSE AND KEYBOARD BINDINGS
         self.text_editor.unbind('<Control-z>')
         self.text_editor.unbind('<Control-Z>')
@@ -294,10 +289,6 @@ class MainWindow:
         self.text_editor.bind("<Button-1>", lambda e: self.root.after(0, self.introspect))
         self.text_editor.bind("<Control-a>", self.select_all)
         self.text_editor.bind("<Control-A>", self.select_all)
-        self.text_editor.bind("<Control-z>", self.undo)
-        self.text_editor.bind("<Control-Z>", self.undo)
-        self.text_editor.bind("<Control-Shift-z>", self.redo)
-        self.text_editor.bind("<Control-Shift-Z>", self.redo)
         self.root.bind("<Control-F>", self.focus_search)
         self.root.bind("<Control-f>", self.focus_search)
         self.root.bind("<Control-e>", self.focus_editor)
@@ -307,6 +298,7 @@ class MainWindow:
         # LINUX SPECIFIC
         self.root.bind("<Button-4>", self.change_text_size)
         self.root.bind("<Button-5>", self.change_text_size)
+        self.menu_bar.bind_events()
 
     # START MAIN LOOP
     def start_main_loop(self):
@@ -602,10 +594,11 @@ class MainWindow:
                 ("RTF dokumenty", "*.rtf"),
             ]
         )
-        text = Service.import_document(file_path)
-        self.text_editor.delete(1.0, tk.END)
-        self.text_editor.insert(tk.END, text)
-        self.analyze_text(True)
+        if file_path:
+            text = Service.import_document(file_path)
+            self.text_editor.delete(1.0, tk.END)
+            self.text_editor.insert(tk.END, text)
+            self.analyze_text(True)
 
     # SAVE TEXT FILE
     def save_file(self):
