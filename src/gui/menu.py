@@ -109,9 +109,7 @@ class SimpleMenu:
             command()
 
     def _handle_menu(self, command, submenu, button):
-        if command:
-            self._close_all_menus()
-            command()
+        self._execute_command(command)
         if submenu:
             self._show_submenu(submenu, button)
 
@@ -128,7 +126,8 @@ class SimpleMenu:
         max_label_length = len(max(submenu_items, key=lambda i: len(i.label)).label)
         width = max_label_length * 11
         if any(map(lambda i: i.shortcut_label, submenu_items)):
-            width += 70
+            max_shortcut_label_length = len(max(submenu_items, key=lambda i: len(i.shortcut_label)).shortcut_label)
+            width += max_shortcut_label_length * 8
         submenu.geometry(f"{width}x{len(submenu_items) * 30}+{button_x}+{button_y}")
 
         submenu.config(bg=self.background, bd=1, relief=tk.SOLID)  # Set background of submenu to match main menu
