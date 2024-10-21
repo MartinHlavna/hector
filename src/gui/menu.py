@@ -64,7 +64,7 @@ class SimpleMenu:
             button.bind("<FocusIn>", lambda e, btn=button: btn.configure(foreground=background, background=foreground))
             button.bind("<FocusOut>", lambda e, btn=button: btn.configure(foreground=foreground, background=background))
 
-            button.config(command=lambda cmd=command, sub=submenu, btn=button: self._handle_menu(cmd, sub, btn))
+            button.config(command=lambda cmd=command, sub=submenu, btn=button: self._handle_menu(cmd, sub, btn, index))
             button.pack(side=tk.LEFT, padx=5)
 
             # Set underline and Alt + key shortcut
@@ -104,13 +104,14 @@ class SimpleMenu:
         self.root.bind("<Return>", self._execute_selected_command)
 
     def _execute_command(self, command):
-        self._close_all_menus()
         if command:
+            self._close_all_menus()
             command()
 
-    def _handle_menu(self, command, submenu, button):
+    def _handle_menu(self, command, submenu, button, index):
         self._execute_command(command)
         if submenu:
+            self.current_main_menu_index = index
             self._show_submenu(submenu, button)
 
     def _show_submenu(self, submenu_items, button):

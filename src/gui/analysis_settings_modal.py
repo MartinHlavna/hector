@@ -187,6 +187,16 @@ class AnalysisSettingsModal:
         spellcheck_checkbox = ttk.Checkbutton(self.toplevel, text="Zapnuté", variable=self.spellcheck_var)
         spellcheck_checkbox.grid(row=row, column=1, padx=(6, 10), pady=2, sticky='w')
 
+        # Spellcheck
+        row += 1
+        tk.Label(self.toplevel, text="Kontrola správnych úvodzoviek", font=(HELVETICA_FONT_NAME, 12, BOLD_FONT),
+                 anchor='w').grid(
+            row=row, column=0, columnspan=1, padx=(10, 80), pady=(10, 2), sticky='w'
+        )
+        self.quote_corrections_var = tk.BooleanVar(value=self.config.analysis_settings.enable_quote_corrections)
+        quote_corrections_checkbox = ttk.Checkbutton(self.toplevel, text="Zapnuté", variable=self.quote_corrections_var)
+        quote_corrections_checkbox.grid(row=row, column=1, padx=(6, 10), pady=2, sticky='w')
+
         # PARTIAL NLP
         row += 1
         tk.Label(self.toplevel, text="Optimalizácia výkonu pri drobných zmenách textu",
@@ -235,6 +245,7 @@ class AnalysisSettingsModal:
         self.config.analysis_settings.enable_close_words = self.close_words_var.get()
         self.config.analysis_settings.enable_spellcheck = self.spellcheck_var.get()
         self.config.analysis_settings.enable_partial_nlp = self.partial_nlp_var.get()
+        self.config.analysis_settings.enable_quote_corrections = self.quote_corrections_var.get()
         Service.save_config(self.config, CONFIG_FILE_PATH)
         self.on_config_change()
         self.toplevel.destroy()

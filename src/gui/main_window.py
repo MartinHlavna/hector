@@ -860,7 +860,7 @@ class MainWindow:
     # SHOW SETTINGS WINDOW
     def show_analysis_settings(self):
         settings_window = AnalysisSettingsModal(self.root, self.config, lambda: self.analyze_text(True))
-        self.configure_modal(settings_window.toplevel, height=630, width=780)
+        self.configure_modal(settings_window.toplevel, height=640, width=780)
 
     # SHOW SETTINGS WINDOW
     def show_appearance_settings(self):

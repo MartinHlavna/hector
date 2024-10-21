@@ -70,6 +70,8 @@ class AnalysisSettings:
         self.enable_spellcheck = data.get('enable_spellcheck', True)
         # ENABLE PARTIAL NLP
         self.enable_partial_nlp = data.get('enable_partial_nlp', True)
+        # ENABLE QUOTE CORRECTIONS
+        self.enable_quote_corrections = data.get('enable_quote_corrections', True)
 
     def to_dict(self):
         """
@@ -96,6 +98,7 @@ class AnalysisSettings:
             "enable_close_words": self.enable_close_words,
             "enable_spellcheck": self.enable_spellcheck,
             "enable_partial_nlp": self.enable_partial_nlp,
+            "enable_quote_corrections": self.enable_quote_corrections,
         }
 
 
