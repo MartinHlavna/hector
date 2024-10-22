@@ -159,6 +159,9 @@ päť päť päť päť päť
 """
 TEST_TEXT_6 = "Moja malá palička."
 TEST_TEXT_6_NON_ACCENTED = "Moja mala palicka."
+TEST_TEXT_QUOTES_1 = "“Ahoj„"
+TEST_TEXT_QUOTES_2 = "\"Ahoj\""
+TEST_TEXT_QUOTES_3 = "“ Ahoj „"
 
 
 # TEST CORRECTLY INITIALIZED VARS
@@ -224,6 +227,25 @@ def test_find_multiple_punctuation(setup_teardown):
     nlp = setup_teardown[0]
     doc = Service.full_nlp(TEST_TEXT_2, nlp, NLP_BATCH_SIZE, Config())
     assert sum(1 for _ in Service.find_multiple_punctuation(doc)) == 1
+
+
+def test_quote_marks_corrections(setup_teardown):
+    nlp = setup_teardown[0]
+    doc = Service.full_nlp(TEST_TEXT_QUOTES_1, nlp, NLP_BATCH_SIZE, Config())
+    assert sum(1 for _ in Service.find_incorrect_lower_quote_marks(doc)) == 1
+    assert sum(1 for _ in Service.find_incorrect_upper_quote_marks(doc)) == 1
+
+
+def test_find_computer_quote_marks(setup_teardown):
+    nlp = setup_teardown[0]
+    doc = Service.full_nlp(TEST_TEXT_QUOTES_2, nlp, NLP_BATCH_SIZE, Config())
+    assert sum(1 for _ in Service.find_computer_quote_marks(doc)) == 2
+
+
+def test_find_dangling_quote_marks(setup_teardown):
+    nlp = setup_teardown[0]
+    doc = Service.full_nlp(TEST_TEXT_QUOTES_3, nlp, NLP_BATCH_SIZE, Config())
+    assert sum(1 for _ in Service.find_dangling_quote_marks(doc)) == 2
 
 
 def test_readability(setup_teardown):

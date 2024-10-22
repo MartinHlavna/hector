@@ -29,10 +29,12 @@ from src.domain.unique_word import UniqueWord
 from src.utils import Utils
 
 PATTERN_TRAILING_SPACES = r' +$'
-
 PATTERN_MULTIPLE_PUNCTUACTION = r'([!?.,:;]){2,}'
-
 PATTERN_MULTIPLE_SPACES = r' {2,}'
+PATTERN_COMPUTER_QUOTE_MARKS = r'"'
+PATTERN_DANGLING_QUOTE_MARKS = r'(\s|^)["„“](\s|$)'
+PATTERN_INCORRECT_LOWER_QUOTE_MARKS = r'\S[„]'
+PATTERN_INCORRECT_UPPER_QUOTE_MARKS = r'[“]\S'
 
 with open(Utils.resource_path(os.path.join('data_files', 'misstagged_words.json')), 'r', encoding='utf-8') as file:
     MISSTAGGED_WORDS = json.load(file)
@@ -253,6 +255,22 @@ class Service:
     @staticmethod
     def find_multiple_spaces(doc: Doc):
         return re.finditer(PATTERN_MULTIPLE_SPACES, doc.text)
+
+    @staticmethod
+    def find_computer_quote_marks(doc: Doc):
+        return re.finditer(PATTERN_COMPUTER_QUOTE_MARKS, doc.text)
+
+    @staticmethod
+    def find_dangling_quote_marks(doc: Doc):
+        return re.finditer(PATTERN_DANGLING_QUOTE_MARKS, doc.text)
+
+    @staticmethod
+    def find_incorrect_lower_quote_marks(doc: Doc):
+        return re.finditer(PATTERN_INCORRECT_LOWER_QUOTE_MARKS, doc.text)
+
+    @staticmethod
+    def find_incorrect_upper_quote_marks(doc: Doc):
+        return re.finditer(PATTERN_INCORRECT_UPPER_QUOTE_MARKS, doc.text)
 
     @staticmethod
     def find_multiple_punctuation(doc: Doc):

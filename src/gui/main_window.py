@@ -33,7 +33,8 @@ from src.const.paths import CONFIG_FILE_PATH
 from src.const.tags import CLOSE_WORD_PREFIX, LONG_SENTENCE_TAG_NAME_HIGH, LONG_SENTENCE_TAG_NAME_MID, \
     PARAGRAPH_TAG_NAME, TRAILING_SPACES_TAG_NAME, MULTIPLE_PUNCTUATION_TAG_NAME, MULTIPLE_SPACES_TAG_NAME, \
     SEARCH_RESULT_TAG_NAME, CURRENT_SEARCH_RESULT_TAG_NAME, GRAMMAR_ERROR_TAG_NAME, CLOSE_WORD_TAG_NAME, \
-    FREQUENT_WORD_PREFIX, FREQUENT_WORD_TAG_NAME
+    FREQUENT_WORD_PREFIX, FREQUENT_WORD_TAG_NAME, COMPUTER_QUOTE_MARKS_TAG_NAME, DANGLING_QUOTE_MARK_TAG_NAME, \
+    SHOULD_USE_LOWER_QUOTE_MARK_TAG_NAME, SHOULD_USE_UPPER_QUOTE_MARK_TAG_NAME
 from src.const.values import READABILITY_MAX_VALUE, DOCUMENTATION_LINK, NLP_BATCH_SIZE
 from src.gui.analysis_settings_modal import AnalysisSettingsModal
 from src.gui.appearance_settings_modal import AppearanceSettingsModal
@@ -108,12 +109,14 @@ class MainWindow:
         # Define menu items
         menu_items = [
             MenuItem(label="Súbor", underline_index=0, submenu=[
-                MenuItem(label="Načítať súbor", command=self.load_file, shortcut="<Control-o>", shortcut_label="Ctrl+O"),
+                MenuItem(label="Načítať súbor", command=self.load_file, shortcut="<Control-o>",
+                         shortcut_label="Ctrl+O"),
                 MenuItem(label="Uložiť súbor", command=self.save_file, shortcut="<Control-s>", shortcut_label="Ctrl+S"),
             ]),
             MenuItem(label="Upraviť", underline_index=0, submenu=[
                 MenuItem(label="Vrátiť späť", command=self.undo, shortcut="<Control-z>", shortcut_label="Ctrl+Z"),
-                MenuItem(label="Zopakovať", command=self.redo, shortcut="<Control-Shift-z>", shortcut_label="Ctrl+Shift+Z")
+                MenuItem(label="Zopakovať", command=self.redo, shortcut="<Control-Shift-z>",
+                         shortcut_label="Ctrl+Shift+Z")
             ]),
             MenuItem(label="Nastavenia", underline_index=0, submenu=[
                 MenuItem(label="Parametre analýzy", command=self.show_analysis_settings),
@@ -415,8 +418,8 @@ class MainWindow:
                 end_index = f"1.0 + {sentence.end_char} chars"
                 self.text_editor.tag_add(LONG_SENTENCE_TAG_NAME_MID, start_index, end_index)
 
-    # HIGHLIGH MULTIPLE SPACE, MULTIPLE PUNCTATION, AND TRAILING SPACES
-    def highlight_multiple_issues(self, doc: Doc):
+    # HIGHLIGHT MULTIPLE SPACES
+    def highlight_multiple_spaces(self, doc: Doc):
         self.text_editor.tag_remove(MULTIPLE_SPACES_TAG_NAME, "1.0", tk.END)
         if self.config.analysis_settings.enable_multiple_spaces:
             matches = Service.find_multiple_spaces(doc)
@@ -425,6 +428,8 @@ class MainWindow:
                 end_index = f"1.0 + {match.end()} chars"
                 self.text_editor.tag_add(MULTIPLE_SPACES_TAG_NAME, start_index, end_index)
 
+    # HIGHLIGHT MULTIPLE PUNCTUATION
+    def highlight_multiple_punctuation(self, doc: Doc):
         if self.config.analysis_settings.enable_multiple_punctuation:
             matches = Service.find_multiple_punctuation(doc)
             for match in matches:
@@ -433,12 +438,38 @@ class MainWindow:
                     end_index = f"1.0 + {match.end()} chars"
                     self.text_editor.tag_add(MULTIPLE_PUNCTUATION_TAG_NAME, start_index, end_index)
 
+    # HIGHLIGHT TRAILING SPACES
+    def highlight_trailing_spaces(self, doc: Doc):
         if self.config.analysis_settings.enable_trailing_spaces:
             matches = Service.find_trailing_spaces(doc)
             for match in matches:
                 start_index = f"1.0 + {match.start()} chars"
                 end_index = f"1.0 + {match.end()} chars"
                 self.text_editor.tag_add(TRAILING_SPACES_TAG_NAME, start_index, end_index)
+
+    # HIGHLIGHT QUOTE_MARK_ERRORS
+    def highlight_quote_mark_errors(self, doc: Doc):
+        if self.config.analysis_settings.enable_quote_corrections:
+            matches = Service.find_computer_quote_marks(doc)
+            for match in matches:
+                start_index = f"1.0 + {match.start()} chars"
+                end_index = f"1.0 + {match.end()} chars"
+                self.text_editor.tag_add(COMPUTER_QUOTE_MARKS_TAG_NAME, start_index, end_index)
+            matches = Service.find_dangling_quote_marks(doc)
+            for match in matches:
+                start_index = f"1.0 + {match.start()} chars"
+                end_index = f"1.0 + {match.end()} chars"
+                self.text_editor.tag_add(DANGLING_QUOTE_MARK_TAG_NAME, start_index, end_index)
+            matches = Service.find_incorrect_lower_quote_marks(doc)
+            for match in matches:
+                start_index = f"1.0 + {match.start()} chars"
+                end_index = f"1.0 + {match.end()} chars"
+                self.text_editor.tag_add(SHOULD_USE_UPPER_QUOTE_MARK_TAG_NAME, start_index, end_index)
+            matches = Service.find_incorrect_upper_quote_marks(doc)
+            for match in matches:
+                start_index = f"1.0 + {match.start()} chars"
+                end_index = f"1.0 + {match.end()} chars"
+                self.text_editor.tag_add(SHOULD_USE_LOWER_QUOTE_MARK_TAG_NAME, start_index, end_index)
 
     # HIGHLIGHT WORDS THAT REPEATS CLOSE TO EACH OTHER
     def highlight_close_words(self, doc: Doc):
@@ -679,7 +710,10 @@ class MainWindow:
         self.highlight_long_sentences(self.doc)
         self.display_word_frequencies(self.doc)
         self.highlight_close_words(self.doc)
-        self.highlight_multiple_issues(self.doc)
+        self.highlight_multiple_spaces(self.doc)
+        self.highlight_multiple_punctuation(self.doc)
+        self.highlight_trailing_spaces(self.doc)
+        self.highlight_quote_mark_errors(self.doc)
         self.run_spellcheck(self.doc)
         # CONFIG TAGS
         self.text_editor.tag_config(PARAGRAPH_TAG_NAME,
@@ -688,6 +722,10 @@ class MainWindow:
         self.text_editor.tag_config(LONG_SENTENCE_TAG_NAME_MID, background=LONG_SENTENCE_HIGHLIGHT_COLOR_MID)
         self.text_editor.tag_config(LONG_SENTENCE_TAG_NAME_HIGH, background=LONG_SENTENCE_HIGHLIGHT_COLOR_HIGH)
         self.text_editor.tag_config(TRAILING_SPACES_TAG_NAME, background="red")
+        self.text_editor.tag_config(COMPUTER_QUOTE_MARKS_TAG_NAME, background="red")
+        self.text_editor.tag_config(DANGLING_QUOTE_MARK_TAG_NAME, background="red")
+        self.text_editor.tag_config(SHOULD_USE_LOWER_QUOTE_MARK_TAG_NAME, background="red")
+        self.text_editor.tag_config(SHOULD_USE_UPPER_QUOTE_MARK_TAG_NAME, background="red")
         self.text_editor.tag_config(MULTIPLE_PUNCTUATION_TAG_NAME, background="red")
         self.text_editor.tag_config(MULTIPLE_SPACES_TAG_NAME, background="red")
         self.text_editor.tag_config(SEARCH_RESULT_TAG_NAME, background=SEARCH_RESULT_HIGHLIGHT_COLOR)
@@ -710,6 +748,35 @@ class MainWindow:
         self.bind_tag_mouse_event(TRAILING_SPACES_TAG_NAME,
                                   self.text_editor,
                                   lambda e: self.show_tooltip(e, 'Zbytočná medzera na konci odstavca.'),
+                                  lambda e: self.hide_tooltip(e)
+                                  )
+        self.bind_tag_mouse_event(COMPUTER_QUOTE_MARKS_TAG_NAME,
+                                  self.text_editor,
+                                  lambda e: self.show_tooltip(e,
+                                                              'Počítačová úvodzovka. V beletrii by sa mali používať '
+                                                              'slovenské úvodzovky „ “'
+                                                              ),
+                                  lambda e: self.hide_tooltip(e)
+                                  )
+        self.bind_tag_mouse_event(DANGLING_QUOTE_MARK_TAG_NAME,
+                                  self.text_editor,
+                                  lambda e: self.show_tooltip(e,
+                                                              'Úvodzovka by nemala mať medzeru z oboch strán.'
+                                                              ),
+                                  lambda e: self.hide_tooltip(e)
+                                  )
+        self.bind_tag_mouse_event(SHOULD_USE_LOWER_QUOTE_MARK_TAG_NAME,
+                                  self.text_editor,
+                                  lambda e: self.show_tooltip(e,
+                                                              'Tu by mala byť použitá spodná („) úvozdovka.'
+                                                              ),
+                                  lambda e: self.hide_tooltip(e)
+                                  )
+        self.bind_tag_mouse_event(SHOULD_USE_UPPER_QUOTE_MARK_TAG_NAME,
+                                  self.text_editor,
+                                  lambda e: self.show_tooltip(e,
+                                                              'Tu by mala byť použitá horná (“) úvozdovka.'
+                                                              ),
                                   lambda e: self.hide_tooltip(e)
                                   )
         self.bind_tag_mouse_event(LONG_SENTENCE_TAG_NAME_MID,
