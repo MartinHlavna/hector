@@ -3,7 +3,7 @@ import tkinter.font as tkFont
 
 
 class MenuItem:
-    def __init__(self, label, command=None, submenu=None, icon=None, shortcut=None, shortcut_label=None,
+    def __init__(self, label, command=None, submenu=None, icon=None, highlight_icon=None, shortcut=None, shortcut_label=None,
                  underline_index=-1):
         """
         Create a menu item with optional parameters.
@@ -12,6 +12,7 @@ class MenuItem:
         :param command: Function to execute when the item is clicked.
         :param submenu: List of additional submenu items (type MenuItem).
         :param icon: Icon image (if any)
+        :param highlight_icon: Icon image (if any)
         :param shortcut: Keyboard shortcut for this item.
         :param shortcut_label: Keyboard shortcut label for this item.
         :param underline_index: Index of the character in the label to underline.
@@ -20,6 +21,7 @@ class MenuItem:
         self.command = command
         self.submenu = submenu if submenu else []
         self.icon = icon
+        self.highlight_icon = highlight_icon
         self.shortcut = shortcut
         self.shortcut_label = shortcut_label
         self.underline_index = underline_index
@@ -52,6 +54,7 @@ class SimpleMenu:
             # Create a button for the main menu item
             button = tk.Button(self.menu_frame,
                                text=label,
+                               compound=tk.LEFT,
                                image=item.icon,
                                bg=background,
                                fg=foreground,
@@ -62,8 +65,10 @@ class SimpleMenu:
                                pady=2
                                )
             # Bind focus events
-            button.bind("<FocusIn>", lambda e, btn=button: btn.configure(foreground=background, background=foreground))
-            button.bind("<FocusOut>", lambda e, btn=button: btn.configure(foreground=foreground, background=background))
+            button.bind("<Enter>", lambda e, i=item, btn=button: btn.configure(foreground=background, background=foreground, image=i.highlight_icon))
+            button.bind("<FocusIn>", lambda e, i=item, btn=button: btn.configure(foreground=background, background=foreground, image=i.highlight_icon))
+            button.bind("<Leave>", lambda e, i=item, btn=button: btn.configure(foreground=foreground, background=background, image=i.icon))
+            button.bind("<FocusOut>", lambda e, i=item, btn=button: btn.configure(foreground=foreground, background=background, image=i.icon))
 
             button.config(command=lambda cmd=command, sub=submenu, btn=button: self._handle_menu(cmd, sub, btn, index))
             button.pack(side=tk.LEFT, padx=5)
@@ -143,6 +148,7 @@ class SimpleMenu:
             submenu_button = tk.Button(submenu,
                                        text=label,
                                        image=item.icon,
+                                       compound=tk.LEFT,
                                        bg=self.background,
                                        fg=self.foreground,
                                        relief=tk.FLAT,
@@ -153,6 +159,10 @@ class SimpleMenu:
                                        command=lambda cmd=command: self._execute_command(cmd)
                                        )
             submenu_button.pack(fill=tk.X)
+            submenu_button.bind("<Enter>", lambda e, i=item, btn=submenu_button: btn.configure(foreground=self.background, background=self.foreground, image=i.highlight_icon))
+            submenu_button.bind("<FocusIn>", lambda e, i=item, btn=submenu_button: btn.configure(foreground=self.background, background=self.foreground, image=i.highlight_icon))
+            submenu_button.bind("<Leave>", lambda e, i=item, btn=submenu_button: btn.configure(foreground=self.foreground, background=self.background, image=i.icon))
+            submenu_button.bind("<FocusOut>", lambda e, i=item, btn=submenu_button: btn.configure(foreground=self.foreground, background=self.background, image=i.icon))
             self.submenu_buttons.append(submenu_button)
 
         self.active_submenu = submenu
