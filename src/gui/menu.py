@@ -11,7 +11,7 @@ class MenuItem:
         :param label: Text displayed on the menu item.
         :param command: Function to execute when the item is clicked.
         :param submenu: List of additional submenu items (type MenuItem).
-        :param icon: Path to an icon file (if any).
+        :param icon: Icon image (if any)
         :param shortcut: Keyboard shortcut for this item.
         :param shortcut_label: Keyboard shortcut label for this item.
         :param underline_index: Index of the character in the label to underline.
@@ -52,6 +52,7 @@ class SimpleMenu:
             # Create a button for the main menu item
             button = tk.Button(self.menu_frame,
                                text=label,
+                               image=item.icon,
                                bg=background,
                                fg=foreground,
                                relief=tk.FLAT,
@@ -141,6 +142,7 @@ class SimpleMenu:
             command = item.command
             submenu_button = tk.Button(submenu,
                                        text=label,
+                                       image=item.icon,
                                        bg=self.background,
                                        fg=self.foreground,
                                        relief=tk.FLAT,
