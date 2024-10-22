@@ -31,11 +31,12 @@ from src.utils import Utils
 PATTERN_TRAILING_SPACES = r' +$'
 PATTERN_MULTIPLE_PUNCTUACTION = r'([!?.,:;]){2,}'
 PATTERN_MULTIPLE_SPACES = r' {2,}'
-PATTERN_COMPUTER_QUOTE_MARKS = r'"'
-PATTERN_DANGLING_QUOTE_MARKS = r'(\s|^)["„“](\s|$)'
+PATTERN_COMPUTER_QUOTE_MARKS = r'["‟]'
+PATTERN_DANGLING_QUOTE_MARKS = r'(\s|^)["„“‟](\s|$)'
 PATTERN_INCORRECT_LOWER_QUOTE_MARKS = r'\S[„]'
 PATTERN_INCORRECT_UPPER_QUOTE_MARKS = r'[“]\S'
-
+PATTERN_UPPER_QUOTE_MARKS_FROM_DIFFERENT_LANGUAGES = r'[‟]'
+UPPER_QUOTE_MARK = "“"
 with open(Utils.resource_path(os.path.join('data_files', 'misstagged_words.json')), 'r', encoding='utf-8') as file:
     MISSTAGGED_WORDS = json.load(file)
 
@@ -165,6 +166,12 @@ class Service:
         doc = Doc.from_docs(list(nlp.pipe([text], batch_size=batch_size)), nlp)
         Service.fill_custom_data(doc, config)
         return doc
+
+    @staticmethod
+    def normalize_text(text):
+        clrf = re.compile(f"\r\n")
+        corrected_text = re.sub(clrf, "\n", text)
+        return corrected_text
 
     # METHOD THAT RUNS PARTIAL NLP BASED ON PARAGRAPHS AROUND CARRET POSITION
     @staticmethod
@@ -422,4 +429,4 @@ class Service:
             '--wrap=none',
         )
         text = pypandoc.convert_file(file_path, 'plain', extra_args=extra_args)
-        return os.linesep.join([s for s in text.splitlines() if s])
+        return Service.normalize_text(os.linesep.join([s for s in text.splitlines() if s]))

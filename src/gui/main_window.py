@@ -292,6 +292,7 @@ class MainWindow:
         self.text_editor.bind("<Button-1>", lambda e: self.root.after(0, self.introspect))
         self.text_editor.bind("<Control-a>", self.select_all)
         self.text_editor.bind("<Control-A>", self.select_all)
+        self.text_editor.bind("<<Paste>>", self.handle_clipboard_paste)
         self.root.bind("<Control-F>", self.focus_search)
         self.root.bind("<Control-f>", self.focus_search)
         self.root.bind("<Control-e>", self.focus_editor)
@@ -607,6 +608,7 @@ class MainWindow:
         # Add content to the tooltip
         label = tk.Label(self.tooltip, text=f"{text}", background=ACCENT_COLOR, foreground=PANEL_TEXT_COLOR,
                          relief="solid", borderwidth=1,
+                         wraplength=240,
                          justify="left", padx=5, pady=5)
         label.pack()
 
@@ -665,6 +667,22 @@ class MainWindow:
         self.text_editor.edit_redo()
         self.analyze_text()
         return 'break'
+
+    # HANDLE CLIPBOARD PASTE
+    # noinspection PyMethodMayBeStatic
+    def handle_clipboard_paste(self, event):
+        # GET CLIPBOARD
+        try:
+            clipboard_text = event.widget.selection_get(selection='CLIPBOARD')
+        except tk.TclError:
+            clipboard_text = ''
+
+        # NORMALIZE TEXT
+        text = Service.normalize_text(clipboard_text)
+        event.widget.insert(tk.INSERT, text)
+
+        # CANCEL DEFAULT PASTE
+        return "break"
 
     # ANALYZE TEXT
     def analyze_text(self, force_reload=False, event=None):
@@ -731,6 +749,7 @@ class MainWindow:
         self.text_editor.tag_config(SEARCH_RESULT_TAG_NAME, background=SEARCH_RESULT_HIGHLIGHT_COLOR)
         self.text_editor.tag_config(CURRENT_SEARCH_RESULT_TAG_NAME, background=CURRENT_SEARCH_RESULT_HIGHLIGHT_COLOR)
         self.text_editor.tag_config(GRAMMAR_ERROR_TAG_NAME, underline=True, underlinefg="red")
+        self.text_editor.tag_raise(COMPUTER_QUOTE_MARKS_TAG_NAME)
         self.text_editor.tag_raise("sel")
         self.close_words_text.tag_raise("sel")
         self.word_freq_text.tag_raise("sel")
@@ -754,7 +773,8 @@ class MainWindow:
                                   self.text_editor,
                                   lambda e: self.show_tooltip(e,
                                                               'Počítačová úvodzovka. V beletrii by sa mali používať '
-                                                              'slovenské úvodzovky „ “'
+                                                              'slovenské úvodzovky „ “.\n\nPOZOR! Nesprávne úvodzovky '
+                                                              'môžu narušiť správne určenie hraníc viet!'
                                                               ),
                                   lambda e: self.hide_tooltip(e)
                                   )
