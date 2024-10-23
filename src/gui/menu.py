@@ -102,12 +102,20 @@ class SimpleMenu:
         # Bind click outside menu and ESC to close submenu
         self.root.bind("<Button-1>", self._close_all_menus)
         self.root.bind("<Escape>", self._close_all_menus)
+        self.root.bind("<FocusOut>", self._on_focus_loss)
         # Bind keys for navigation
         self.root.bind("<Up>", self._navigate_submenu_up)
         self.root.bind("<Down>", self._navigate_submenu_down)
         self.root.bind("<Left>", self._navigate_main_menu_left)
         self.root.bind("<Right>", self._navigate_main_menu_right)
         self.root.bind("<Return>", self._execute_selected_command)
+
+    def _on_focus_loss(self, event):
+        if event.widget is self.root:
+            # check which widget getting the focus
+            w = self.root.tk.call('focus')
+            if not w:
+                self._close_all_menus()
 
     def _execute_command(self, command):
         if command:
