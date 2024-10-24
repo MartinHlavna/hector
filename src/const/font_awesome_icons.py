@@ -1,0 +1,12 @@
+class FontAwesomeIcons:
+    file = '\uf15b'
+    floppy_disk = '\uf0c7'
+    rotate_left = '\uf2ea'
+    rotate_right = '\uf2f9'
+    file_export = '\uf56e'
+    file_import = '\uf56f'
+    gears = '\uf013'
+    pallete = '\uf53f'
+    book = '\uf02d'
+    question_circle = '\uf059'
+    magnifying_glass = '\uf002'

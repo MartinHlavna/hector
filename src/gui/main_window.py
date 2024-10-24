@@ -25,8 +25,9 @@ from src.backend.service import Service
 from src.const.colors import PRIMARY_COLOR, ACCENT_COLOR, ACCENT_2_COLOR, TEXT_EDITOR_FRAME_BG, PANEL_TEXT_COLOR, \
     TEXT_EDITOR_BG, EDITOR_TEXT_COLOR, CLOSE_WORDS_PALLETE, LONG_SENTENCE_HIGHLIGHT_COLOR_MID, \
     LONG_SENTENCE_HIGHLIGHT_COLOR_HIGH, SEARCH_RESULT_HIGHLIGHT_COLOR, CURRENT_SEARCH_RESULT_HIGHLIGHT_COLOR
+from src.const.font_awesome_icons import FontAwesomeIcons
 from src.const.fonts import HELVETICA_FONT_NAME, TEXT_SIZE_SECTION_HEADER, TEXT_SIZE_BOTTOM_BAR, TEXT_SIZE_MENU, \
-    BOLD_FONT
+    BOLD_FONT, FA_REGULAR, FA_SOLID
 from src.const.grammar_error_types import GRAMMAR_ERROR_TYPE_MISSPELLED_WORD, GRAMMAR_ERROR_TYPE_WRONG_Y_SUFFIX, \
     GRAMMAR_ERROR_TYPE_WRONG_I_SUFFIX, GRAMMAR_ERROR_TYPE_WRONG_YSI_SUFFIX, GRAMMAR_ERROR_TYPE_WRONG_ISI_SUFFIX
 from src.const.paths import CONFIG_FILE_PATH
@@ -108,25 +109,74 @@ class MainWindow:
         # TOP MENU
         # Define menu items
         menu_items = [
-            MenuItem(label="Súbor", underline_index=0, submenu=[
-                MenuItem(label="Načítať súbor", command=self.load_file, shortcut="<Control-o>",
-                         shortcut_label="Ctrl+O"),
-                MenuItem(label="Uložiť súbor", command=self.save_file, shortcut="<Control-s>", shortcut_label="Ctrl+S"),
-            ]),
+            MenuItem(label="Súbor",
+                     underline_index=0, submenu=[
+                    MenuItem(label="Otvoriť", command=self.load_file, shortcut="<Control-o>",
+                             icon=Utils.fa_image(FA_SOLID, "#3B3B3B", "white", FontAwesomeIcons.file, 16),
+                             highlight_icon=Utils.fa_image(FA_SOLID, "white", "#3B3B3B", FontAwesomeIcons.file, 16),
+                             shortcut_label="Ctrl+O"),
+                    MenuItem(label="Uložiť",
+                             command=self.save_file,
+                             shortcut="<Control-s>",
+                             icon=Utils.fa_image(FA_SOLID, "#3B3B3B", "white", FontAwesomeIcons.floppy_disk, 16),
+                             highlight_icon=Utils.fa_image(FA_SOLID, "white", "#3B3B3B", FontAwesomeIcons.floppy_disk, 16),
+                             shortcut_label="Ctrl+S"),
+                ]),
             MenuItem(label="Upraviť", underline_index=0, submenu=[
-                MenuItem(label="Vrátiť späť", command=self.undo, shortcut="<Control-z>", shortcut_label="Ctrl+Z"),
-                MenuItem(label="Zopakovať", command=self.redo, shortcut="<Control-Shift-z>",
-                         shortcut_label="Ctrl+Shift+Z")
+                MenuItem(
+                    label="Vrátiť späť",
+                    command=self.undo,
+                    icon=Utils.fa_image(FA_SOLID, "#3B3B3B", "white", FontAwesomeIcons.rotate_left, 16),
+                    highlight_icon=Utils.fa_image(FA_SOLID, "white", "#3B3B3B", FontAwesomeIcons.rotate_left, 16),
+                    shortcut="<Control-z>",
+                    shortcut_label="Ctrl+Z"
+                ),
+                MenuItem(label="Zopakovať",
+                         command=self.redo,
+                         icon=Utils.fa_image(FA_SOLID, "#3B3B3B", "white", FontAwesomeIcons.rotate_right, 16),
+                         highlight_icon=Utils.fa_image(FA_SOLID, "white", "#3B3B3B", FontAwesomeIcons.rotate_right, 16),
+                         shortcut="<Control-Shift-z>",
+                         shortcut_label="Ctrl+Shift+Z"
+                         )
             ]),
             MenuItem(label="Nastavenia", underline_index=0, submenu=[
-                MenuItem(label="Parametre analýzy", command=self.show_analysis_settings),
-                MenuItem(label="Vzhľad", command=self.show_appearance_settings),
-                MenuItem(label="Exportovať", command=self.export_settings),
-                MenuItem(label="Importovať", command=self.import_settings)
+                MenuItem(
+                    label="Parametre analýzy",
+                    icon=Utils.fa_image(FA_SOLID, "#3B3B3B", "white", FontAwesomeIcons.gears, 16),
+                    highlight_icon=Utils.fa_image(FA_SOLID, "white", "#3B3B3B", FontAwesomeIcons.gears, 16),
+                    command=self.show_analysis_settings
+                ),
+                MenuItem(
+                    label="Vzhľad",
+                    icon=Utils.fa_image(FA_SOLID, "#3B3B3B", "white", FontAwesomeIcons.pallete, 16),
+                    highlight_icon=Utils.fa_image(FA_SOLID, "white", "#3B3B3B", FontAwesomeIcons.pallete, 16),
+                    command=self.show_appearance_settings
+                ),
+                MenuItem(
+                    label="Exportovať",
+                    icon=Utils.fa_image(FA_SOLID, "#3B3B3B", "white", FontAwesomeIcons.file_export, 16),
+                    highlight_icon=Utils.fa_image(FA_SOLID, "white", "#3B3B3B", FontAwesomeIcons.file_export, 16),
+                    command=self.export_settings
+                ),
+                MenuItem(
+                    label="Importovať",
+                    icon=Utils.fa_image(FA_SOLID, "#3B3B3B", "white", FontAwesomeIcons.file_import, 16),
+                    highlight_icon=Utils.fa_image(FA_SOLID, "white", "#3B3B3B", FontAwesomeIcons.file_import, 16),
+                    command=self.import_settings
+                )
             ]),
             MenuItem(label="Pomoc", underline_index=0, submenu=[
-                MenuItem(label="O programe", command=self.show_about),
-                MenuItem(label="Dokumentácia", command=lambda: webbrowser.open(DOCUMENTATION_LINK))
+                MenuItem(label="O programe",
+                         icon=Utils.fa_image(FA_SOLID, "#3B3B3B", "white", FontAwesomeIcons.question_circle, 16),
+                         highlight_icon=Utils.fa_image(FA_SOLID, "white", "#3B3B3B", FontAwesomeIcons.question_circle, 16),
+                         command=self.show_about
+                         ),
+                MenuItem(
+                    label="Dokumentácia",
+                    icon=Utils.fa_image(FA_SOLID, "#3B3B3B", "white", FontAwesomeIcons.book, 16),
+                    highlight_icon=Utils.fa_image(FA_SOLID, "white", "#3B3B3B", FontAwesomeIcons.book, 16),
+                    command=lambda: webbrowser.open(DOCUMENTATION_LINK)
+                )
             ])
         ]
         self.menu_bar = SimpleMenu(self.root, menu_items, background="#3B3B3B", foreground="white")
@@ -200,7 +250,7 @@ class MainWindow:
         self.logo_holder.image = logo
         text_editor_scroll.config(command=self.text_editor.yview)
         # RIGHT PANEL CONTENTS
-        tk.Label(right_side_panel, pady=10, background=PRIMARY_COLOR, foreground=PANEL_TEXT_COLOR,
+        tk.Label(right_side_panel, pady=10, compound=tk.LEFT, background=PRIMARY_COLOR, foreground=PANEL_TEXT_COLOR,
                  text="Hľadať", font=(HELVETICA_FONT_NAME, TEXT_SIZE_SECTION_HEADER),
                  anchor='n', justify='left').pack(fill=tk.X)
         search_frame = tk.Frame(right_side_panel, relief=tk.FLAT, background=PRIMARY_COLOR)
