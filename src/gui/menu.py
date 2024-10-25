@@ -76,17 +76,13 @@ class SimpleMenu:
                                )
             # Bind focus events
             button.bind("<Enter>",
-                        lambda e, i=item, btn=button: btn.configure(foreground=background, background=foreground,
-                                                                    image=i.highlight_icon))
+                        lambda e, i=item, btn=button: self._on_main_menu_hover(btn, i))
             button.bind("<FocusIn>",
-                        lambda e, i=item, btn=button: btn.configure(foreground=background, background=foreground,
-                                                                    image=i.highlight_icon))
+                        lambda e, i=item, btn=button: self._on_main_menu_focus(btn, i))
             button.bind("<Leave>",
-                        lambda e, i=item, btn=button: btn.configure(foreground=foreground, background=background,
-                                                                    image=i.icon))
+                        lambda e, i=item, btn=button: self._on_main_menu_hover_loss(btn, i))
             button.bind("<FocusOut>",
-                        lambda e, i=item, btn=button: btn.configure(foreground=foreground, background=background,
-                                                                    image=i.icon))
+                        lambda e, i=item, btn=button: self.on_main_menu_focus_loss(btn, i))
 
             button.config(command=lambda cmd=command, sub=submenu, idx=index, btn=button: self._handle_menu(cmd, sub, btn, idx))
             button.pack(side=tk.LEFT, padx=5)
@@ -106,6 +102,27 @@ class SimpleMenu:
                             cmd)
 
             self.menu_buttons.append(button)
+
+    def on_main_menu_focus_loss(self, btn, i):
+        btn.configure(foreground=self.foreground, background=self.background,
+                             image=i.icon)
+
+    def _on_main_menu_hover_loss(self, btn, i):
+        # IF SUBMENU IS OPENED, DO NOT UNHLIGHLIGHT TO KEEP HIGHLIGHTED MENU
+        if not self.active_submenu:
+            btn.configure(foreground=self.foreground, background=self.background,
+                                 image=i.icon)
+
+    def _on_main_menu_focus(self, btn, i):
+        btn.configure(foreground=self.background, background=self.foreground,
+                             image=i.highlight_icon)
+
+    def _on_main_menu_hover(self, btn, i):
+        # IF SUBMENU IS OPENED, HANDLE HOVER AS CLICK TO OPEN HOVERED SUBMENU
+        if self.active_submenu:
+            btn.invoke()
+        btn.configure(foreground=self.background, background=self.foreground,
+                             image=i.highlight_icon)
 
     def bind_events(self):
         # Bind Alt + keys
@@ -145,9 +162,8 @@ class SimpleMenu:
         self._execute_command(command)
         if submenu:
             self.current_main_menu_index = index
-            print(index)
-            self.menu_buttons[index].focus_set()
             self._show_submenu(submenu, button)
+            self.menu_buttons[index].focus_set()
 
     def _show_submenu(self, submenu_items, button):
         self._close_submenu()
