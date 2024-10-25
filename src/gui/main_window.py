@@ -6,7 +6,6 @@ import os
 import platform
 import random
 import re
-import time
 import tkinter as tk
 import webbrowser
 from tkinter import filedialog, ttk
@@ -26,8 +25,7 @@ from src.const.colors import PRIMARY_COLOR, ACCENT_COLOR, ACCENT_2_COLOR, TEXT_E
     TEXT_EDITOR_BG, EDITOR_TEXT_COLOR, CLOSE_WORDS_PALLETE, LONG_SENTENCE_HIGHLIGHT_COLOR_MID, \
     LONG_SENTENCE_HIGHLIGHT_COLOR_HIGH, SEARCH_RESULT_HIGHLIGHT_COLOR, CURRENT_SEARCH_RESULT_HIGHLIGHT_COLOR
 from src.const.font_awesome_icons import FontAwesomeIcons
-from src.const.fonts import HELVETICA_FONT_NAME, TEXT_SIZE_SECTION_HEADER, TEXT_SIZE_BOTTOM_BAR, TEXT_SIZE_MENU, \
-    BOLD_FONT, FA_REGULAR, FA_SOLID
+from src.const.fonts import HELVETICA_FONT_NAME, TEXT_SIZE_SECTION_HEADER, TEXT_SIZE_BOTTOM_BAR, BOLD_FONT, FA_SOLID
 from src.const.grammar_error_types import GRAMMAR_ERROR_TYPE_MISSPELLED_WORD, GRAMMAR_ERROR_TYPE_WRONG_Y_SUFFIX, \
     GRAMMAR_ERROR_TYPE_WRONG_I_SUFFIX, GRAMMAR_ERROR_TYPE_WRONG_YSI_SUFFIX, GRAMMAR_ERROR_TYPE_WRONG_ISI_SUFFIX
 from src.const.paths import CONFIG_FILE_PATH
@@ -119,7 +117,8 @@ class MainWindow:
                              command=self.save_file,
                              shortcut="<Control-s>",
                              icon=Utils.fa_image(FA_SOLID, "#3B3B3B", "white", FontAwesomeIcons.floppy_disk, 16),
-                             highlight_icon=Utils.fa_image(FA_SOLID, "white", "#3B3B3B", FontAwesomeIcons.floppy_disk, 16),
+                             highlight_icon=Utils.fa_image(FA_SOLID, "white", "#3B3B3B", FontAwesomeIcons.floppy_disk,
+                                                           16),
                              shortcut_label="Ctrl+S"),
                 ]),
             MenuItem(label="Upraviť", underline_index=0, submenu=[
@@ -168,7 +167,8 @@ class MainWindow:
             MenuItem(label="Pomoc", underline_index=0, submenu=[
                 MenuItem(label="O programe",
                          icon=Utils.fa_image(FA_SOLID, "#3B3B3B", "white", FontAwesomeIcons.question_circle, 16),
-                         highlight_icon=Utils.fa_image(FA_SOLID, "white", "#3B3B3B", FontAwesomeIcons.question_circle, 16),
+                         highlight_icon=Utils.fa_image(FA_SOLID, "white", "#3B3B3B", FontAwesomeIcons.question_circle,
+                                                       16),
                          command=self.show_about
                          ),
                 MenuItem(

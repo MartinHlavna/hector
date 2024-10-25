@@ -10,6 +10,7 @@ rm -rf build.hector && python3 -m nuitka hector.py  \
   --include-module=spacy.lexeme \
   --include-data-dir=images=images \
   --include-data-dir=data_files=data_files \
+  --include-data-dir=fonts=fonts \
   --onefile
 
 

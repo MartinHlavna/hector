@@ -1,6 +1,10 @@
-FA_BRANDS = 'fonts/fontawesome-free-6.6.0-desktop/otfs/Font Awesome 6 Brands-Regular-400.otf'
-FA_REGULAR = 'fonts/fontawesome-free-6.6.0-desktop/otfs/Font Awesome 6 Free-Regular-400.otf'
-FA_SOLID = 'fonts/fontawesome-free-6.6.0-desktop/otfs/Font Awesome 6 Free-Solid-900.otf'
+import os
+
+from src.const.paths import FONT_AWESOME_DIRECTORY
+
+FA_BRANDS = os.path.join(FONT_AWESOME_DIRECTORY, "Font Awesome 6 Brands-Regular-400.otf")
+FA_REGULAR = os.path.join(FONT_AWESOME_DIRECTORY, "Font Awesome 6 Free-Regular-400.otf")
+FA_SOLID = os.path.join(FONT_AWESOME_DIRECTORY, "Font Awesome 6 Free-Solid-900.otf")
 
 HELVETICA_FONT_NAME = "Helvetica"
 BOLD_FONT = "bold"

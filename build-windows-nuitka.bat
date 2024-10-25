@@ -10,4 +10,5 @@ python.exe -m nuitka hector.py  ^
   --include-module=fsspec.implementations.github ^
   --include-module=spacy.lexeme ^
   --include-data-dir=images=images ^
+  --include-data-dir=fonts=fonts ^
   --include-data-dir=data_files=data_files ^

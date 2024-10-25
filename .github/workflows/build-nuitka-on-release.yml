@@ -78,6 +78,7 @@ jobs:
             spacy.lexeme
           include-data-dir: |
             images=images
+            fonts=fonts
             data_files=data_files
           disable-console: true
           windows-icon-from-ico: images/hector-icon-white-edge.png

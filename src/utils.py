@@ -13,9 +13,9 @@ class Utils:
         return os.path.join(RUN_DIRECTORY, relative_path)
 
     @staticmethod
-    def fa_image(font, background, foreground, char, size):
+    def fa_image(font, background, foreground, char, size, padding=2):
         img = Image.new("L", (size, size), background)
         draw = ImageDraw.Draw(img)
-        font_awesome = ImageFont.truetype(font, size-4)
-        draw.text((2, 2), char, foreground, font_awesome)
+        font_awesome = ImageFont.truetype(font, size-(padding*2))
+        draw.text((padding, padding), char, foreground, font_awesome)
         return ImageTk.PhotoImage(img)
