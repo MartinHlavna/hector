@@ -169,8 +169,7 @@ class SimpleMenu:
         self._close_submenu()
 
         submenu = tk.Toplevel(self.root)
-        submenu.overrideredirect(True)
-        submenu.transient(self.root)
+        submenu.wm_overrideredirect(True)
 
         # Get the position of the button and set submenu under it
         button_x = button.winfo_rootx()
@@ -186,7 +185,7 @@ class SimpleMenu:
             max_shortcut_label_length = len(max(submenu_items, key=lambda i: len(i.shortcut_label)).shortcut_label)
             width += max_shortcut_label_length * 9
             has_shortcut = True
-        submenu.geometry(f"{width}x{len(submenu_items) * 24}+{button_x}+{button_y}")
+        submenu.wm_geometry(f"{width}x{len(submenu_items) * 28}+{button_x}+{button_y}")
         submenu.config(bg=self.background, bd=1, relief=tk.SOLID)  # Set background of submenu to match main menu
 
         self.submenu_buttons = []
