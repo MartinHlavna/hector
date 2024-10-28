@@ -14,8 +14,8 @@ dotiahnuť implementáciu na macOS.
 
 ## NA STIAHNUTIE
 
-Windows: [0.9.4 Beta](https://github.com/MartinHlavna/hector/releases/download/v.0.9.4-beta/hector-windows-amd64.exe)
-Linux: [0.9.4 Beta](https://github.com/MartinHlavna/hector/releases/download/v.0.9.4-beta/hector-linux-amd64.bin)
+Windows: [0.9.5 Beta](https://github.com/MartinHlavna/hector/releases/download/v.0.9.5-beta/hector-windows-amd64.exe)
+Linux: [0.9.5 Beta](https://github.com/MartinHlavna/hector/releases/download/v.0.9.5-beta/hector-linux-amd64.bin)
 
 ## O programe
 
@@ -182,6 +182,24 @@ Odstrániť medzery na konci odstavcov.
   projektu [sk-spell](https://sk-spell.sk.cx/hunspell-sk).
 - Vyhodnocovanie í/ý má momentálne tiež svoje limity. V prípade, že nájdete chybu,
   vytvorte [hlásenie chyby](https://github.com/MartinHlavna/hector/issues/new), alebo napíšte na info@martinhlavna.sk
+
+### Kontrola úvodzoviek
+
+Analyzuje použité úvodzovky a nájdené problémy zvýrazňuje červenou
+
+* Použitie počítačových úvodzoviek namiesto správnych slovenských úvodzoviek
+* Osamotené úvodzoky (väčšinou indikuje zbytočnú medzeru na jednej, alebo druhej strany)
+* Správne použitie horných alebo spodných úvodzoviek
+
+#### Možnosti prispôsobenia
+
+| Nastavenie | Význam                                     | Základná hodnota |
+|------------|--------------------------------------------|------------------|
+| Zapnuté    | Umožňuje zapnúť alebo vypnúť funkcionalitu | Zapnuté          |
+
+#### Odporúčanie
+
+Všetky problémy by mal autor opraviť, ak na ne nemá špeciálny dôvod.
 
 ### Počet znakov, slov a normostrán
 
