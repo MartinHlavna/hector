@@ -28,7 +28,7 @@ from src.const.font_awesome_icons import FontAwesomeIcons
 from src.const.fonts import HELVETICA_FONT_NAME, TEXT_SIZE_SECTION_HEADER, TEXT_SIZE_BOTTOM_BAR, BOLD_FONT, FA_SOLID
 from src.const.grammar_error_types import GRAMMAR_ERROR_TYPE_MISSPELLED_WORD, GRAMMAR_ERROR_TYPE_WRONG_Y_SUFFIX, \
     GRAMMAR_ERROR_TYPE_WRONG_I_SUFFIX, GRAMMAR_ERROR_TYPE_WRONG_YSI_SUFFIX, GRAMMAR_ERROR_TYPE_WRONG_ISI_SUFFIX
-from src.const.paths import CONFIG_FILE_PATH
+from src.const.paths import CONFIG_FILE_PATH, METADATA_FILE_PATH
 from src.const.tags import CLOSE_WORD_PREFIX, LONG_SENTENCE_TAG_NAME_HIGH, LONG_SENTENCE_TAG_NAME_MID, \
     PARAGRAPH_TAG_NAME, TRAILING_SPACES_TAG_NAME, MULTIPLE_PUNCTUATION_TAG_NAME, MULTIPLE_SPACES_TAG_NAME, \
     SEARCH_RESULT_TAG_NAME, CURRENT_SEARCH_RESULT_TAG_NAME, GRAMMAR_ERROR_TAG_NAME, CLOSE_WORD_TAG_NAME, \
@@ -103,6 +103,8 @@ class MainWindow:
         self.close_word_colors = {}
         # LOAD CONFIG
         self.config = Service.load_config(CONFIG_FILE_PATH)
+        # LOAD METADATA
+        self.metadata = Service.load_metadata(METADATA_FILE_PATH)
         # INIT GUI
         # TOP MENU
         # Define menu items
@@ -113,6 +115,10 @@ class MainWindow:
                              icon=Utils.fa_image(FA_SOLID, "#3B3B3B", "white", FontAwesomeIcons.file, 16),
                              highlight_icon=Utils.fa_image(FA_SOLID, "white", "#3B3B3B", FontAwesomeIcons.file, 16),
                              shortcut_label="Ctrl+O"),
+                    MenuItem(label="Otvoriť posledný súbor", command=self.load_file_contents, shortcut="<Control-r>",
+                             icon=Utils.fa_image(FA_SOLID, "#3B3B3B", "white", FontAwesomeIcons.rotate, 16),
+                             highlight_icon=Utils.fa_image(FA_SOLID, "white", "#3B3B3B", FontAwesomeIcons.rotate, 16),
+                             shortcut_label="Ctrl+R"),
                     MenuItem(label="Uložiť",
                              command=self.save_file,
                              shortcut="<Control-s>",
@@ -668,6 +674,27 @@ class MainWindow:
             self.tooltip = None
 
     # LOAD TEXT FILE
+    def load_file_contents(self, file_path=None):
+        if not file_path:
+            while len(self.metadata.recent_files) > 0 and file_path is None:
+                file_path = self.metadata.recent_files[0]
+                if not os.path.isfile(file_path):
+                    file_path = None
+                    self.metadata.recent_files.pop(0)
+        if file_path:
+            text = Service.import_document(file_path)
+            # AK SA POLOZKA V LISTE UZ NACHADZA, PRESUNIEM JU NA ZACIATOK, INAK NA ZACIATOK VLOZIM NOVU POLOZKU
+            if file_path in self.metadata.recent_files:
+                self.metadata.recent_files.remove(file_path)
+            self.metadata.recent_files.insert(0, file_path)
+            if len(self.metadata.recent_files) > 10:
+                self.metadata.recent_files.pop()
+            Service.save_metadata(self.metadata, METADATA_FILE_PATH)
+            self.text_editor.delete(1.0, tk.END)
+            self.text_editor.insert(tk.END, text)
+            self.analyze_text(True)
+
+    # LOAD TEXT FILE
     def load_file(self):
         file_path = filedialog.askopenfilename(
             filetypes=[
@@ -677,11 +704,7 @@ class MainWindow:
                 ("RTF dokumenty", "*.rtf"),
             ]
         )
-        if file_path:
-            text = Service.import_document(file_path)
-            self.text_editor.delete(1.0, tk.END)
-            self.text_editor.insert(tk.END, text)
-            self.analyze_text(True)
+        self.load_file_contents(file_path)
 
     # SAVE TEXT FILE
     def save_file(self):
@@ -750,7 +773,7 @@ class MainWindow:
         self.last_match_index = 0
         # GET TEXT FROM EDITOR
         # RUN ANALYSIS
-        if len(text) > 100 and abs(
+        if not force_reload and len(text) > 100 and abs(
                 len(self.doc.text) - len(text)) < 20 and self.config.analysis_settings.enable_partial_nlp:
             # PARTIAL NLP
             carret_position = self.get_carret_position()

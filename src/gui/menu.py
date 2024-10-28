@@ -215,10 +215,19 @@ class SimpleMenu:
                                           sl=shortcut_label: self._on_submenu_focus(e, frame, i, il, tl, sl))
             item_frame.bind("<Leave>", lambda e, frame=item_frame, i=item, il=icon_label, tl=text_label,
                                               sl=shortcut_label: self._on_submenu_focus_loss(e, frame, i, il, tl, sl))
-            self.submenu_buttons.append(_SubmenuButton(item, item_frame, icon_label, text_label, shortcut_label))
+            button = _SubmenuButton(item, item_frame, icon_label, text_label, shortcut_label)
+            item_frame.bind("<Button-1>", lambda e, btn=button: self._on_submenu_click(btn))
+            icon_label.bind("<Button-1>", lambda e, btn=button: self._on_submenu_click(btn))
+            text_label.bind("<Button-1>", lambda e, btn=button: self._on_submenu_click(btn))
+            shortcut_label.bind("<Button-1>", lambda e, btn=button: self._on_submenu_click(btn))
+            self.submenu_buttons.append(button)
 
         self.active_submenu = submenu
         self.current_submenu_index = -1  # Reset submenu index
+
+    def _on_submenu_click(self, button):
+        self._close_all_menus()
+        button.item.command()
 
     def _on_submenu_focus(self, event, frame: tk.Frame, item: MenuItem, image_label: tk.Label, text_label: tk.Label, shortcut_label:tk.Label):
         frame.configure(background=self.foreground)

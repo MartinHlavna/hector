@@ -25,6 +25,7 @@ from src.const.paths import DATA_DIRECTORY, SPACY_MODELS_DIR, SK_SPACY_MODEL_DIR
     SK_SPELL_DICTIONARY_DIR
 from src.const.values import SPACY_MODEL_NAME_WITH_VERSION, SPACY_MODEL_LINK, SPACY_MODEL_NAME, READABILITY_MAX_VALUE
 from src.domain.config import Config
+from src.domain.metadata import Metadata
 from src.domain.unique_word import UniqueWord
 from src.utils import Utils
 
@@ -149,16 +150,30 @@ class Service:
             with open(path, 'r') as file:
                 c = json.load(file)
                 return Config(c)
-                # CHECK IF ALL CONFIG_KEYS ARE PRESENT
-                # PROVIDE MISSING KEYS FROM DEFAULTS
         else:
             return Config()
+
+    # FUNCTION THAT LOADS EDITOR METADATA FROM FILE
+    @staticmethod
+    def load_metadata(path: string):
+        if os.path.exists(path):
+            with open(path, 'r') as file:
+                metadata = json.load(file)
+                return Metadata(metadata)
+        else:
+            return Metadata()
 
     # FUNCTION THAT SAVES CONFIG TO FILE
     @staticmethod
     def save_config(c: Config, path: string):
         with open(path, 'w') as file:
             json.dump(c.to_dict(), file, indent=4)
+
+    # FUNCTION THAT SAVES METADATA TO FILE
+    @staticmethod
+    def save_metadata(metadata: Metadata, path: string):
+        with open(path, 'w') as file:
+            json.dump(metadata.to_dict(), file, indent=4)
 
     # METHOD THAT RUNS FULL NLP
     @staticmethod
