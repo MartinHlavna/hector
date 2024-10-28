@@ -341,3 +341,7 @@ BY-SA 4.0).
 Program využíva synonymický slovník z
 projektu [LibreOffice](https://github.com/LibreOffice/dictionaries/tree/master/sk_SK) (Licencia GPLv2) a spelling
 slovník projektu [hunspell-sk](https://github.com/sk-spell/hunspell-sk) (Licencia MPLv2).
+
+### Ikony
+
+Program využíva [FontAwesome](https://fontawesome.com/) (Licencia SIL OFL 1.1)
