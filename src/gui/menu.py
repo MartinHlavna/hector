@@ -176,7 +176,7 @@ class SimpleMenu:
         button_x = button.winfo_rootx()
         button_y = button.winfo_rooty() + button.winfo_height()
         max_label_length = len(max(submenu_items, key=lambda i: len(i.label)).label)
-        width = max_label_length * 11
+        width = max_label_length * 9
         has_icon = False
         has_shortcut = False
         if any(map(lambda i: i.icon, submenu_items)):
@@ -184,7 +184,7 @@ class SimpleMenu:
             has_icon = True
         if any(map(lambda i: i.shortcut_label, submenu_items)):
             max_shortcut_label_length = len(max(submenu_items, key=lambda i: len(i.shortcut_label)).shortcut_label)
-            width += max_shortcut_label_length * 10
+            width += max_shortcut_label_length * 9
             has_shortcut = True
         submenu.geometry(f"{width}x{len(submenu_items) * 24}+{button_x}+{button_y}")
         submenu.config(bg=self.background, bd=1, relief=tk.SOLID)  # Set background of submenu to match main menu
@@ -217,9 +217,12 @@ class SimpleMenu:
                                               sl=shortcut_label: self._on_submenu_focus_loss(e, frame, i, il, tl, sl))
             button = _SubmenuButton(item, item_frame, icon_label, text_label, shortcut_label)
             item_frame.bind("<Button-1>", lambda e, btn=button: self._on_submenu_click(btn))
-            icon_label.bind("<Button-1>", lambda e, btn=button: self._on_submenu_click(btn))
-            text_label.bind("<Button-1>", lambda e, btn=button: self._on_submenu_click(btn))
-            shortcut_label.bind("<Button-1>", lambda e, btn=button: self._on_submenu_click(btn))
+            if icon_label:
+                icon_label.bind("<Button-1>", lambda e, btn=button: self._on_submenu_click(btn))
+            if text_label:
+                text_label.bind("<Button-1>", lambda e, btn=button: self._on_submenu_click(btn))
+            if shortcut_label:
+                shortcut_label.bind("<Button-1>", lambda e, btn=button: self._on_submenu_click(btn))
             self.submenu_buttons.append(button)
 
         self.active_submenu = submenu
