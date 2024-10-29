@@ -1,4 +1,4 @@
-
+import ctypes
 import os
 import string
 
@@ -19,3 +19,13 @@ class Utils:
         font_awesome = ImageFont.truetype(font, size-(padding*2))
         draw.text((padding, padding), char, foreground, font_awesome)
         return ImageTk.PhotoImage(img)
+
+    @staticmethod
+    def get_windows_scaling_factor():
+        # Windows API call to get DPI scaling (for Windows)
+        user32 = ctypes.windll.user32
+        user32.SetProcessDPIAware()  # Optional, allows Python process to be aware of the DPI
+        dpi = user32.GetDpiForSystem()
+        # Standard DPI is 96, so scale factor is based on that
+        scaling_factor = dpi / 96
+        return scaling_factor

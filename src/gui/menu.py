@@ -1,5 +1,8 @@
+import platform
 import tkinter as tk
 import tkinter.font as tkFont
+
+from src.utils import Utils
 
 
 class MenuItem:
@@ -151,7 +154,7 @@ class SimpleMenu:
             # check which widget getting the focus
             w = self.root.tk.call('focus')
             if not w:
-                self._close_all_menus()
+                self.root.after(0, lambda: self._close_all_menus())
 
     def _execute_command(self, command):
         if command:
@@ -167,7 +170,6 @@ class SimpleMenu:
 
     def _show_submenu(self, submenu_items, button):
         self._close_submenu()
-
         submenu = tk.Toplevel(self.root)
         submenu.wm_overrideredirect(True)
 
@@ -185,7 +187,12 @@ class SimpleMenu:
             max_shortcut_label_length = len(max(submenu_items, key=lambda i: len(i.shortcut_label)).shortcut_label)
             width += max_shortcut_label_length * 9
             has_shortcut = True
-        submenu.wm_geometry(f"{width}x{len(submenu_items) * 28}+{button_x}+{button_y}")
+        height = len(submenu_items) * 26
+        if platform.system() == "Windows":
+            scaling_factor = Utils.get_windows_scaling_factor()
+            width = int(round(width * scaling_factor, 0))
+            height = int(round(height * scaling_factor, 0))
+        submenu.wm_geometry(f"{width}x{height}+{button_x}+{button_y}")
         submenu.config(bg=self.background, bd=1, relief=tk.SOLID)  # Set background of submenu to match main menu
 
         self.submenu_buttons = []

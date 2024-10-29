@@ -47,7 +47,7 @@ EDITOR_LOGO_HEIGHT = 300
 EDITOR_LOGO_WIDTH = 300
 NLP_DEBOUNCE_LENGTH = 500
 ENABLE_DEBUG_DEP_IMAGE = False
-VERSION = "0.9.5 Beta"
+VERSION = "0.10.0 Beta"
 
 with open(Utils.resource_path(os.path.join('data_files', 'pos_tag_translations.json')), 'r', encoding='utf-8') as file:
     POS_TAG_TRANSLATIONS = json.load(file)
@@ -373,16 +373,6 @@ class MainWindow:
         text.delete(1.0, tk.END)
         text.insert(tk.END, value)
         text.config(state=tk.DISABLED)
-
-    @staticmethod
-    def get_windows_scaling_factor():
-        # Windows API call to get DPI scaling (for Windows)
-        user32 = ctypes.windll.user32
-        user32.SetProcessDPIAware()  # Optional, allows Python process to be aware of the DPI
-        dpi = user32.GetDpiForSystem()
-        # Standard DPI is 96, so scale factor is based on that
-        scaling_factor = dpi / 96
-        return scaling_factor
 
     def get_carret_position(self):
         possible_carret = self.text_editor.count("1.0", self.text_editor.index(tk.INSERT), "chars")
@@ -1020,7 +1010,7 @@ class MainWindow:
     # SHOW SETTINGS WINDOW
     def show_analysis_settings(self):
         settings_window = AnalysisSettingsModal(self.root, self.config, lambda: self.analyze_text(True))
-        self.configure_modal(settings_window.toplevel, height=640, width=780)
+        self.configure_modal(settings_window.toplevel, height=660, width=780)
 
     # SHOW SETTINGS WINDOW
     def show_appearance_settings(self):
@@ -1060,7 +1050,7 @@ class MainWindow:
 
     def configure_modal(self, modal, width=600, height=400):
         if platform.system() == "Windows":
-            scaling_factor = MainWindow.get_windows_scaling_factor()
+            scaling_factor = Utils.get_windows_scaling_factor()
             width = width * scaling_factor
             height = height * scaling_factor
         modal.bind('<Escape>', lambda e: modal.destroy())
