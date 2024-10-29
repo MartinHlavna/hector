@@ -1073,4 +1073,5 @@ class MainWindow:
         modal.geometry("+%d+%d" % (x, y))
         modal.wait_visibility()
         modal.grab_set()
+        modal.focus_set()
         modal.transient(self.root)

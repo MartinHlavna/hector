@@ -156,7 +156,7 @@ class SimpleMenu:
     def _execute_command(self, command):
         if command:
             self._close_all_menus()
-            command()
+            self.root.after(0, lambda: command())
 
     def _handle_menu(self, command, submenu, button, index):
         self._execute_command(command)
@@ -229,7 +229,7 @@ class SimpleMenu:
 
     def _on_submenu_click(self, button):
         self._close_all_menus()
-        button.item.command()
+        self.root.after(0, lambda: button.item.command())
 
     def _on_submenu_focus(self, event, frame: tk.Frame, item: MenuItem, image_label: tk.Label, text_label: tk.Label, shortcut_label:tk.Label):
         frame.configure(background=self.foreground)
@@ -314,4 +314,4 @@ class SimpleMenu:
         if self.active_submenu and self.current_submenu_index != -1:
             selected_button = self.submenu_buttons[self.current_submenu_index]
             self._close_all_menus()
-            selected_button.item.command()
+            self.root.after(0, lambda: selected_button.item.command())
