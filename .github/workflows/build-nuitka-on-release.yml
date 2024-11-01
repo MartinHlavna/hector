@@ -21,9 +21,15 @@ jobs:
           - os: ubuntu-latest
             artifact_name: hector.bin
             asset_name: hector-linux-amd64.bin
+            disable_console: false
           - os: windows-latest
             artifact_name: hector.exe
             asset_name: hector-windows-amd64.exe
+            disable_console: true
+          - os: windows-latest
+            artifact_name: hector.exe
+            asset_name: hector-windows-amd64-debug.exe
+            disable_console: false
 #          - os: macos-latest
 #            artifact_name: hector.bin
 #            asset_name: hector-macos-arm64.bin
@@ -80,7 +86,7 @@ jobs:
             images=images
             fonts=fonts
             data_files=data_files
-          disable-console: true
+          disable-console: ${{ matrix.disable_console }}
           windows-icon-from-ico: images/hector-icon-white-edge.png
           macos-app-icon: images/hector-icon-white-edge.png
           #TODO #1: macos-create-app-bundle: true
