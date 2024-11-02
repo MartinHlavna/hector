@@ -16,8 +16,8 @@ Pre dalšie možnosti ako sa zapojiť si prečítajte [túto sekciu](CONTRIBUTIN
 
 ## NA STIAHNUTIE
 
-Windows: [0.10.0 Beta](https://github.com/MartinHlavna/hector/releases/download/v.0.10.0-beta/hector-windows-amd64.exe)
-Linux: [0.10.0 Beta](https://github.com/MartinHlavna/hector/releases/download/v.0.10.0-beta/hector-linux-amd64.bin)
+Windows: [0.10.2 Beta](https://github.com/MartinHlavna/hector/releases/download/v.0.10.2-beta/hector-windows-amd64.exe)
+Linux: [0.10.2 Beta](https://github.com/MartinHlavna/hector/releases/download/v.0.10.2-beta/hector-linux-amd64.bin)
 
 ## O programe
 
