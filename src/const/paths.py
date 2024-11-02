@@ -19,7 +19,7 @@ print(WORKING_DIRECTORY)
 print(RUN_DIRECTORY)
 # LOCATION OF CONFIG
 DATA_DIRECTORY = os.path.join(WORKING_DIRECTORY, "data")
-FONTS_DIRECTORY = os.path.join(WORKING_DIRECTORY, "fonts")
+FONTS_DIRECTORY = os.path.join(RUN_DIRECTORY, "fonts")
 FONT_AWESOME_DIRECTORY = os.path.join(FONTS_DIRECTORY, "fontawesome-free-6.6.0-desktop", "otfs")
 SPACY_MODELS_DIR = os.path.join(DATA_DIRECTORY, "spacy-models")
 SK_SPACY_MODEL_DIR = os.path.join(SPACY_MODELS_DIR, "sk")
