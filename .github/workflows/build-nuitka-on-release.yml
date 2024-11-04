@@ -99,9 +99,6 @@ jobs:
       - name: Setup tmate session
         uses: mxschmitt/action-tmate@v3
         if: ${{ github.event_name == 'workflow_dispatch' && inputs.debug_enabled }}
-      - name: Install Xvfb
-        if: matrix.os == 'ubuntu-latest'
-        run: sudo apt-get install xvfb
       - name: Execute linux binary
         id: execute-linux-binary
         if: matrix.os == 'ubuntu-latest'
