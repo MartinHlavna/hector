@@ -7,6 +7,7 @@ param (
 
 # Start the GUI program in the background
 $process = Start-Process -FilePath $ProgramPath -PassThru
+$processCrashed = $false
 
 # Wait for 60 seconds
 Start-Sleep -Seconds 60
@@ -17,6 +18,7 @@ if ($process.HasExited -eq $false) {
     $process.Kill()
     $process.WaitForExit()
 } else {
+    $processCrashed = $true
     Write-Host "Program exited before 60 seconds."
 }
 
@@ -27,9 +29,9 @@ $exitCode = $process.ExitCode
 Write-Host "Exit code: $exitCode"
 
 # Check if the program exited successfully
-if ($exitCode -eq 0) {
-    Write-Host "Program executed successfully."
-} else {
+if ($processCrashed) {
     Write-Host "Program terminated with exit code $exitCode."
     exit $exitCode
+} else {
+    Write-Host "Program executed successfully."
 }
