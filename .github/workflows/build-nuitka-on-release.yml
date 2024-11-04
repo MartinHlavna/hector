@@ -4,8 +4,10 @@
 name: Nuitka build
 
 on:
+  # RELEASE BUILD
   release:
     types: [published]
+  # MANUAL BUILD
   workflow_dispatch:
     inputs:
       debug_enabled:
@@ -13,6 +15,9 @@ on:
         description: 'Run the build with tmate debugging enabled (https://github.com/marketplace/actions/debugging-with-tmate)'
         required: false
         default: false
+  # NIGHTLY BUILD
+  schedule:
+    - cron: "0 0 * * *"
 
 permissions:
   contents: read
@@ -107,6 +112,12 @@ jobs:
           export DISPLAY=:99
           Xvfb :99 -screen 0 1024x768x16 &
           ${GITHUB_WORKSPACE}/.github/scripts/test-linux-binary.sh build/${{matrix.artifact_name}}
+      - name: Run GUI Program Test
+        if: matrix.os == 'windows-latest'
+        shell: pwsh
+        run: |
+          # Run the PowerShell script
+          ${GITHUB_WORKSPACE}/.github/scripts/test-windows-binary.sh -ProgramPath "build/${{ matrix.artifact_name }}"
       - name: Upload Artifacts
         uses: actions/upload-artifact@v4
         with:
