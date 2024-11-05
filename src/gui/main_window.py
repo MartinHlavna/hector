@@ -141,6 +141,11 @@ class MainWindow:
                          highlight_icon=Utils.fa_image(FA_SOLID, "white", "#3B3B3B", FontAwesomeIcons.rotate_right, 16),
                          shortcut="<Control-Shift-z>",
                          shortcut_label="Ctrl+Shift+Z"
+                         ),
+                MenuItem(label="Analyzovať všetko",
+                         command=lambda: self.analyze_text(force_reload=True),
+                         icon=Utils.fa_image(FA_SOLID, "#3B3B3B", "white", FontAwesomeIcons.rotate, 16),
+                         highlight_icon=Utils.fa_image(FA_SOLID, "white", "#3B3B3B", FontAwesomeIcons.rotate, 16),
                          )
             ]),
             MenuItem(label="Nastavenia", underline_index=0, submenu=[

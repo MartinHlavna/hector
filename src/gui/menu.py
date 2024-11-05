@@ -184,7 +184,7 @@ class SimpleMenu:
             width += 20
             has_icon = True
         if any(map(lambda i: i.shortcut_label, submenu_items)):
-            max_shortcut_label_length = len(max(submenu_items, key=lambda i: len(i.shortcut_label)).shortcut_label)
+            max_shortcut_label_length = len(max(submenu_items, key=lambda i: len(i.shortcut_label) if i.shortcut_label is not None else 0).shortcut_label)
             width += max_shortcut_label_length * 9
             has_shortcut = True
         height = len(submenu_items) * 26

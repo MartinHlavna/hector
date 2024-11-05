@@ -258,9 +258,9 @@ Okno má iba informačný charakter.
 
 ## Ďalšie nastavenia
 
-| Nastavenie                                      | Význam                                                                                                                                                 | Základná hodnota |
-|-------------------------------------------------|--------------------------------------------------------------------------------------------------------------------------------------------------------|------------------|
-| Optimalizácia výkonu pri drobných zmenách textu | Ak má text aspoň 100 znakov a používateľ zmenil menej než 20 znakov, tak sa Hector snaží optimalizovať výkon tak, že analyzuje iba zmenenú časť textu. | Zapnuté          |
+| Nastavenie                                      | Význam                                                                                                                                                                                                                                                                          | Základná hodnota |
+|-------------------------------------------------|---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|------------------|
+| Optimalizácia výkonu pri drobných zmenách textu | Ak má text aspoň 100 znakov a používateľ zmenil menej než 20 znakov, tak sa Hector snaží optimalizovať výkon tak, že analyzuje iba zmenenú časť textu. V prípade, že by došlo k neočakávaným problém je stále možnosť vynútiť plnú analýzu pomocou Upraviť -> Analyzovať všetko | Zapnuté          |
 
 ## Nastavenia vzhľadu
 
