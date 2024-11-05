@@ -16,9 +16,11 @@ dotiahnuť implementáciu na macOS.
 Pre dalšie možnosti ako sa zapojiť si prečítajte [túto sekciu](CONTRIBUTING.md)
 
 ## NA STIAHNUTIE
+Poznámka:
+Ak má súbor v názve ```debug``` ide o ladiacu verziu. Momentálne sa to používa len pre windows. Ladiaca verzia otvára aj konzolu z ktorej je možné v prípade chyby odčítať problém.
 
-Windows: [0.10.2 Beta](https://github.com/MartinHlavna/hector/releases/download/v.0.10.2-beta/hector-windows-amd64.exe)
-Linux: [0.10.2 Beta](https://github.com/MartinHlavna/hector/releases/download/v.0.10.2-beta/hector-linux-amd64.bin)
+<!-- BEGIN DOWNLOAD LINKS -->
+<!-- END DOWNLOAD LINKS -->
 
 ## O programe
 
