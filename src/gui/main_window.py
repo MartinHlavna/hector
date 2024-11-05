@@ -744,6 +744,10 @@ class MainWindow:
         except tk.TclError:
             clipboard_text = ''
 
+        # IF THERE SI SELECTED TEXT IN EDITOR, OVERWRITE IT WITH SELECTED TEXT
+        if event.widget.tag_ranges("sel"):
+            event.widget.delete("sel.first", "sel.last")
+
         # NORMALIZE TEXT
         text = Service.normalize_text(clipboard_text)
         event.widget.insert(tk.INSERT, text)
