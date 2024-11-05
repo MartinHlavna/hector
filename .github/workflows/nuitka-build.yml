@@ -137,3 +137,15 @@ jobs:
           asset_name: ${{ matrix.asset_name }}
           tag: ${{ github.ref }}
           overwrite: true
+  update_readme:
+    permissions: write-all
+    runs-on: 'ubuntu-latest'
+    needs: ['build']
+    if: |
+      github.event_name == 'release'
+    steps:
+      - name: Update download links
+        uses: peter-evans/repository-dispatch@v2
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          event-type: update-download-links
