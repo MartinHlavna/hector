@@ -4,8 +4,6 @@ from PIL import ImageTk, Image
 
 from src.const.colors import PRIMARY_COLOR
 from src.const.fonts import HELVETICA_FONT_NAME
-from src.const.values import VERSION
-from src.gui.main_window import MainWindow
 from src.utils import Utils
 
 
@@ -30,7 +28,7 @@ class SplashWindow:
         logo_holder = ttk.Label(self.main_frame, image=logo, background=PRIMARY_COLOR)
         logo_holder.image = logo
         logo_holder.pack()
-        self.status = tk.Label(self.main_frame, text=f"Verzia {VERSION}", background=PRIMARY_COLOR,
+        self.status = tk.Label(self.main_frame, text=f"Verzia {Utils.get_version_info()}", background=PRIMARY_COLOR,
                                font=(HELVETICA_FONT_NAME, 10), foreground="#ffffff")
         self.status.pack()
         self.status = tk.Label(self.main_frame, text="inicializujem...", background=PRIMARY_COLOR,

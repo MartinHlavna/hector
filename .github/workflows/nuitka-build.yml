@@ -60,7 +60,7 @@ jobs:
       - name: Install GCC for linux
         uses: egor-tensin/setup-gcc@v1.3
         if: matrix.os == 'ubuntu-latest'
-      - name: Install hunspell dependencies for linux
+      - name: Install dependencies for linux
         if: matrix.os == 'ubuntu-latest'
         run: sudo apt install -y autoconf libtool gettext autopoint
       - name: Install requirements for macOS
@@ -76,6 +76,20 @@ jobs:
           python -m pip install --upgrade pip
           pip install imageio
           pip install -r requirements.txt
+      - name: Update build.json
+        env:
+          CHANNEL: ${{ github.event_name == 'workflow_dispatch' || github.event_name == 'schedule'
+                   ? 'development'
+            : github.event_name == 'release' && github.event.release.prerelease == true
+                   ? 'beta'
+            : github.event_name == 'release' && github.event.release.prerelease == false
+                   ? 'stable'
+            : 'unknown'
+        }}
+        uses: restackio/update-json-file-action@2.1
+        with:
+          file: data_files/build.json
+          fields: "{'platform': '${{ runner.os }}', 'asset_name': '${{matrix.asset_name}}', channel: '${{CHANNEL}}'}"
       - name: Build Executable
         uses: Nuitka/Nuitka-Action@main
         with:

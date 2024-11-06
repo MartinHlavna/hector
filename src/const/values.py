@@ -5,4 +5,4 @@ SPACY_MODEL_NAME_WITH_VERSION = f"{SPACY_MODEL_NAME}-{SPACY_MODEL_VERSION}"
 DOCUMENTATION_LINK = "https://github.com/MartinHlavna/hector"
 SPACY_MODEL_LINK = f"https://github.com/MartinHlavna/hector-spacy-model/releases/download/v.{SPACY_MODEL_VERSION}/{SPACY_MODEL_NAME_WITH_VERSION}.tar.gz"
 NLP_BATCH_SIZE = 8000
-VERSION = "0.10.3 Beta"
+VERSION = "0.10.3"

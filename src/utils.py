@@ -1,9 +1,12 @@
 import ctypes
+import json
 import os
 import string
 
 from src.const.paths import RUN_DIRECTORY
 from PIL import ImageFont, ImageDraw, Image, ImageTk
+
+from src.const.values import VERSION
 
 
 # UTIL METHODS
@@ -29,3 +32,9 @@ class Utils:
         # Standard DPI is 96, so scale factor is based on that
         scaling_factor = dpi / 96
         return scaling_factor
+
+    @staticmethod
+    def get_version_info():
+        with open(Utils.resource_path(os.path.join('data_files', 'build_info.json')), 'r', encoding='utf-8') as file:
+            build_info = json.load(file)
+            return f'{VERSION} {build_info["channel"]} {build_info["platform"]}'
