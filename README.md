@@ -4,7 +4,7 @@
 
 # Hector
 
-![hector logo](https://github.com/MartinHlavna/hector/blob/main/images/hector-logo-white-bg.png?raw=true)
+![hector logo](https://github.com/MartinHlavna/hector/blob/main/images/hector-logo-white-bg-socials.png?raw=true)
 ![hector screen](https://github.com/MartinHlavna/hector/blob/main/screenshots/hector.png?raw=true)
 
 ## HELP WANTED
