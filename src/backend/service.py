@@ -22,7 +22,7 @@ from spacy.util import compile_infix_regex
 from src.const.grammar_error_types import GRAMMAR_ERROR_TYPE_MISSPELLED_WORD, GRAMMAR_ERROR_TYPE_WRONG_Y_SUFFIX, \
     GRAMMAR_ERROR_TYPE_WRONG_YSI_SUFFIX, GRAMMAR_ERROR_TYPE_WRONG_I_SUFFIX, GRAMMAR_ERROR_TYPE_WRONG_ISI_SUFFIX
 from src.const.paths import DATA_DIRECTORY, SPACY_MODELS_DIR, SK_SPACY_MODEL_DIR, DICTIONARY_DIR, SK_DICTIONARY_DIR, \
-    SK_SPELL_DICTIONARY_DIR
+    SK_SPELL_DICTIONARY_DIR, CURRENT_SK_SPACY_MODEL_DIR
 from src.const.values import SPACY_MODEL_NAME_WITH_VERSION, SPACY_MODEL_LINK, SPACY_MODEL_NAME, READABILITY_MAX_VALUE
 from src.domain.config import Config
 from src.domain.metadata import Metadata
@@ -70,6 +70,7 @@ class Service:
     # FUNCTION THAT INTIALIZES NLP ENGINE
     @staticmethod
     def initialize_nlp():
+        old_model_exists=False
         # INITIALIZE NLP ENGINE
         spacy.util.set_data_path = Utils.resource_path('lib/site-packages/spacy/data')
         if not os.path.isdir(DATA_DIRECTORY):
@@ -78,6 +79,13 @@ class Service:
             os.mkdir(SPACY_MODELS_DIR)
         if not os.path.isdir(SK_SPACY_MODEL_DIR):
             os.mkdir(SK_SPACY_MODEL_DIR)
+        else:
+            old_model_exists = True
+        if not os.path.isdir(CURRENT_SK_SPACY_MODEL_DIR):
+            # IF WE ARE UPGRADING SPACY MODEL, WE NEED TO REMOVE OLD MODELS
+            if old_model_exists:
+                shutil.rmtree(SK_SPACY_MODEL_DIR)
+                os.mkdir(SK_SPACY_MODEL_DIR)
             archive_file_name = os.path.join(SPACY_MODELS_DIR, f'{SPACY_MODEL_NAME_WITH_VERSION}.tar.gz')
             with urllib.request.urlopen(SPACY_MODEL_LINK) as response, open(archive_file_name, 'wb') as out_file:
                 shutil.copyfileobj(response, out_file)
