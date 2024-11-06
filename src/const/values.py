@@ -1,6 +1,6 @@
 READABILITY_MAX_VALUE = 50
 SPACY_MODEL_NAME = "sk_ud_sk_snk"
-SPACY_MODEL_VERSION = "1.0.0"
+SPACY_MODEL_VERSION = "1.1.0"
 SPACY_MODEL_NAME_WITH_VERSION = f"{SPACY_MODEL_NAME}-{SPACY_MODEL_VERSION}"
 DOCUMENTATION_LINK = "https://github.com/MartinHlavna/hector"
 SPACY_MODEL_LINK = f"https://github.com/MartinHlavna/hector-spacy-model/releases/download/v.{SPACY_MODEL_VERSION}/{SPACY_MODEL_NAME_WITH_VERSION}.tar.gz"
