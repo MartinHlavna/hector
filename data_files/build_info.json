@@ -1,4 +1,5 @@
 {
   "channel": "source",
-  "platform": null
+  "platform": null,
+  "asset_name": null
 }
