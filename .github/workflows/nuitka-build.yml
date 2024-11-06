@@ -79,7 +79,7 @@ jobs:
       - name: Update build.json
         uses: restackio/update-json-file-action@2.1
         with:
-          file: ${GITHUB_WORKSPACE}/data_files/build_info.json
+          file: ${{GITHUB_WORKSPACE}}/data_files/build_info.json
           fields: "{'platform': '${{ runner.os }}', 'asset_name': '${{matrix.asset_name}}', channel: '${{ github.event_name == 'workflow_dispatch' || github.event_name == 'schedule' && 'development' || github.event_name == 'release' && github.event.release.prerelease == true && 'beta' || github.event_name == 'release' && github.event.release.prerelease == false && 'stable'}}'}"
       - name: Build Executable
         uses: Nuitka/Nuitka-Action@main
