@@ -213,7 +213,8 @@ class MainWindow:
         # LEFT PANEL CONTENTS
         self.introspection_text = tk.Text(left_side_panel, highlightthickness=0, bd=0, wrap=tk.WORD, state=tk.DISABLED,
                                           width=30, background=PRIMARY_COLOR, foreground=PANEL_TEXT_COLOR, height=15,
-                                          font=(HELVETICA_FONT_NAME, 9))
+                                          font=(HELVETICA_FONT_NAME, 9), insertbackground=PANEL_TEXT_COLOR,
+                                          )
         if ENABLE_DEBUG_DEP_IMAGE:
             self.dep_image_holder = ttk.Label(left_side_panel, width=30)
             self.dep_image_holder.pack(pady=10, padx=10, side=tk.BOTTOM)
@@ -250,7 +251,8 @@ class MainWindow:
         self.text_editor = tk.Text(text_editor_outer_frame, wrap=tk.WORD, relief=tk.RAISED, highlightthickness=0,
                                    yscrollcommand=text_editor_scroll.set, background=TEXT_EDITOR_BG,
                                    foreground=EDITOR_TEXT_COLOR, borderwidth=0,
-                                   spacing1=1.2, spacing2=1.2, spacing3=1.2, undo=True, autoseparators=True, maxundo=-1)
+                                   spacing1=1.2, spacing2=1.2, spacing3=1.2, undo=True, autoseparators=True, maxundo=-1,
+                                   insertbackground=PANEL_TEXT_COLOR)
         self.text_editor.config(font=(HELVETICA_FONT_NAME, self.text_size), )
         self.text_editor.pack(expand=1, fill=tk.BOTH, padx=20, pady=20)
         text_editor_outer_frame.pack_propagate(False)
