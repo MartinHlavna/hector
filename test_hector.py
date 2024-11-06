@@ -251,7 +251,7 @@ def test_find_dangling_quote_marks(setup_teardown):
 def test_readability(setup_teardown):
     nlp = setup_teardown[0]
     doc = Service.full_nlp(TEST_TEXT_4, nlp, NLP_BATCH_SIZE, Config())
-    assert Service.evaluate_readability(doc) == 9
+    assert Service.evaluate_readability(doc) == 8
 
 
 def test_word_frequencies(setup_teardown):

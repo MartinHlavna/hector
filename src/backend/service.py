@@ -393,8 +393,13 @@ class Service:
     def evaluate_readability(doc: Doc):
         if doc._.total_words <= 1:
             return 0
+        # SHORTER THAN 3 CHAR SENTENCES ARE JUST GARBAGE
+        sentence_count = 0
+        for sent in doc.sents:
+            if len(sent.text) > 2:
+                sentence_count += 1
         type_to_token_ratio = doc._.total_words / doc._.total_unique_words
-        average_sentence_length = doc._.total_words / sum(1 for _ in doc.sents)
+        average_sentence_length = doc._.total_words / sentence_count
         average_word_length = doc._.total_chars / doc._.total_words / 2
         mistrik_index = READABILITY_MAX_VALUE - ((average_sentence_length * average_word_length) / type_to_token_ratio)
         return READABILITY_MAX_VALUE - max(0.0, round(mistrik_index, 0))
