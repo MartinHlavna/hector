@@ -80,7 +80,7 @@ jobs:
         uses: restackio/update-json-file-action@2.1
         with:
           file: data_files/build_info.json
-          fields: "{platform: '${{ runner.os }}', asset_name: '${{matrix.asset_name}}', channel: '${{ github.event_name == 'workflow_dispatch' || github.event_name == 'schedule' && 'development' || github.event_name == 'release' && github.event.release.prerelease == true && 'beta' || github.event_name == 'release' && github.event.release.prerelease == false && 'stable'}}'}"
+          fields: "{'platform': '${{ runner.os }}', 'asset_name': '${{matrix.asset_name}}', 'channel': '${{ github.event_name == 'workflow_dispatch' || github.event_name == 'schedule' && 'development' || github.event_name == 'release' && github.event.release.prerelease == true && 'beta' || github.event_name == 'release' && github.event.release.prerelease == false && 'stable'}}'}"
       - name: Build Executable
         uses: Nuitka/Nuitka-Action@main
         with:
