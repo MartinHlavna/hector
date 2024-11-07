@@ -10,3 +10,5 @@ pytest~=8.2.2
 pythes @ git+https://github.com/corerd/pythes
 tkinter-autoscrollbar @ git+https://github.com/MartinHlavna/tkinter-autoscrollbar
 pypandoc~=1.14
+requests~=2.32.3
+semver~=3.0.2
