@@ -22,30 +22,27 @@ on:
 permissions:
   contents: read
 
-env:
-  UPDATE_CHANNEL: "unkwnown"
-
 jobs:
   compute_update_channel:
+    outputs:
+      update_channel: ${{ steps.set_update_channel.outputs.update_channel }}
     runs-on: ubuntu-latest
     steps:
       - name: Set update channel
+        id: set_update_channel
         env:
           EVENT_NAME: ${{ github.event_name }}
           PRERELEASE: ${{ github.event.release.prerelease || 'false' }}
         run: |
           if [[ "${{ env.EVENT_NAME }}" == "workflow_dispatch" || "${{ env.EVENT_NAME }}" == "schedule" ]]; then
-            echo "UPDATE_CHANNEL=development" >> $GITHUB_ENV
+            echo "update_channel=development" >> $GITHUB_OUTPUT
           elif [[ "${{ env.EVENT_NAME }}" == "release" && "${{ env.PRERELEASE }}" == "true" ]]; then
-            echo "UPDATE_CHANNEL=beta" >> $GITHUB_ENV
+            echo "update_channel=beta" >> $GITHUB_OUTPUT
           elif [[ "${{ env.EVENT_NAME }}" == "release" && "${{ env.PRERELEASE }}" == "false" ]]; then
-            echo "UPDATE_CHANNEL=stable" >> $GITHUB_ENV
+            echo "update_channel=stable" >> $GITHUB_OUTPUT
           else
-            echo "UPDATE_CHANNEL=failed" >> $GITHUB_ENV
-          fi
-      - name: Check update
-        run: |
-         echo "${{env.UPDATE_CHANNEL}}"    
+            exit 1
+          fi   
 
   build:
     needs: [ 'compute_update_channel' ]
@@ -105,7 +102,7 @@ jobs:
         uses: restackio/update-json-file-action@2.1
         with:
           file: data_files/build_info.json
-          fields: "{\"platform\": \"${{ runner.os }}\", \"asset_name\": \"${{matrix.asset_name}}\", \"channel\": \"${{env.UPDATE_CHANNEL}}\"}"
+          fields: "{\"platform\": \"${{ runner.os }}\", \"asset_name\": \"${{matrix.asset_name}}\", \"channel\": \"${{needs.compute_update_channel.outputs.update_channel}}\"}"
       - name: Build Executable
         uses: Nuitka/Nuitka-Action@main
         with:
