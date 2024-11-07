@@ -24,7 +24,7 @@ class Utils:
     def fa_image(font, background, foreground, char, size, padding=2):
         img = Image.new("L", (size, size), background)
         draw = ImageDraw.Draw(img)
-        font_awesome = ImageFont.truetype(font, size-(padding*2))
+        font_awesome = ImageFont.truetype(font, size - (padding * 2))
         draw.text((padding, padding), char, foreground, font_awesome)
         return ImageTk.PhotoImage(img)
 
@@ -39,10 +39,14 @@ class Utils:
         return scaling_factor
 
     @staticmethod
-    def get_version_info():
+    def get_build_info():
         with open(Utils.resource_path(os.path.join('data_files', 'build_info.json')), 'r', encoding='utf-8') as file:
-            build_info = json.load(file)
-            return f'{VERSION} {build_info["channel"]} {build_info["platform"]}'
+            return json.load(file)
+
+    @staticmethod
+    def get_version_info():
+        build_info = Utils.get_build_info()
+        return f'{VERSION} {build_info["channel"]} {build_info["platform"]}'
 
     def extract_version_from_tag(tag: str) -> str:
         """
@@ -55,10 +59,11 @@ class Utils:
         return match.group(1) if match else None
 
     @staticmethod
-    def check_latest_version(beta: bool = False) -> bool:
+    def check_updates(current_version: string, beta: bool = False) -> bool:
         """
         Fetches the latest release version from a GitHub repository.
 
+        :param current_version: Current version.
         :param beta: If True, includes prerelease versions.
         :return: Tag name of the latest release or prerelease version, or None if unavailable.
         """
@@ -84,5 +89,3 @@ class Utils:
         except requests.RequestException:
             print("Unable to retrieve data. Please check your internet connection.")
             return None
-
-

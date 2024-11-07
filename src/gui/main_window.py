@@ -96,7 +96,7 @@ with open(Utils.resource_path(os.path.join('data_files', 'dep_tag_translations.j
 
 # MAIN GUI WINDOW
 class MainWindow:
-    def __init__(self, r, _nlp: spacy, spellcheck_dictionary: Hunspell, thesaurus: PyThes):
+    def __init__(self, r, _nlp: spacy, spellcheck_dictionary: Hunspell, thesaurus: PyThes, has_available_update: bool):
         self.root = r
         r.overrideredirect(False)
         style = ttk.Style(self.root)
@@ -143,6 +143,7 @@ class MainWindow:
         self.config = Service.load_config(CONFIG_FILE_PATH)
         # LOAD METADATA
         self.metadata = Service.load_metadata(METADATA_FILE_PATH)
+        self.has_available_update = has_available_update
         # INIT GUI
         # TOP MENU
         # Define menu items
@@ -408,6 +409,8 @@ class MainWindow:
     # START MAIN LOOP
     def start_main_loop(self):
         # START MAIN LOOP TO SHOW ROOT WINDOW
+        if self.has_available_update:
+            self.root.after(1000, self.show_about)
         self.root.mainloop()
 
     # UTIL METHOD TO SET tk.TEXT WIDGET
@@ -1084,6 +1087,10 @@ class MainWindow:
         link = tk.Label(about_window, text="Viac info", fg="blue", cursor="hand2", font=(HELVETICA_FONT_NAME, 10))
         link.pack()
         link.bind("<Button-1>", lambda e: webbrowser.open(DOCUMENTATION_LINK))
+        if self.has_available_update:
+            new_version_button = tk.Label(about_window, text="K dispozícií je nová verzia", fg="blue", cursor="hand2", font=(HELVETICA_FONT_NAME, 10))
+            new_version_button.pack()
+            new_version_button.bind("<Button-1>", lambda e: webbrowser.open(DOCUMENTATION_LINK))
 
     def show_dep_image(self, event=None):
         if self.current_instrospection_token is not None:

@@ -35,7 +35,7 @@ jobs:
           PRERELEASE: ${{ github.event.release.prerelease || 'false' }}
         run: |
           if [[ "${{ env.EVENT_NAME }}" == "workflow_dispatch" || "${{ env.EVENT_NAME }}" == "schedule" ]]; then
-            echo "update_channel=development" >> $GITHUB_OUTPUT
+            echo "update_channel=dev" >> $GITHUB_OUTPUT
           elif [[ "${{ env.EVENT_NAME }}" == "release" && "${{ env.PRERELEASE }}" == "true" ]]; then
             echo "update_channel=beta" >> $GITHUB_OUTPUT
           elif [[ "${{ env.EVENT_NAME }}" == "release" && "${{ env.PRERELEASE }}" == "false" ]]; then

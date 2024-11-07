@@ -6,6 +6,7 @@ import pypandoc
 from ttkthemes import ThemedTk
 
 from src.backend.service import Service
+from src.const.values import VERSION
 from src.gui.main_window import MainWindow
 from src.gui.splash_window import SplashWindow
 from src.utils import Utils
@@ -24,9 +25,14 @@ splash.update_status("sťahujem a inicializujem slovník...")
 dictionaries = Service.initialize_dictionaries()
 splash.update_status("sťahujem pandoc...")
 Service.download_pandoc()
-splash.update_status("inicializujem textový processor...")
 splash.update_status("kontrolujem aktualizácie...")
-has_update = Utils.check_latest_version(True)
+has_available_update = False
+build_info = Utils.get_build_info()
+if build_info['channel'] == "beta":
+    has_available_update = Utils.check_updates(VERSION, True)
+if build_info['channel'] == "stable":
+    has_available_update = Utils.check_updates(VERSION, False)
+splash.update_status("inicializujem textový processor...")
 splash.close()
-main_window = MainWindow(root, nlp, dictionaries["spellcheck"], dictionaries["thesaurus"])
+main_window = MainWindow(root, nlp, dictionaries["spellcheck"], dictionaries["thesaurus"], has_available_update)
 main_window.start_main_loop()
