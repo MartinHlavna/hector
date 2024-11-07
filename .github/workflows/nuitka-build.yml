@@ -41,7 +41,7 @@ jobs:
           elif [[ "${{ env.EVENT_NAME }}" == "release" && "${{ env.PRERELEASE }}" == "false" ]]; then
             echo "UPDATE_CHANNEL=stable" >> $GITHUB_ENV
           else
-            echo "UPDATE_CHANNEL=unknown" >> $GITHUB_ENV
+            echo "UPDATE_CHANNEL=failed" >> $GITHUB_ENV
           fi
 
   build:
