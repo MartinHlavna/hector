@@ -11,16 +11,17 @@ from src.utils import Utils
 class SplashWindow:
     def __init__(self, r):
         self.root = r
-        self.root.geometry("600x400")
+        self.splash = tk.Toplevel(self.root)
+        self.splash.geometry("600x400")
+        self.splash.overrideredirect(True)
         screen_width = self.root.winfo_screenwidth()
         screen_height = self.root.winfo_screenheight()
         x = screen_width / 2 - 300
         y = screen_height / 2 - 200
 
-        self.root.geometry("+%d+%d" % (x, y))
-        self.root.overrideredirect(True)
+        self.splash.geometry("+%d+%d" % (x, y))
         # MAIN FRAME
-        self.main_frame = tk.Frame(self.root, background=PRIMARY_COLOR)
+        self.main_frame = tk.Frame(self.splash, background=PRIMARY_COLOR)
         self.main_frame.pack(expand=1, fill=tk.BOTH, side=tk.LEFT)
         image = Image.open(Utils.resource_path("images/hector-logo-white-text.png"))
         logo = ImageTk.PhotoImage(image.resize((300, 300)))
@@ -38,7 +39,7 @@ class SplashWindow:
         self.root.update()
 
     def close(self):
-        self.main_frame.destroy()
+        self.splash.destroy()
 
     def update_status(self, text):
         self.status.config(text=text)

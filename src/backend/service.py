@@ -47,6 +47,7 @@ class Service:
     @staticmethod
     def download_pandoc():
         """Download pandoc if not already installed"""
+
     try:
         # Check whether it is already installed
         pypandoc.get_pandoc_version()
@@ -70,7 +71,7 @@ class Service:
     # FUNCTION THAT INTIALIZES NLP ENGINE
     @staticmethod
     def initialize_nlp():
-        old_model_exists=False
+        old_model_exists = False
         # INITIALIZE NLP ENGINE
         spacy.util.set_data_path = Utils.resource_path('lib/site-packages/spacy/data')
         if not os.path.isdir(DATA_DIRECTORY):
@@ -135,6 +136,12 @@ class Service:
         Span.set_extension("is_long_sentence", default=False, force=True)
         return nlp
 
+    # FUNCTION THAT DELETED NLP DICTIONARIES
+    @staticmethod
+    def delete_dictionaries():
+        if os.path.isdir(SK_DICTIONARY_DIR):
+            shutil.rmtree(SK_DICTIONARY_DIR)
+
     # FUNCTION THAT INTIALIZES NLP DICTIONARIES
     @staticmethod
     def initialize_dictionaries(github_token=None, github_user=None):
@@ -142,9 +149,11 @@ class Service:
             os.mkdir(DICTIONARY_DIR)
         if not os.path.isdir(SK_DICTIONARY_DIR):
             os.mkdir(SK_DICTIONARY_DIR)
-            fs = fsspec.filesystem("github", org="LibreOffice", repo="dictionaries", token=github_token, username=github_user)
+            fs = fsspec.filesystem("github", org="LibreOffice", repo="dictionaries", token=github_token,
+                                   username=github_user)
             fs.get(fs.ls("sk_SK"), SK_DICTIONARY_DIR, recursive=True)
-            fs = fsspec.filesystem("github", org="sk-spell", repo="hunspell-sk", token=github_token, username=github_user)
+            fs = fsspec.filesystem("github", org="sk-spell", repo="hunspell-sk", token=github_token,
+                                   username=github_user)
             fs.get(fs.ls("/"), SK_SPELL_DICTIONARY_DIR, recursive=True)
         return {
             "spellcheck": Hunspell('sk_SK', hunspell_data_dir=SK_SPELL_DICTIONARY_DIR),

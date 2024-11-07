@@ -37,46 +37,7 @@ from src.const.values import READABILITY_MAX_VALUE, DOCUMENTATION_LINK, NLP_BATC
 from src.gui.analysis_settings_modal import AnalysisSettingsModal
 from src.gui.appearance_settings_modal import AppearanceSettingsModal
 from src.gui.menu import MenuItem, SimpleMenu
-from src.utils import Utils
-import io
-import json
-import math
-import os
-import platform
-import random
-import re
-import tkinter as tk
-import webbrowser
-from tkinter import filedialog, ttk
-
-import spacy
-from PIL import ImageTk, Image
-from hunspell import Hunspell
-from pythes import PyThes
-from reportlab.graphics import renderPM
-from spacy import displacy
-from spacy.tokens import Doc
-from svglib.svglib import svg2rlg
-from tkinter_autoscrollbar import AutoScrollbar
-
-from src.backend.service import Service
-from src.const.colors import PRIMARY_COLOR, ACCENT_COLOR, ACCENT_2_COLOR, TEXT_EDITOR_FRAME_BG, PANEL_TEXT_COLOR, \
-    TEXT_EDITOR_BG, EDITOR_TEXT_COLOR, CLOSE_WORDS_PALLETE, LONG_SENTENCE_HIGHLIGHT_COLOR_MID, \
-    LONG_SENTENCE_HIGHLIGHT_COLOR_HIGH, SEARCH_RESULT_HIGHLIGHT_COLOR, CURRENT_SEARCH_RESULT_HIGHLIGHT_COLOR
-from src.const.font_awesome_icons import FontAwesomeIcons
-from src.const.fonts import HELVETICA_FONT_NAME, TEXT_SIZE_SECTION_HEADER, TEXT_SIZE_BOTTOM_BAR, BOLD_FONT, FA_SOLID
-from src.const.grammar_error_types import GRAMMAR_ERROR_TYPE_MISSPELLED_WORD, GRAMMAR_ERROR_TYPE_WRONG_Y_SUFFIX, \
-    GRAMMAR_ERROR_TYPE_WRONG_I_SUFFIX, GRAMMAR_ERROR_TYPE_WRONG_YSI_SUFFIX, GRAMMAR_ERROR_TYPE_WRONG_ISI_SUFFIX
-from src.const.paths import CONFIG_FILE_PATH, METADATA_FILE_PATH
-from src.const.tags import CLOSE_WORD_PREFIX, LONG_SENTENCE_TAG_NAME_HIGH, LONG_SENTENCE_TAG_NAME_MID, \
-    PARAGRAPH_TAG_NAME, TRAILING_SPACES_TAG_NAME, MULTIPLE_PUNCTUATION_TAG_NAME, MULTIPLE_SPACES_TAG_NAME, \
-    SEARCH_RESULT_TAG_NAME, CURRENT_SEARCH_RESULT_TAG_NAME, GRAMMAR_ERROR_TAG_NAME, CLOSE_WORD_TAG_NAME, \
-    FREQUENT_WORD_PREFIX, FREQUENT_WORD_TAG_NAME, COMPUTER_QUOTE_MARKS_TAG_NAME, DANGLING_QUOTE_MARK_TAG_NAME, \
-    SHOULD_USE_LOWER_QUOTE_MARK_TAG_NAME, SHOULD_USE_UPPER_QUOTE_MARK_TAG_NAME
-from src.const.values import READABILITY_MAX_VALUE, DOCUMENTATION_LINK, NLP_BATCH_SIZE
-from src.gui.analysis_settings_modal import AnalysisSettingsModal
-from src.gui.appearance_settings_modal import AppearanceSettingsModal
-from src.gui.menu import MenuItem, SimpleMenu
+from src.gui.splash_window import SplashWindow
 from src.utils import Utils
 
 # A4 SIZE IN INCHES. WE LATER USE DPI TO SET EDITOR WIDTH
@@ -226,6 +187,12 @@ class MainWindow:
                     icon=Utils.fa_image(FA_SOLID, "#3B3B3B", "white", FontAwesomeIcons.book, 16),
                     highlight_icon=Utils.fa_image(FA_SOLID, "white", "#3B3B3B", FontAwesomeIcons.book, 16),
                     command=lambda: webbrowser.open(DOCUMENTATION_LINK)
+                ),
+                MenuItem(
+                    label="Aktualizovať slovníky",
+                    icon=Utils.fa_image(FA_SOLID, "#3B3B3B", "white", FontAwesomeIcons.download, 16),
+                    highlight_icon=Utils.fa_image(FA_SOLID, "white", "#3B3B3B", FontAwesomeIcons.download, 16),
+                    command=self.update_dictionaries
                 )
             ])
         ]
@@ -1088,9 +1055,20 @@ class MainWindow:
         link.pack()
         link.bind("<Button-1>", lambda e: webbrowser.open(DOCUMENTATION_LINK))
         if self.has_available_update:
-            new_version_button = tk.Label(about_window, text="K dispozícií je nová verzia", fg="blue", cursor="hand2", font=(HELVETICA_FONT_NAME, 10))
+            new_version_button = tk.Label(about_window, text="K dispozícií je nová verzia", fg="blue", cursor="hand2",
+                                          font=(HELVETICA_FONT_NAME, 10))
             new_version_button.pack()
             new_version_button.bind("<Button-1>", lambda e: webbrowser.open(DOCUMENTATION_LINK))
+
+    # SHOW ABOUT DIALOG
+    def update_dictionaries(self):
+        splash = SplashWindow(self.root)
+        splash.update_status("aktualizujem a reinicializujem slovníky...")
+        Service.delete_dictionaries()
+        dictionaries = Service.initialize_dictionaries()
+        self.spellcheck_dictionary = dictionaries["spellcheck"];
+        self.thesaurus =dictionaries["thesaurus"]
+        splash.close()
 
     def show_dep_image(self, event=None):
         if self.current_instrospection_token is not None:

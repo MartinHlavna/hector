@@ -11,3 +11,4 @@ class FontAwesomeIcons:
     question_circle = '\uf059'
     magnifying_glass = '\uf002'
     rotate = '\uf2f1'
+    download = '\uf019'
