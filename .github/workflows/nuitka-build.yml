@@ -34,11 +34,11 @@ jobs:
           EVENT_NAME: ${{ github.event_name }}
           PRERELEASE: ${{ github.event.release.prerelease || 'false' }}
         run: |
-          if [[ "$EVENT_NAME" == "workflow_dispatch" || "$EVENT_NAME" == "schedule" ]]; then
+          if [[ "${{ env.EVENT_NAME }}" == "workflow_dispatch" || "${{ env.EVENT_NAME }}" == "schedule" ]]; then
             echo "UPDATE_CHANNEL=development" >> $GITHUB_ENV
-          elif [[ "$EVENT_NAME" == "release" && "$PRERELEASE" == "true" ]]; then
+          elif [[ "${{ env.EVENT_NAME }}" == "release" && "${{ env.PRERELEASE }}" == "true" ]]; then
             echo "UPDATE_CHANNEL=beta" >> $GITHUB_ENV
-          elif [[ "$EVENT_NAME" == "release" && "$PRERELEASE" == "false" ]]; then
+          elif [[ "${{ env.EVENT_NAME }}" == "release" && "${{ env.PRERELEASE }}" == "false" ]]; then
             echo "UPDATE_CHANNEL=stable" >> $GITHUB_ENV
           else
             echo "UPDATE_CHANNEL=unknown" >> $GITHUB_ENV
@@ -102,7 +102,7 @@ jobs:
         uses: restackio/update-json-file-action@2.1
         with:
           file: data_files/build_info.json
-          fields: "{\"platform\": \"${{ runner.os }}\", \"asset_name\": \"${{matrix.asset_name}}\", \"channel\": \"$UPDATE_CHANNEL\"}"
+          fields: "{\"platform\": \"${{ runner.os }}\", \"asset_name\": \"${{matrix.asset_name}}\", \"channel\": \"${{env.UPDATE_CHANNEL}}\"}"
       - name: Build Executable
         uses: Nuitka/Nuitka-Action@main
         with:
