@@ -43,6 +43,9 @@ jobs:
           else
             echo "UPDATE_CHANNEL=failed" >> $GITHUB_ENV
           fi
+      - name: Check update
+        run: |
+         echo "${{env.UPDATE_CHANNEL}}"    
 
   build:
     needs: [ 'compute_update_channel' ]
