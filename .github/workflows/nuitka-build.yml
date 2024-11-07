@@ -23,7 +23,7 @@ permissions:
   contents: read
 
 env:
-  UPDATE_CHANNEL: "development"
+  UPDATE_CHANNEL: "unkwnown"
 
 jobs:
   compute_update_channel:
