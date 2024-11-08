@@ -119,20 +119,12 @@ jobs:
             build/*.exe
             build/*.app/**/*
           compression-level: 0 #NUITKA ALREADY COMPRESSES
-      - name: Try to execute linux binary
-        id: execute-linux-binary
-        if: matrix.os == 'ubuntu-latest'
-        run: |
-          sudo apt-get install xvfb
-          export DISPLAY=:99
-          Xvfb :99 -screen 0 1024x768x16 &
-          ${GITHUB_WORKSPACE}/.github/scripts/test-linux-binary.sh build/${{matrix.artifact_name}}
-      - name: Try to execute windows binary
-        if: matrix.os == 'windows-latest'
-        shell: pwsh
-        run: |
-          # Run the PowerShell script
-          & "${env:GITHUB_WORKSPACE}\.github\scripts\test-windows-binary.ps1" -ProgramPath "build\${{ matrix.artifact_name }}"
+      - name: Test binary
+        id: test-binary
+        uses: ./.github/actions/test-binary
+        with:
+          os: ${{matrix.os}}
+          path: build/${{matrix.artifact_name}}
       - name: Upload binary to release
         if: |
           github.event_name == 'release'

@@ -1,0 +1,31 @@
+name: Generate licence check report
+description: Chech licences of dependencies
+# Schema: https://json.schemastore.org/github-action.json
+
+inputs:
+  os:
+    description: 'Os to run against'
+    required: true
+  path:
+    description: 'Binary path to execute'
+    required: true
+
+runs:
+  using: 'composite'
+  steps:
+    - name: Try to execute linux binary
+      shell: bash
+      id: execute-linux-binary
+      if: inputs.os == 'ubuntu-latest'
+      run: |
+        sudo apt-get install xvfb
+        export DISPLAY=:99
+        Xvfb :99 -screen 0 1024x768x16 &
+        ${GITHUB_WORKSPACE}/.github/scripts/test-linux-binary.sh ${{inputs.path}}
+    - name: Try to execute windows binary
+      if: inputs.os == 'windows-latest'
+      shell: pwsh
+      run: |
+        # Run the PowerShell script
+        $path = "${{inputs.path}}".replace('/','\')
+        & "${env:GITHUB_WORKSPACE}\.github\scripts\test-windows-binary.ps1" -ProgramPath $path"
