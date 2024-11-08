@@ -30,7 +30,7 @@ jobs:
     steps:
     - name: Setup hector enviroment
       id: reusable-steps
-      uses: ./.github/actions/setup-hector-enviroment.yml
+      uses: ./.github/actions/setup-hector-enviroment
     - name: Check package licences
       if: matrix.os == 'ubuntu-latest'
       id: license_check_report
