@@ -74,30 +74,12 @@ jobs:
 
     steps:
       - uses: actions/checkout@v4
-      - name: Set up Python 3.11
-        uses: actions/setup-python@v5
-        with:
-          python-version: "3.11"
-          cache: 'pip'
-      - name: Install GCC for linux
-        uses: egor-tensin/setup-gcc@v1.3
-        if: matrix.os == 'ubuntu-latest'
-      - name: Install dependencies for linux
-        if: matrix.os == 'ubuntu-latest'
-        run: sudo apt install -y autoconf libtool gettext autopoint
-      - name: Install requirements for macOS
-        if: matrix.os == 'macos-latest' || matrix.os == 'macos-13'
-        run: brew install automake autoconf libtool
-      - name: Symlink tcl 8.6 for macos-13
-        if: matrix.os == 'macos-13'
+      - name: Setup hector enviroment
+        id: reusable-steps
+        uses: ./.github/actions/setup-hector-enviroment
+      - name: Install additional dependencies
         run: |
-          ln -s /Users/runner/hostedtoolcache/PyPy/3.7.13/x64/lib/libtcl8.6.dylib /usr/local/lib/libtcl8.6.dylib
-          ln -s /Users/runner/hostedtoolcache/PyPy/3.7.13/x64/lib/libtk8.6.dylib /usr/local/lib/libtk8.6.dylib
-      - name: Install dependencies
-        run: |
-          python -m pip install --upgrade pip
           pip install imageio
-          pip install -r requirements.txt
       - name: Update build.json
         uses: restackio/update-json-file-action@2.1
         with:
@@ -128,9 +110,6 @@ jobs:
           windows-icon-from-ico: images/hector-icon-white-edge.png
           macos-app-icon: images/hector-icon-white-edge.png
           #TODO #1: macos-create-app-bundle: true
-      - name: Setup tmate session
-        uses: mxschmitt/action-tmate@v3
-        if: ${{ github.event_name == 'workflow_dispatch' && inputs.debug_enabled }}
       - name: Upload Artifacts
         uses: actions/upload-artifact@v4
         with:

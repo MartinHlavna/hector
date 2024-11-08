@@ -2,7 +2,6 @@ import ctypes
 import platform
 import tkinter as tk
 
-import pypandoc
 from ttkthemes import ThemedTk
 
 from src.backend.service import Service
