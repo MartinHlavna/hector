@@ -14,7 +14,7 @@ $stderrLog = "stderr.log"
 
 # Start the GUI program in the background
 $process = Start-Process -FilePath $ProgramPath `
-                         -ArgumentList "github_token=$GithubToken", "github_user=$GithubUser" `
+                         -ArgumentList "--github_token=$GithubToken", "--github_user=$GithubUser" `
                          -RedirectStandardOutput $stdoutLog `
                          -RedirectStandardError $stderrLog `
                          -PassThru
