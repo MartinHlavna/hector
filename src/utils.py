@@ -59,7 +59,8 @@ class Utils:
         return match.group(1) if match else None
 
     @staticmethod
-    def check_updates(current_version: string, beta: bool = False) -> bool:
+    def check_updates(current_version: string, beta: bool = False, github_token: string = None,
+                      github_user: string = None) -> bool:
         """
         Fetches the latest release version from a GitHub repository.
 
@@ -69,7 +70,10 @@ class Utils:
         """
         url = f"https://api.github.com/repos/{GITHUB_REPO}/releases"
         try:
-            response = requests.get(url, timeout=10)
+            headers = {}
+            if github_token is not None:
+                headers['Authorization'] = f'Bearer {github_token}'
+            response = requests.get(url, timeout=10, headers=headers)
             response.raise_for_status()  # Raise an error for HTTP errors
             releases = response.json()
 
@@ -82,7 +86,7 @@ class Utils:
             # Get the latest release (GitHub returns them in descending order by release date)
             if releases:
                 latest_version = VersionInfo.parse(Utils.extract_version_from_tag(releases[0]['tag_name']))
-                current_version = VersionInfo.parse(VERSION)
+                current_version = VersionInfo.parse(current_version)
                 return latest_version > current_version
             return False
 

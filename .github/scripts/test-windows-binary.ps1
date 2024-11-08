@@ -5,8 +5,18 @@ param (
     [string]$ProgramPath
 )
 
+param (
+    [Parameter(Mandatory = $true)]
+    [string]$GithubToken
+)
+
+param (
+    [Parameter(Mandatory = $true)]
+    [string]$GithubUser
+)
+
 # Start the GUI program in the background
-$process = Start-Process -FilePath $ProgramPath -PassThru
+$process = Start-Process -FilePath $ProgramPath -ArgumentList "github_token=$GithubToken", "github_user=$GithubUser" -PassThru
 $processCrashed = $false
 
 # Wait for 60 seconds

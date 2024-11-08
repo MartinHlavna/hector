@@ -2,7 +2,7 @@
 
 set +e
 # Start the GUI program in the background
-$1 &
+$1 --github_token="$2" --github_user="$3" &
 PID=$!
 
 # Wait for 60 seconds
