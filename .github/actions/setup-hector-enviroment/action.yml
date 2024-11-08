@@ -2,18 +2,6 @@ name: Setup hector enviroment
 description: Setup python and dependencies
 # Schema: https://json.schemastore.org/github-action.json
 
-inputs:
-  reusable_input:
-    description: 'Input to the reusable workflow'
-    required: true
-  filename:
-    required: true
-outputs:
-  # Map the action output(s) to step output(s)
-  reusable_output:
-    description: 'Output from the reusable workflow'
-    value: ${{ steps.process-step.outputs.step_output }}
-
 runs:
   using: 'composite'
   steps:

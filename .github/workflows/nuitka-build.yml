@@ -75,7 +75,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - name: Setup hector enviroment
-        id: reusable-steps
+        id: setup-hector-enviroment
         uses: ./.github/actions/setup-hector-enviroment
       - name: Install additional dependencies
         run: |
