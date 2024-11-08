@@ -1,0 +1,44 @@
+name: Setup hector enviroment
+description: Setup python and dependencies
+# Schema: https://json.schemastore.org/github-action.json
+
+inputs:
+  reusable_input:
+    description: 'Input to the reusable workflow'
+    required: true
+  filename:
+    required: true
+outputs:
+  # Map the action output(s) to step output(s)
+  reusable_output:
+    description: 'Output from the reusable workflow'
+    value: ${{ steps.process-step.outputs.step_output }}
+
+runs:
+  using: 'composite'
+  steps:
+    - uses: actions/checkout@v4
+    - name: Set up Python 3.11
+      uses: actions/setup-python@v5
+      with:
+        python-version: "3.11"
+        cache: 'pip'
+        check-latest: true
+    - name: Install GCC for linux
+      uses: egor-tensin/setup-gcc@v1.3
+      if: matrix.os == 'ubuntu-latest'
+    - name: Install hunspell requirements for linux
+      if: matrix.os == 'ubuntu-latest'
+      shell: bash
+      run: sudo apt install -y autoconf libtool gettext autopoint
+    - name: Install requirements for macOS
+      shell: bash
+      if: matrix.os == 'macos-latest' || matrix.os == 'macos-13' || matrix.os == 'macos-12'
+      run: brew install automake autoconf libtool
+    - name: Install dependencies
+      shell: bash
+      run: |
+        python -m pip install --upgrade pip
+        pip install flake8 pytest
+        pip install -r requirements.txt
+        pip freeze > requirements-all.txt
