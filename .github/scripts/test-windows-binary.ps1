@@ -36,13 +36,11 @@ if ($process.HasExited -eq $false) {
 if (Test-Path $stdoutLog) {
     Write-Host "=== Standard Output ==="
     Get-Content $stdoutLog | ForEach-Object { Write-Host $_ }
-    Remove-Item $stdoutLog
 }
 
 if (Test-Path $stderrLog) {
     Write-Host "=== Standard Error ==="
     Get-Content $stderrLog | ForEach-Object { Write-Host $_ }
-    Remove-Item $stderrLog
 }
 
 # Get the exit code
