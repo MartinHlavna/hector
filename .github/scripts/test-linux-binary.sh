@@ -1,8 +1,13 @@
 #!/bin/bash
 
 set +e
+
+STDOUT_LOG="stdout.log"
+STDERR_LOG="stderr.log"
+
+
 # Start the GUI program in the background
-$1 --github_token="$2" --github_user="$3" &
+$1 --github_token="$2" --github_user="$3" >"$STDOUT_LOG" 2>"$STDERR_LOG" &
 PID=$!
 
 # Wait for 60 seconds
@@ -22,6 +27,18 @@ fi
 
 # Output the exit code
 echo "Exit code: $EXIT_CODE"
+
+if [ -f "$STDOUT_LOG" ]; then
+    echo "=== Standard Output ==="
+    cat "$STDOUT_LOG"
+    rm "$STDOUT_LOG"
+fi
+
+if [ -f "$STDERR_LOG" ]; then
+    echo "=== Standard Error ==="
+    cat "$STDERR_LOG"
+    rm "$STDERR_LOG"
+fi
 
 # Check if the program exited successfully
 if [ $EXIT_CODE -eq 0 ]; then
