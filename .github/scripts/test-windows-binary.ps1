@@ -2,9 +2,9 @@
 
 param (
     [Parameter(Mandatory = $true)]
-    [string]$ProgramPath
+    [string]$ProgramPath,
     [Parameter(Mandatory = $true)]
-    [string]$GithubToken
+    [string]$GithubToken,
     [Parameter(Mandatory = $true)]
     [string]$GithubUser
 )
