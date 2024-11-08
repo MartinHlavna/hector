@@ -9,8 +9,15 @@ param (
     [string]$GithubUser
 )
 
+$stdoutLog = "stdout.log"
+$stderrLog = "stderr.log"
+
 # Start the GUI program in the background
-$process = Start-Process -FilePath $ProgramPath -ArgumentList "github_token=$GithubToken", "github_user=$GithubUser" -PassThru
+$process = Start-Process -FilePath $ProgramPath `
+                         -ArgumentList "github_token=$GithubToken", "github_user=$GithubUser" `
+                         -RedirectStandardOutput $stdoutLog `
+                         -RedirectStandardError $stderrLog `
+                         -PassThru
 $processCrashed = $false
 
 # Wait for 60 seconds
@@ -24,6 +31,18 @@ if ($process.HasExited -eq $false) {
 } else {
     $processCrashed = $true
     Write-Host "Program exited before 60 seconds."
+}
+
+if (Test-Path $stdoutLog) {
+    Write-Host "=== Standard Output ==="
+    Get-Content $stdoutLog | ForEach-Object { Write-Host $_ }
+    Remove-Item $stdoutLog
+}
+
+if (Test-Path $stderrLog) {
+    Write-Host "=== Standard Error ==="
+    Get-Content $stderrLog | ForEach-Object { Write-Host $_ }
+    Remove-Item $stderrLog
 }
 
 # Get the exit code
