@@ -28,4 +28,4 @@ runs:
       run: |
         # Run the PowerShell script
         $path = "${{inputs.path}}".replace('/','\')
-        & "${env:GITHUB_WORKSPACE}\.github\scripts\test-windows-binary.ps1" -ProgramPath $path"
+        & "${env:GITHUB_WORKSPACE}\.github\scripts\test-windows-binary.ps1" -ProgramPath $path
