@@ -9,6 +9,9 @@ inputs:
   path:
     description: 'Binary path to execute'
     required: true
+  github_token:
+    description: 'Github token'
+    required: true
 
 runs:
   using: 'composite'
@@ -21,11 +24,11 @@ runs:
         sudo apt-get install xvfb
         export DISPLAY=:99
         Xvfb :99 -screen 0 1024x768x16 &
-        ${GITHUB_WORKSPACE}/.github/scripts/test-linux-binary.sh ${{inputs.path}} ${{ secrets.GITHUB_TOKEN }} MartinHlavna
+        ${GITHUB_WORKSPACE}/.github/scripts/test-linux-binary.sh ${{inputs.path}} ${{ inputs.github_token }} MartinHlavna
     - name: Try to execute windows binary
       if: inputs.os == 'windows-latest'
       shell: pwsh
       run: |
         # Run the PowerShell script
         $path = "${{inputs.path}}".replace('/','\')
-        & "${env:GITHUB_WORKSPACE}\.github\scripts\test-windows-binary.ps1" -ProgramPath $path -GithubToken ${{ secrets.GITHUB_TOKEN }} -GithubUser MartinHlavna
+        & "${env:GITHUB_WORKSPACE}\.github\scripts\test-windows-binary.ps1" -ProgramPath $path -GithubToken ${{ inputs.github_token }} -GithubUser MartinHlavna

@@ -125,6 +125,7 @@ jobs:
         with:
           os: ${{matrix.os}}
           path: build/${{matrix.artifact_name}}
+          github_token: ${{ secrets.GITHUB_TOKEN }}
       - name: Upload binary to release
         if: |
           github.event_name == 'release'
