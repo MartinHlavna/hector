@@ -1,6 +1,7 @@
 import pytest
 from hunspell import Hunspell
 from pythes import PyThes
+from semver import VersionInfo
 from spacy.lang.sk import Slovak
 from spacy.tokens import Doc
 
@@ -9,6 +10,7 @@ from src.const.grammar_error_types import GRAMMAR_ERROR_TYPE_MISSPELLED_WORD, GR
     GRAMMAR_ERROR_TYPE_WRONG_I_SUFFIX
 from src.const.values import NLP_BATCH_SIZE
 from src.domain.config import Config
+from src.utils import Utils
 
 TEST_TEXT_1 = 'Toto je testovací text.\nToto je veta.'
 TEST_TEXT_2 = 'Toto  je testovací text. Toto      je veta. Haló! A toto je čo?! '
@@ -456,6 +458,15 @@ def test_spellcheck_handles_empty_document(setup_teardown):
     # Nemalo by dôjsť k výnimke
     assert len(doc) == 0
 
+
+def test_updates(setup_teardown):
+    github_token = setup_teardown[3]
+    github_user = setup_teardown[4]
+    latest_beta_version = Utils.find_latest_version(True, github_token, github_user)
+    previous_beta_version = Utils.find_latest_version(True, github_token, github_user, skip=1)
+    assert not Utils.check_updates(latest_beta_version, True, github_token, github_user)
+    assert Utils.check_updates(previous_beta_version, True, github_token, github_user)
+    # After first stable release add tests for stable
 
 if __name__ == '__main__':
     pytest.main()

@@ -62,14 +62,29 @@ class Utils:
     def check_updates(current_version: string, beta: bool = False, github_token: string = None,
                       github_user: string = None) -> bool:
         """
-        Fetches the latest release version from a GitHub repository.
+        Checks if there is available update
 
         :param current_version: Current version.
         :param beta: If True, includes prerelease versions.
         :return: Tag name of the latest release or prerelease version, or None if unavailable.
         """
-        url = f"https://api.github.com/repos/{GITHUB_REPO}/releases"
+        latest_version = Utils.find_latest_version(beta, github_token, github_user)
+        if latest_version is not None:
+            current_version = VersionInfo.parse(current_version)
+            return latest_version > current_version
+        return False
+
+    @staticmethod
+    def find_latest_version(beta: bool = False, github_token: string = None,
+                            github_user: string = None, skip: int = 0) -> string:
+        """
+        Fetches the latest release version from a GitHub repository.
+
+        :param beta: If True, includes prerelease versions.
+        :return: Tag name of the latest release or prerelease version, or None if unavailable.
+        """
         try:
+            url = f"https://api.github.com/repos/{GITHUB_REPO}/releases"
             headers = {}
             if github_token is not None:
                 headers['Authorization'] = f'Bearer {github_token}'
@@ -85,10 +100,8 @@ class Utils:
 
             # Get the latest release (GitHub returns them in descending order by release date)
             if releases:
-                latest_version = VersionInfo.parse(Utils.extract_version_from_tag(releases[0]['tag_name']))
-                current_version = VersionInfo.parse(current_version)
-                return latest_version > current_version
-            return False
+                return Utils.extract_version_from_tag(releases[min(len(releases) - 1, skip)]['tag_name'])
+            return None
 
         except requests.RequestException:
             print("Unable to retrieve data. Please check your internet connection.")
