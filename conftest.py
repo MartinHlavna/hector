@@ -1,8 +1,11 @@
+import os
+import shutil
 from socket import socket
 
 import pytest
 
 from src.backend.service import Service
+from src.const.paths import DATA_DIRECTORY
 from src.utils import Utils
 
 
@@ -18,6 +21,7 @@ def setup_teardown(request):
                                                    github_user=request.config.option.github_user)
     spellcheck_dictionary = dictionaries["spellcheck"]
     thesaurus = dictionaries["thesaurus"]
+    Service.download_pandoc()
     yield nlp, spellcheck_dictionary, thesaurus, request.config.option.github_token, request.config.option.github_user
     # Cleanup code, if needed
 

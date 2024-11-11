@@ -7,7 +7,7 @@ import random
 import re
 import tkinter as tk
 import webbrowser
-from tkinter import filedialog, ttk
+from tkinter import filedialog, ttk, messagebox
 
 import spacy
 from PIL import ImageTk, Image
@@ -1063,40 +1063,49 @@ class MainWindow:
     # SHOW ABOUT DIALOG
     def update_dictionaries(self):
         splash = SplashWindow(self.root)
+        # noinspection PyBroadException
         splash.update_status("aktualizujem a reinicializujem slovníky...")
-        Service.delete_dictionaries()
+        Service.prepare_dictionaries_for_upgrade()
         dictionaries = Service.initialize_dictionaries()
-        self.spellcheck_dictionary = dictionaries["spellcheck"];
-        self.thesaurus =dictionaries["thesaurus"]
-        splash.close()
+        if dictionaries["spellcheck"] is not None and dictionaries["thesaurus"] is not None:
+            self.spellcheck_dictionary = dictionaries["spellcheck"]
+            self.thesaurus = dictionaries["thesaurus"]
+            Service.cleanup_old_dictionaries()
+            splash.close()
+        else:
+            Service.on_dictionary_upgrade_error()
+            splash.close()
+            messagebox.showerror("Chyba!", "Slovníky sa nepodarilo aktualizovať. Skontrolujte internetové pripojenie.")
 
-    def show_dep_image(self, event=None):
-        if self.current_instrospection_token is not None:
-            dep_window = tk.Toplevel(self.root)
-            dep_window.title("Rozbor vety")
-            rlg = svg2rlg(io.StringIO(displacy.render(self.current_instrospection_token.sent, minify=True)))
-            dep_image = renderPM.drawToPIL(rlg)
-            scaling_ratio = 1000 / dep_image.width
-            dep_view = ImageTk.PhotoImage(dep_image.resize((1000, math.ceil(dep_image.height * scaling_ratio))))
-            image_holder = ttk.Label(dep_window, image=dep_view)
-            image_holder.image = dep_view
-            image_holder.pack(fill=tk.BOTH, expand=True)
-            self.configure_modal(dep_window, width=dep_view.width(), height=dep_view.height())
 
-    def configure_modal(self, modal, width=600, height=400):
-        if platform.system() == "Windows":
-            scaling_factor = Utils.get_windows_scaling_factor()
-            width = width * scaling_factor
-            height = height * scaling_factor
-        modal.bind('<Escape>', lambda e: modal.destroy())
-        modal.geometry("%dx%d" % (width, height))
-        modal.resizable(False, False)
-        screen_width = self.root.winfo_screenwidth()
-        screen_height = self.root.winfo_screenheight()
-        x = screen_width / 2 - (width / 2)
-        y = screen_height / 2 - (height / 2)
-        modal.geometry("+%d+%d" % (x, y))
-        modal.wait_visibility()
-        modal.grab_set()
-        modal.focus_set()
-        modal.transient(self.root)
+def show_dep_image(self, event=None):
+    if self.current_instrospection_token is not None:
+        dep_window = tk.Toplevel(self.root)
+        dep_window.title("Rozbor vety")
+        rlg = svg2rlg(io.StringIO(displacy.render(self.current_instrospection_token.sent, minify=True)))
+        dep_image = renderPM.drawToPIL(rlg)
+        scaling_ratio = 1000 / dep_image.width
+        dep_view = ImageTk.PhotoImage(dep_image.resize((1000, math.ceil(dep_image.height * scaling_ratio))))
+        image_holder = ttk.Label(dep_window, image=dep_view)
+        image_holder.image = dep_view
+        image_holder.pack(fill=tk.BOTH, expand=True)
+        self.configure_modal(dep_window, width=dep_view.width(), height=dep_view.height())
+
+
+def configure_modal(self, modal, width=600, height=400):
+    if platform.system() == "Windows":
+        scaling_factor = Utils.get_windows_scaling_factor()
+        width = width * scaling_factor
+        height = height * scaling_factor
+    modal.bind('<Escape>', lambda e: modal.destroy())
+    modal.geometry("%dx%d" % (width, height))
+    modal.resizable(False, False)
+    screen_width = self.root.winfo_screenwidth()
+    screen_height = self.root.winfo_screenheight()
+    x = screen_width / 2 - (width / 2)
+    y = screen_height / 2 - (height / 2)
+    modal.geometry("+%d+%d" % (x, y))
+    modal.wait_visibility()
+    modal.grab_set()
+    modal.focus_set()
+    modal.transient(self.root)

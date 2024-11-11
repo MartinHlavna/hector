@@ -1,3 +1,6 @@
+import os
+import shutil
+
 import pytest
 from hunspell import Hunspell
 from pythes import PyThes
@@ -8,6 +11,7 @@ from spacy.tokens import Doc
 from src.backend.service import Service
 from src.const.grammar_error_types import GRAMMAR_ERROR_TYPE_MISSPELLED_WORD, GRAMMAR_ERROR_TYPE_WRONG_Y_SUFFIX, \
     GRAMMAR_ERROR_TYPE_WRONG_I_SUFFIX
+from src.const.paths import DATA_DIRECTORY
 from src.const.values import NLP_BATCH_SIZE
 from src.domain.config import Config
 from src.utils import Utils
@@ -478,6 +482,20 @@ def test_offline_updates(setup_teardown, monkeypatch):
     assert not Utils.check_updates(latest_beta_version, True, github_token, github_user)
     assert not Utils.check_updates(previous_beta_version, True, github_token, github_user)
     # After first stable release add tests for stable
+
+
+@pytest.mark.disable_socket
+def test_offline_inicialization(request):
+    if os.path.isdir(DATA_DIRECTORY):
+        shutil.rmtree(DATA_DIRECTORY)
+    nlp = Service.initialize_nlp()
+    dictionaries = Service.initialize_dictionaries(github_token=request.config.option.github_token,
+                                                   github_user=request.config.option.github_user)
+    spellcheck_dictionary = dictionaries["spellcheck"]
+    thesaurus = dictionaries["thesaurus"]
+    assert not nlp
+    assert not spellcheck_dictionary
+    assert not thesaurus
 
 if __name__ == '__main__':
     pytest.main()

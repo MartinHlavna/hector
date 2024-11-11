@@ -22,7 +22,7 @@ from spacy.util import compile_infix_regex
 from src.const.grammar_error_types import GRAMMAR_ERROR_TYPE_MISSPELLED_WORD, GRAMMAR_ERROR_TYPE_WRONG_Y_SUFFIX, \
     GRAMMAR_ERROR_TYPE_WRONG_YSI_SUFFIX, GRAMMAR_ERROR_TYPE_WRONG_I_SUFFIX, GRAMMAR_ERROR_TYPE_WRONG_ISI_SUFFIX
 from src.const.paths import DATA_DIRECTORY, SPACY_MODELS_DIR, SK_SPACY_MODEL_DIR, DICTIONARY_DIR, SK_DICTIONARY_DIR, \
-    SK_SPELL_DICTIONARY_DIR, CURRENT_SK_SPACY_MODEL_DIR
+    SK_SPELL_DICTIONARY_DIR, CURRENT_SK_SPACY_MODEL_DIR, DICTIONARY_DIR_BACKUP
 from src.const.values import SPACY_MODEL_NAME_WITH_VERSION, SPACY_MODEL_LINK, SPACY_MODEL_NAME, READABILITY_MAX_VALUE
 from src.domain.config import Config
 from src.domain.metadata import Metadata
@@ -71,94 +71,120 @@ class Service:
     # FUNCTION THAT INTIALIZES NLP ENGINE
     @staticmethod
     def initialize_nlp():
-        old_model_exists = False
-        # INITIALIZE NLP ENGINE
-        spacy.util.set_data_path = Utils.resource_path('lib/site-packages/spacy/data')
-        if not os.path.isdir(DATA_DIRECTORY):
-            os.mkdir(DATA_DIRECTORY)
-        if not os.path.isdir(SPACY_MODELS_DIR):
-            os.mkdir(SPACY_MODELS_DIR)
-        if not os.path.isdir(SK_SPACY_MODEL_DIR):
-            os.mkdir(SK_SPACY_MODEL_DIR)
-        else:
-            old_model_exists = True
-        if not os.path.isdir(CURRENT_SK_SPACY_MODEL_DIR):
-            # IF WE ARE UPGRADING SPACY MODEL, WE NEED TO REMOVE OLD MODELS
-            if old_model_exists:
-                shutil.rmtree(SK_SPACY_MODEL_DIR)
+        # noinspection PyBroadException
+        try:
+            old_model_exists = False
+            # INITIALIZE NLP ENGINE
+            spacy.util.set_data_path = Utils.resource_path('lib/site-packages/spacy/data')
+            if not os.path.isdir(DATA_DIRECTORY):
+                os.mkdir(DATA_DIRECTORY)
+            if not os.path.isdir(SPACY_MODELS_DIR):
+                os.mkdir(SPACY_MODELS_DIR)
+            if not os.path.isdir(SK_SPACY_MODEL_DIR):
                 os.mkdir(SK_SPACY_MODEL_DIR)
-            archive_file_name = os.path.join(SPACY_MODELS_DIR, f'{SPACY_MODEL_NAME_WITH_VERSION}.tar.gz')
-            with urllib.request.urlopen(SPACY_MODEL_LINK) as response, open(archive_file_name, 'wb') as out_file:
-                shutil.copyfileobj(response, out_file)
-            with tarfile.open(archive_file_name) as tar_file:
-                tar_file.extractall(SK_SPACY_MODEL_DIR)
-            os.remove(archive_file_name)
-        nlp = spacy.load(os.path.join(
-            SK_SPACY_MODEL_DIR,
-            SPACY_MODEL_NAME_WITH_VERSION,
-            SPACY_MODEL_NAME,
-            SPACY_MODEL_NAME_WITH_VERSION)
-        )
-        # CUSTOM TOKENIZER THAT TREATS HYPTHENATED WORDS AS SINGLE TOKEN
-        infixes = (
-                LIST_ELLIPSES
-                + LIST_ICONS
-                + [
-                    r"(?<=[0-9])[+\-\*^](?=[0-9-])",
-                    r"(?<=[{al}{q}])\.(?=[{au}{q}])".format(
-                        al=ALPHA_LOWER, au=ALPHA_UPPER, q=CONCAT_QUOTES
-                    ),
-                    r"(?<=[{a}]),(?=[{a}])".format(a=ALPHA),
-                    # OVERRIDE: r"(?<=[{a}])(?:{h})(?=[{a}])".format(a=ALPHA, h=HYPHENS),
-                    r"(?<=[{a}0-9])[:<>=/](?=[{a}])".format(a=ALPHA),
-                ]
-        )
-        infix_re = compile_infix_regex(infixes)
-        nlp.tokenizer = Tokenizer(nlp.vocab, prefix_search=nlp.tokenizer.prefix_search,
-                                  suffix_search=nlp.tokenizer.suffix_search,
-                                  infix_finditer=infix_re.finditer,
-                                  token_match=nlp.tokenizer.token_match,
-                                  rules=nlp.Defaults.tokenizer_exceptions)
-        # SPACY EXTENSIONS
-        Token.set_extension("is_word", default=False, force=True)
-        Token.set_extension("grammar_error_type", default=None, force=True)
-        Token.set_extension("has_grammar_error", default=False, force=True)
-        Token.set_extension("paragraph", default=None, force=True)
-        Doc.set_extension("words", default=[], force=True)
-        Doc.set_extension("paragraphs", default=[], force=True)
-        Doc.set_extension("unique_words", default=[], force=True)
-        Doc.set_extension("lemmas", default=[], force=True)
-        Doc.set_extension("total_chars", default=0, force=True)
-        Doc.set_extension("total_words", default=0, force=True)
-        Doc.set_extension("total_unique_words", default=0, force=True)
-        Doc.set_extension("total_pages", default=0, force=True)
-        Span.set_extension("is_mid_sentence", default=False, force=True)
-        Span.set_extension("is_long_sentence", default=False, force=True)
-        return nlp
+            else:
+                old_model_exists = True
+            if not os.path.isdir(CURRENT_SK_SPACY_MODEL_DIR):
+                # IF WE ARE UPGRADING SPACY MODEL, WE NEED TO REMOVE OLD MODELS
+                if old_model_exists:
+                    shutil.rmtree(SK_SPACY_MODEL_DIR)
+                    os.mkdir(SK_SPACY_MODEL_DIR)
+                archive_file_name = os.path.join(SPACY_MODELS_DIR, f'{SPACY_MODEL_NAME_WITH_VERSION}.tar.gz')
+                with urllib.request.urlopen(SPACY_MODEL_LINK) as response, open(archive_file_name, 'wb') as out_file:
+                    shutil.copyfileobj(response, out_file)
+                with tarfile.open(archive_file_name) as tar_file:
+                    tar_file.extractall(SK_SPACY_MODEL_DIR)
+                os.remove(archive_file_name)
+            nlp = spacy.load(os.path.join(
+                SK_SPACY_MODEL_DIR,
+                SPACY_MODEL_NAME_WITH_VERSION,
+                SPACY_MODEL_NAME,
+                SPACY_MODEL_NAME_WITH_VERSION)
+            )
+            # CUSTOM TOKENIZER THAT TREATS HYPTHENATED WORDS AS SINGLE TOKEN
+            infixes = (
+                    LIST_ELLIPSES
+                    + LIST_ICONS
+                    + [
+                        r"(?<=[0-9])[+\-\*^](?=[0-9-])",
+                        r"(?<=[{al}{q}])\.(?=[{au}{q}])".format(
+                            al=ALPHA_LOWER, au=ALPHA_UPPER, q=CONCAT_QUOTES
+                        ),
+                        r"(?<=[{a}]),(?=[{a}])".format(a=ALPHA),
+                        # OVERRIDE: r"(?<=[{a}])(?:{h})(?=[{a}])".format(a=ALPHA, h=HYPHENS),
+                        r"(?<=[{a}0-9])[:<>=/](?=[{a}])".format(a=ALPHA),
+                    ]
+            )
+            infix_re = compile_infix_regex(infixes)
+            nlp.tokenizer = Tokenizer(nlp.vocab, prefix_search=nlp.tokenizer.prefix_search,
+                                      suffix_search=nlp.tokenizer.suffix_search,
+                                      infix_finditer=infix_re.finditer,
+                                      token_match=nlp.tokenizer.token_match,
+                                      rules=nlp.Defaults.tokenizer_exceptions)
+            # SPACY EXTENSIONS
+            Token.set_extension("is_word", default=False, force=True)
+            Token.set_extension("grammar_error_type", default=None, force=True)
+            Token.set_extension("has_grammar_error", default=False, force=True)
+            Token.set_extension("paragraph", default=None, force=True)
+            Doc.set_extension("words", default=[], force=True)
+            Doc.set_extension("paragraphs", default=[], force=True)
+            Doc.set_extension("unique_words", default=[], force=True)
+            Doc.set_extension("lemmas", default=[], force=True)
+            Doc.set_extension("total_chars", default=0, force=True)
+            Doc.set_extension("total_words", default=0, force=True)
+            Doc.set_extension("total_unique_words", default=0, force=True)
+            Doc.set_extension("total_pages", default=0, force=True)
+            Span.set_extension("is_mid_sentence", default=False, force=True)
+            Span.set_extension("is_long_sentence", default=False, force=True)
+            return nlp
+        except Exception:
+            print("Unable to retrieve data. Please check your internet connection.")
+            return None
 
     # FUNCTION THAT DELETED NLP DICTIONARIES
     @staticmethod
-    def delete_dictionaries():
-        if os.path.isdir(SK_DICTIONARY_DIR):
-            shutil.rmtree(SK_DICTIONARY_DIR)
+    def prepare_dictionaries_for_upgrade():
+        if os.path.isdir(DICTIONARY_DIR):
+            Service.cleanup_old_dictionaries()
+            os.rename(DICTIONARY_DIR, DICTIONARY_DIR_BACKUP)
+
+    @staticmethod
+    def cleanup_old_dictionaries():
+        if os.path.isdir(DICTIONARY_DIR_BACKUP):
+            shutil.rmtree(DICTIONARY_DIR_BACKUP)
+
+    @staticmethod
+    def on_dictionary_upgrade_error():
+        if os.path.isdir(DICTIONARY_DIR_BACKUP):
+            shutil.rmtree(DICTIONARY_DIR)
+            os.rename(DICTIONARY_DIR_BACKUP, DICTIONARY_DIR)
 
     # FUNCTION THAT INTIALIZES NLP DICTIONARIES
     @staticmethod
     def initialize_dictionaries(github_token=None, github_user=None):
-        if not os.path.isdir(DICTIONARY_DIR):
-            os.mkdir(DICTIONARY_DIR)
-        if not os.path.isdir(SK_DICTIONARY_DIR):
-            os.mkdir(SK_DICTIONARY_DIR)
-            fs = fsspec.filesystem("github", org="LibreOffice", repo="dictionaries", token=github_token,
-                                   username=github_user)
-            fs.get(fs.ls("sk_SK"), SK_DICTIONARY_DIR, recursive=True)
-            fs = fsspec.filesystem("github", org="sk-spell", repo="hunspell-sk", token=github_token,
-                                   username=github_user)
-            fs.get(fs.ls("/"), SK_SPELL_DICTIONARY_DIR, recursive=True)
-        return {
-            "spellcheck": Hunspell('sk_SK', hunspell_data_dir=SK_SPELL_DICTIONARY_DIR),
-            "thesaurus": PyThes(os.path.join(SK_DICTIONARY_DIR, "th_sk_SK_v2.dat"))
-        }
+        # noinspection PyBroadException
+        try:
+            if not os.path.isdir(DICTIONARY_DIR):
+                os.mkdir(DICTIONARY_DIR)
+            if not os.path.isdir(SK_DICTIONARY_DIR):
+                os.mkdir(SK_DICTIONARY_DIR)
+                fs = fsspec.filesystem("github", org="LibreOffice", repo="dictionaries", token=github_token,
+                                       username=github_user)
+                fs.get(fs.ls("sk_SK"), SK_DICTIONARY_DIR, recursive=True)
+                fs = fsspec.filesystem("github", org="sk-spell", repo="hunspell-sk", token=github_token,
+                                       username=github_user)
+                fs.get(fs.ls("/"), SK_SPELL_DICTIONARY_DIR, recursive=True)
+            return {
+                "spellcheck": Hunspell('sk_SK', hunspell_data_dir=SK_SPELL_DICTIONARY_DIR),
+                "thesaurus": PyThes(os.path.join(SK_DICTIONARY_DIR, "th_sk_SK_v2.dat"))
+            }
+        except Exception as ex:
+            print("Unable to retrieve data. Please check your internet connection.")
+            print(ex)
+            return {
+                "spellcheck": None,
+                "thesaurus": None
+            }
 
     # FUNCTION THAT LOADS CONFIG FROM FILE
     @staticmethod
