@@ -1,6 +1,9 @@
+from socket import socket
+
 import pytest
 
 from src.backend.service import Service
+from src.utils import Utils
 
 
 @pytest.fixture(scope='session')
@@ -22,3 +25,17 @@ def setup_teardown(request):
 def pytest_addoption(parser):
     parser.addoption("--github_token", action="store", default=None)
     parser.addoption("--github_user", action="store", default=None)
+
+
+def pytest_configure(config):
+    config.addinivalue_line(
+        "markers", "disable_socket: Disable socket connections for this test."
+    )
+
+
+@pytest.fixture(autouse=True)
+def disable_socket_fixture(request, monkeypatch):
+    if 'disable_socket' in request.keywords:
+        # Disable socket methods
+        # Get the monkeypatch fixture
+        Utils.disable_socket(monkeypatch)

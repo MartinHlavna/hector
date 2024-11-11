@@ -2,15 +2,14 @@ import ctypes
 import json
 import os
 import re
+import socket
 import string
 
 import requests
-import semver;
+from PIL import ImageFont, ImageDraw, Image, ImageTk
 from semver import VersionInfo
 
 from src.const.paths import RUN_DIRECTORY
-from PIL import ImageFont, ImageDraw, Image, ImageTk
-
 from src.const.values import VERSION, GITHUB_REPO
 
 
@@ -83,6 +82,7 @@ class Utils:
         :param beta: If True, includes prerelease versions.
         :return: Tag name of the latest release or prerelease version, or None if unavailable.
         """
+        # noinspection PyBroadException
         try:
             url = f"https://api.github.com/repos/{GITHUB_REPO}/releases"
             headers = {}
@@ -103,6 +103,23 @@ class Utils:
                 return Utils.extract_version_from_tag(releases[min(len(releases) - 1, skip)]['tag_name'])
             return None
 
-        except requests.RequestException:
+        except Exception:
             print("Unable to retrieve data. Please check your internet connection.")
             return None
+
+    # FOR TESTING PURPOSES:
+
+    @staticmethod
+    def disable_socket(monkeypatch):
+        """Disable socket.socket and socket.create_connection."""
+
+        def guard(*args, **kwargs):
+            raise RuntimeError("Network access not allowed during this test.")
+
+        monkeypatch.setattr(socket, "socket", guard)
+        monkeypatch.setattr(socket, "create_connection", guard)
+
+    @staticmethod
+    def enable_socket(monkeypatch):
+        """Restore socket.socket and socket.create_connection to their original state."""
+        monkeypatch.undo()

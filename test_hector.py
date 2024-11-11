@@ -468,5 +468,16 @@ def test_updates(setup_teardown):
     assert Utils.check_updates(previous_beta_version, True, github_token, github_user)
     # After first stable release add tests for stable
 
+
+def test_offline_updates(setup_teardown, monkeypatch):
+    github_token = setup_teardown[3]
+    github_user = setup_teardown[4]
+    latest_beta_version = Utils.find_latest_version(True, github_token, github_user)
+    previous_beta_version = Utils.find_latest_version(True, github_token, github_user, skip=1)
+    Utils.disable_socket(monkeypatch)
+    assert not Utils.check_updates(latest_beta_version, True, github_token, github_user)
+    assert not Utils.check_updates(previous_beta_version, True, github_token, github_user)
+    # After first stable release add tests for stable
+
 if __name__ == '__main__':
     pytest.main()
