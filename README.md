@@ -42,6 +42,12 @@ konfigurovateľný nástroj, ktorý automaticky analyzuje a vyhodnocuje text. Ci
 problémov, ktoré má autor určite opraviť, ale len zvýrazniť potenciálne problematické časti. Konečné rozhodnutie je vždy
 na autorovi.
 
+### Aktuálny cieľ projektu
+Momentálny focus projektu sa sústredí na vytvorenie verzie [1.0.0](https://github.com/MartinHlavna/hector/milestone/2). Táto verzia by mala byť plnohodnotným štylistickým korektorom, ktorý poskytuje základné funkcie dobre, je stabilný a má praktické využitie. Súčasný stav projektu je tomuto cieľu veľmi bizko.
+
+### Dlhodobý cieľ projektu
+Z dlhodobého hľadiska je  cieľom vytvoriť komplexný nástroj určený na písanie a editovanie beletristického textu. K tomuto mǐľniku však vedie ešte dlhá cesta plná výziev.
+
 ## Funkcie programu
 
 ### Zvýraznenie dlhých viet
