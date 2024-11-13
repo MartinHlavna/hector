@@ -1,5 +1,6 @@
 [![Nuitka build](https://github.com/MartinHlavna/hector/actions/workflows/nuitka-build.yml/badge.svg)](https://github.com/MartinHlavna/hector/actions/workflows/nuitka-build.yml)
 [![Python application](https://github.com/MartinHlavna/hector/actions/workflows/python-app.yml/badge.svg)](https://github.com/MartinHlavna/hector/actions/workflows/python-app.yml)
+[![codecov](https://codecov.io/github/MartinHlavna/hector/graph/badge.svg?token=KO5BAQUVGP)](https://codecov.io/github/MartinHlavna/hector)
 [![GitHub Release](https://img.shields.io/github/v/release/MartinHlavna/hector?include_prereleases&sort=semver&display_name=release)](https://github.com/MartinHlavna/hector/releases/latest)
 
 # Hector
