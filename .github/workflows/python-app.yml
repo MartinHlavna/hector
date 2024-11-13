@@ -44,4 +44,10 @@ jobs:
         flake8 . --count --exit-zero --max-complexity=10 --max-line-length=127 --statistics
     - name: Test with pytest
       run: |
-        pytest --github_token=${{ secrets.GITHUB_TOKEN }} --github_user=MartinHlavna
+        pip install pytest pytest-cov
+        pytest -cov --cov-report=xml --github_token=${{ secrets.GITHUB_TOKEN }} --github_user=MartinHlavna
+    - name: Upload coverage results to Codecov
+      uses: codecov/codecov-action@v4
+      with:
+        token: ${{ secrets.CODECOV_TOKEN }}
+
