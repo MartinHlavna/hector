@@ -11,9 +11,10 @@ from spacy.tokens import Doc
 from src.backend.service import Service
 from src.const.grammar_error_types import GRAMMAR_ERROR_TYPE_MISSPELLED_WORD, GRAMMAR_ERROR_TYPE_WRONG_Y_SUFFIX, \
     GRAMMAR_ERROR_TYPE_WRONG_I_SUFFIX
-from src.const.paths import DATA_DIRECTORY
+from src.const.paths import DATA_DIRECTORY, CONFIG_FILE_PATH, METADATA_FILE_PATH
 from src.const.values import NLP_BATCH_SIZE
 from src.domain.config import Config
+from src.domain.metadata import Metadata
 from src.utils import Utils
 
 TEST_TEXT_1 = 'Toto je testovací text.\nToto je veta.'
@@ -471,6 +472,24 @@ def test_updates(setup_teardown):
     assert not Utils.check_updates(latest_beta_version, True, github_token, github_user)
     assert Utils.check_updates(previous_beta_version, True, github_token, github_user)
     # After first stable release add tests for stable
+
+
+def test_config_save_load(setup_teardown):
+    c = Config()
+    c.analysis_settings.long_sentence_words_high = 999
+    c_path = f"{CONFIG_FILE_PATH}.test"
+    Service.save_config(c, c_path)
+    c = Service.load_config(c_path)
+    assert c.analysis_settings.long_sentence_words_high == 999
+
+
+def test_metadata_save_load(setup_teardown):
+    m = Metadata()
+    m.recent_files = ["TEST"]
+    m_path = f"{METADATA_FILE_PATH}.test"
+    Service.save_metadata(m, m_path)
+    m = Service.load_metadata(m_path)
+    assert m.recent_files[0] == "TEST"
 
 
 def test_offline_updates(setup_teardown, monkeypatch):
