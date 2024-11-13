@@ -103,7 +103,8 @@ class Utils:
                 return Utils.extract_version_from_tag(releases[min(len(releases) - 1, skip)]['tag_name'])
             return None
 
-        except Exception:
+        except Exception as e:
+            print(e)
             print("Unable to retrieve data. Please check your internet connection.")
             return None
 

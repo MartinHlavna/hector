@@ -45,7 +45,7 @@ jobs:
     - name: Test with pytest
       run: |
         pip install pytest pytest-cov
-        pytest -cov --cov-report=xml --github_token=${{ secrets.GITHUB_TOKEN }} --github_user=MartinHlavna
+        pytest --github_token=${{ secrets.GITHUB_TOKEN }} --github_user=MartinHlavna -cov --cov-report=xml
     - name: Upload coverage results to Codecov
       uses: codecov/codecov-action@v4
       with:

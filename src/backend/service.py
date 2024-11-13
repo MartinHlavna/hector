@@ -137,7 +137,8 @@ class Service:
             Span.set_extension("is_mid_sentence", default=False, force=True)
             Span.set_extension("is_long_sentence", default=False, force=True)
             return nlp
-        except Exception:
+        except Exception as e:
+            print(e)
             print("Unable to retrieve data. Please check your internet connection.")
             return None
 
@@ -178,9 +179,11 @@ class Service:
                 "spellcheck": Hunspell('sk_SK', hunspell_data_dir=SK_SPELL_DICTIONARY_DIR),
                 "thesaurus": PyThes(os.path.join(SK_DICTIONARY_DIR, "th_sk_SK_v2.dat"))
             }
-        except Exception as ex:
+        except Exception as e:
+            print(e)
             print("Unable to retrieve data. Please check your internet connection.")
-            print(ex)
+            if os.path.isdir(DICTIONARY_DIR):
+                shutil.rmtree(DICTIONARY_DIR)
             return {
                 "spellcheck": None,
                 "thesaurus": None
