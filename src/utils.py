@@ -1,6 +1,7 @@
 import ctypes
 import json
 import os
+import platform
 import re
 import socket
 import string
@@ -29,13 +30,15 @@ class Utils:
 
     @staticmethod
     def get_windows_scaling_factor():
-        # Windows API call to get DPI scaling (for Windows)
-        user32 = ctypes.windll.user32
-        user32.SetProcessDPIAware()  # Optional, allows Python process to be aware of the DPI
-        dpi = user32.GetDpiForSystem()
-        # Standard DPI is 96, so scale factor is based on that
-        scaling_factor = dpi / 96
-        return scaling_factor
+        if platform.system() == "Windows":
+            # Windows API call to get DPI scaling (for Windows)
+            user32 = ctypes.windll.user32
+            user32.SetProcessDPIAware()  # Optional, allows Python process to be aware of the DPI
+            dpi = user32.GetDpiForSystem()
+            # Standard DPI is 96, so scale factor is based on that
+            scaling_factor = dpi / 96
+            return scaling_factor
+        return None
 
     @staticmethod
     def get_build_info():

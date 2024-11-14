@@ -1,4 +1,5 @@
 import os
+import platform
 import shutil
 
 import pytest
@@ -515,6 +516,15 @@ def test_offline_inicialization(request):
     assert not nlp
     assert not spellcheck_dictionary
     assert not thesaurus
+
+
+def test_get_windows_scaling():
+    scaling_factor = Utils.get_windows_scaling_factor()
+    if platform.system() == "Windows":
+        assert scaling_factor is not None and scaling_factor != 0
+    else:
+        assert scaling_factor is None
+
 
 if __name__ == '__main__':
     pytest.main()
