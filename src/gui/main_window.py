@@ -36,6 +36,7 @@ from src.const.tags import CLOSE_WORD_PREFIX, LONG_SENTENCE_TAG_NAME_HIGH, LONG_
 from src.const.values import READABILITY_MAX_VALUE, DOCUMENTATION_LINK, NLP_BATCH_SIZE
 from src.gui.analysis_settings_modal import AnalysisSettingsModal
 from src.gui.appearance_settings_modal import AppearanceSettingsModal
+from src.gui.gui_utils import GuiUtils
 from src.gui.menu import MenuItem, SimpleMenu
 from src.gui.splash_window import SplashWindow
 from src.utils import Utils
@@ -112,18 +113,18 @@ class MainWindow:
             MenuItem(label="Súbor",
                      underline_index=0, submenu=[
                     MenuItem(label="Otvoriť", command=self.load_file, shortcut="<Control-o>",
-                             icon=Utils.fa_image(FA_SOLID, "#3B3B3B", "white", FontAwesomeIcons.file, 16),
-                             highlight_icon=Utils.fa_image(FA_SOLID, "white", "#3B3B3B", FontAwesomeIcons.file, 16),
+                             icon=GuiUtils.fa_image(FA_SOLID, "#3B3B3B", "white", FontAwesomeIcons.file, 16),
+                             highlight_icon=GuiUtils.fa_image(FA_SOLID, "white", "#3B3B3B", FontAwesomeIcons.file, 16),
                              shortcut_label="Ctrl+O"),
                     MenuItem(label="Otvoriť posledný súbor", command=self.load_file_contents, shortcut="<Control-r>",
-                             icon=Utils.fa_image(FA_SOLID, "#3B3B3B", "white", FontAwesomeIcons.rotate, 16),
-                             highlight_icon=Utils.fa_image(FA_SOLID, "white", "#3B3B3B", FontAwesomeIcons.rotate, 16),
+                             icon=GuiUtils.fa_image(FA_SOLID, "#3B3B3B", "white", FontAwesomeIcons.rotate, 16),
+                             highlight_icon=GuiUtils.fa_image(FA_SOLID, "white", "#3B3B3B", FontAwesomeIcons.rotate, 16),
                              shortcut_label="Ctrl+R"),
                     MenuItem(label="Uložiť",
                              command=self.save_file,
                              shortcut="<Control-s>",
-                             icon=Utils.fa_image(FA_SOLID, "#3B3B3B", "white", FontAwesomeIcons.floppy_disk, 16),
-                             highlight_icon=Utils.fa_image(FA_SOLID, "white", "#3B3B3B", FontAwesomeIcons.floppy_disk,
+                             icon=GuiUtils.fa_image(FA_SOLID, "#3B3B3B", "white", FontAwesomeIcons.floppy_disk, 16),
+                             highlight_icon=GuiUtils.fa_image(FA_SOLID, "white", "#3B3B3B", FontAwesomeIcons.floppy_disk,
                                                            16),
                              shortcut_label="Ctrl+S"),
                 ]),
@@ -131,67 +132,67 @@ class MainWindow:
                 MenuItem(
                     label="Vrátiť späť",
                     command=self.undo,
-                    icon=Utils.fa_image(FA_SOLID, "#3B3B3B", "white", FontAwesomeIcons.rotate_left, 16),
-                    highlight_icon=Utils.fa_image(FA_SOLID, "white", "#3B3B3B", FontAwesomeIcons.rotate_left, 16),
+                    icon=GuiUtils.fa_image(FA_SOLID, "#3B3B3B", "white", FontAwesomeIcons.rotate_left, 16),
+                    highlight_icon=GuiUtils.fa_image(FA_SOLID, "white", "#3B3B3B", FontAwesomeIcons.rotate_left, 16),
                     shortcut="<Control-z>",
                     shortcut_label="Ctrl+Z"
                 ),
                 MenuItem(label="Zopakovať",
                          command=self.redo,
-                         icon=Utils.fa_image(FA_SOLID, "#3B3B3B", "white", FontAwesomeIcons.rotate_right, 16),
-                         highlight_icon=Utils.fa_image(FA_SOLID, "white", "#3B3B3B", FontAwesomeIcons.rotate_right, 16),
+                         icon=GuiUtils.fa_image(FA_SOLID, "#3B3B3B", "white", FontAwesomeIcons.rotate_right, 16),
+                         highlight_icon=GuiUtils.fa_image(FA_SOLID, "white", "#3B3B3B", FontAwesomeIcons.rotate_right, 16),
                          shortcut="<Control-Shift-z>",
                          shortcut_label="Ctrl+Shift+Z"
                          ),
                 MenuItem(label="Analyzovať všetko",
                          command=lambda: self.analyze_text(force_reload=True),
-                         icon=Utils.fa_image(FA_SOLID, "#3B3B3B", "white", FontAwesomeIcons.rotate, 16),
-                         highlight_icon=Utils.fa_image(FA_SOLID, "white", "#3B3B3B", FontAwesomeIcons.rotate, 16),
+                         icon=GuiUtils.fa_image(FA_SOLID, "#3B3B3B", "white", FontAwesomeIcons.rotate, 16),
+                         highlight_icon=GuiUtils.fa_image(FA_SOLID, "white", "#3B3B3B", FontAwesomeIcons.rotate, 16),
                          )
             ]),
             MenuItem(label="Nastavenia", underline_index=0, submenu=[
                 MenuItem(
                     label="Parametre analýzy",
-                    icon=Utils.fa_image(FA_SOLID, "#3B3B3B", "white", FontAwesomeIcons.gears, 16),
-                    highlight_icon=Utils.fa_image(FA_SOLID, "white", "#3B3B3B", FontAwesomeIcons.gears, 16),
+                    icon=GuiUtils.fa_image(FA_SOLID, "#3B3B3B", "white", FontAwesomeIcons.gears, 16),
+                    highlight_icon=GuiUtils.fa_image(FA_SOLID, "white", "#3B3B3B", FontAwesomeIcons.gears, 16),
                     command=self.show_analysis_settings
                 ),
                 MenuItem(
                     label="Vzhľad",
-                    icon=Utils.fa_image(FA_SOLID, "#3B3B3B", "white", FontAwesomeIcons.pallete, 16),
-                    highlight_icon=Utils.fa_image(FA_SOLID, "white", "#3B3B3B", FontAwesomeIcons.pallete, 16),
+                    icon=GuiUtils.fa_image(FA_SOLID, "#3B3B3B", "white", FontAwesomeIcons.pallete, 16),
+                    highlight_icon=GuiUtils.fa_image(FA_SOLID, "white", "#3B3B3B", FontAwesomeIcons.pallete, 16),
                     command=self.show_appearance_settings
                 ),
                 MenuItem(
                     label="Exportovať",
-                    icon=Utils.fa_image(FA_SOLID, "#3B3B3B", "white", FontAwesomeIcons.file_export, 16),
-                    highlight_icon=Utils.fa_image(FA_SOLID, "white", "#3B3B3B", FontAwesomeIcons.file_export, 16),
+                    icon=GuiUtils.fa_image(FA_SOLID, "#3B3B3B", "white", FontAwesomeIcons.file_export, 16),
+                    highlight_icon=GuiUtils.fa_image(FA_SOLID, "white", "#3B3B3B", FontAwesomeIcons.file_export, 16),
                     command=self.export_settings
                 ),
                 MenuItem(
                     label="Importovať",
-                    icon=Utils.fa_image(FA_SOLID, "#3B3B3B", "white", FontAwesomeIcons.file_import, 16),
-                    highlight_icon=Utils.fa_image(FA_SOLID, "white", "#3B3B3B", FontAwesomeIcons.file_import, 16),
+                    icon=GuiUtils.fa_image(FA_SOLID, "#3B3B3B", "white", FontAwesomeIcons.file_import, 16),
+                    highlight_icon=GuiUtils.fa_image(FA_SOLID, "white", "#3B3B3B", FontAwesomeIcons.file_import, 16),
                     command=self.import_settings
                 )
             ]),
             MenuItem(label="Pomoc", underline_index=0, submenu=[
                 MenuItem(label="O programe",
-                         icon=Utils.fa_image(FA_SOLID, "#3B3B3B", "white", FontAwesomeIcons.question_circle, 16),
-                         highlight_icon=Utils.fa_image(FA_SOLID, "white", "#3B3B3B", FontAwesomeIcons.question_circle,
+                         icon=GuiUtils.fa_image(FA_SOLID, "#3B3B3B", "white", FontAwesomeIcons.question_circle, 16),
+                         highlight_icon=GuiUtils.fa_image(FA_SOLID, "white", "#3B3B3B", FontAwesomeIcons.question_circle,
                                                        16),
                          command=self.show_about
                          ),
                 MenuItem(
                     label="Dokumentácia",
-                    icon=Utils.fa_image(FA_SOLID, "#3B3B3B", "white", FontAwesomeIcons.book, 16),
-                    highlight_icon=Utils.fa_image(FA_SOLID, "white", "#3B3B3B", FontAwesomeIcons.book, 16),
+                    icon=GuiUtils.fa_image(FA_SOLID, "#3B3B3B", "white", FontAwesomeIcons.book, 16),
+                    highlight_icon=GuiUtils.fa_image(FA_SOLID, "white", "#3B3B3B", FontAwesomeIcons.book, 16),
                     command=lambda: webbrowser.open(DOCUMENTATION_LINK)
                 ),
                 MenuItem(
                     label="Aktualizovať slovníky",
-                    icon=Utils.fa_image(FA_SOLID, "#3B3B3B", "white", FontAwesomeIcons.download, 16),
-                    highlight_icon=Utils.fa_image(FA_SOLID, "white", "#3B3B3B", FontAwesomeIcons.download, 16),
+                    icon=GuiUtils.fa_image(FA_SOLID, "#3B3B3B", "white", FontAwesomeIcons.download, 16),
+                    highlight_icon=GuiUtils.fa_image(FA_SOLID, "white", "#3B3B3B", FontAwesomeIcons.download, 16),
                     command=self.update_dictionaries
                 )
             ])

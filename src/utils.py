@@ -3,11 +3,9 @@ import json
 import os
 import platform
 import re
-import socket
 import string
 
 import requests
-from PIL import ImageFont, ImageDraw, Image, ImageTk
 from semver import VersionInfo
 
 from src.const.paths import RUN_DIRECTORY
@@ -19,14 +17,6 @@ class Utils:
     @staticmethod
     def resource_path(relative_path: string):
         return os.path.join(RUN_DIRECTORY, relative_path)
-
-    @staticmethod
-    def fa_image(font, background, foreground, char, size, padding=2):
-        img = Image.new("L", (size, size), background)
-        draw = ImageDraw.Draw(img)
-        font_awesome = ImageFont.truetype(font, size - (padding * 2))
-        draw.text((padding, padding), char, foreground, font_awesome)
-        return ImageTk.PhotoImage(img)
 
     @staticmethod
     def get_windows_scaling_factor():
@@ -110,20 +100,3 @@ class Utils:
             print(e)
             print("Unable to retrieve data. Please check your internet connection.")
             return None
-
-    # FOR TESTING PURPOSES:
-
-    @staticmethod
-    def disable_socket(monkeypatch):
-        """Disable socket.socket and socket.create_connection."""
-
-        def guard(*args, **kwargs):
-            raise RuntimeError("Network access not allowed during this test.")
-
-        monkeypatch.setattr(socket, "socket", guard)
-        monkeypatch.setattr(socket, "create_connection", guard)
-
-    @staticmethod
-    def enable_socket(monkeypatch):
-        """Restore socket.socket and socket.create_connection to their original state."""
-        monkeypatch.undo()

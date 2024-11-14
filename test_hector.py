@@ -5,7 +5,6 @@ import shutil
 import pytest
 from hunspell import Hunspell
 from pythes import PyThes
-from semver import VersionInfo
 from spacy.lang.sk import Slovak
 from spacy.tokens import Doc
 
@@ -17,6 +16,7 @@ from src.const.values import NLP_BATCH_SIZE
 from src.domain.config import Config
 from src.domain.metadata import Metadata
 from src.utils import Utils
+from test_utils import TestUtils
 
 TEST_TEXT_1 = 'Toto je testovací text.\nToto je veta.'
 TEST_TEXT_2 = 'Toto  je testovací text. Toto      je veta. Haló! A toto je čo?! '
@@ -443,7 +443,7 @@ def test_spellcheck_optimizes_on_small_changes(setup_teardown):
     doc = Service.full_nlp(text, nlp, NLP_BATCH_SIZE, Config())
     Service.spellcheck(hunspell, doc)
     # Simulujeme malú zmenu v texte
-    text_changed = "Toto je testovacíy text. "+text
+    text_changed = "Toto je testovacíy text. " + text
     doc_changed = Service.partial_nlp(text_changed, doc, nlp, Config(), 10)
     Service.spellcheck(hunspell, doc_changed)
     # Skontrolujeme, či je iba zmenený token označený ako chybný
@@ -498,7 +498,7 @@ def test_offline_updates(setup_teardown, monkeypatch):
     github_user = setup_teardown[4]
     latest_beta_version = Utils.find_latest_version(True, github_token, github_user)
     previous_beta_version = Utils.find_latest_version(True, github_token, github_user, skip=1)
-    Utils.disable_socket(monkeypatch)
+    TestUtils.disable_socket(monkeypatch)
     assert not Utils.check_updates(latest_beta_version, True, github_token, github_user)
     assert not Utils.check_updates(previous_beta_version, True, github_token, github_user)
     # After first stable release add tests for stable

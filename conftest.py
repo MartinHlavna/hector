@@ -7,6 +7,7 @@ import pytest
 from src.backend.service import Service
 from src.const.paths import DATA_DIRECTORY
 from src.utils import Utils
+from test_utils import TestUtils
 
 
 @pytest.fixture(scope='session')
@@ -42,4 +43,4 @@ def disable_socket_fixture(request, monkeypatch):
     if 'disable_socket' in request.keywords:
         # Disable socket methods
         # Get the monkeypatch fixture
-        Utils.disable_socket(monkeypatch)
+        TestUtils.disable_socket(monkeypatch)
