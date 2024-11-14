@@ -142,23 +142,27 @@ class Service:
             print("Unable to retrieve data. Please check your internet connection.")
             return None
 
-    # FUNCTION THAT DELETED NLP DICTIONARIES
+    # FUNCTION FOR UPGRADING DICTIONARIES
     @staticmethod
-    def prepare_dictionaries_for_upgrade():
+    def upgrade_dictionaries(github_token: string = None,
+                             github_user: string = None):
         if os.path.isdir(DICTIONARY_DIR):
             Service.cleanup_old_dictionaries()
             os.rename(DICTIONARY_DIR, DICTIONARY_DIR_BACKUP)
+        dictionaries = Service.initialize_dictionaries(github_token, github_user)
+        if dictionaries["spellcheck"] is not None and dictionaries["thesaurus"] is not None:
+            if os.path.isdir(DICTIONARY_DIR_BACKUP):
+                shutil.rmtree(DICTIONARY_DIR_BACKUP)
+            return dictionaries
+        else:
+            os.rename(DICTIONARY_DIR_BACKUP, DICTIONARY_DIR)
+            Service.cleanup_old_dictionaries()
+            return None
 
     @staticmethod
     def cleanup_old_dictionaries():
         if os.path.isdir(DICTIONARY_DIR_BACKUP):
             shutil.rmtree(DICTIONARY_DIR_BACKUP)
-
-    @staticmethod
-    def on_dictionary_upgrade_error():
-        if os.path.isdir(DICTIONARY_DIR_BACKUP):
-            shutil.rmtree(DICTIONARY_DIR)
-            os.rename(DICTIONARY_DIR_BACKUP, DICTIONARY_DIR)
 
     # FUNCTION THAT INTIALIZES NLP DICTIONARIES
     @staticmethod

@@ -118,14 +118,16 @@ class MainWindow:
                              shortcut_label="Ctrl+O"),
                     MenuItem(label="Otvoriť posledný súbor", command=self.load_file_contents, shortcut="<Control-r>",
                              icon=GuiUtils.fa_image(FA_SOLID, "#3B3B3B", "white", FontAwesomeIcons.rotate, 16),
-                             highlight_icon=GuiUtils.fa_image(FA_SOLID, "white", "#3B3B3B", FontAwesomeIcons.rotate, 16),
+                             highlight_icon=GuiUtils.fa_image(FA_SOLID, "white", "#3B3B3B", FontAwesomeIcons.rotate,
+                                                              16),
                              shortcut_label="Ctrl+R"),
                     MenuItem(label="Uložiť",
                              command=self.save_file,
                              shortcut="<Control-s>",
                              icon=GuiUtils.fa_image(FA_SOLID, "#3B3B3B", "white", FontAwesomeIcons.floppy_disk, 16),
-                             highlight_icon=GuiUtils.fa_image(FA_SOLID, "white", "#3B3B3B", FontAwesomeIcons.floppy_disk,
-                                                           16),
+                             highlight_icon=GuiUtils.fa_image(FA_SOLID, "white", "#3B3B3B",
+                                                              FontAwesomeIcons.floppy_disk,
+                                                              16),
                              shortcut_label="Ctrl+S"),
                 ]),
             MenuItem(label="Upraviť", underline_index=0, submenu=[
@@ -140,7 +142,8 @@ class MainWindow:
                 MenuItem(label="Zopakovať",
                          command=self.redo,
                          icon=GuiUtils.fa_image(FA_SOLID, "#3B3B3B", "white", FontAwesomeIcons.rotate_right, 16),
-                         highlight_icon=GuiUtils.fa_image(FA_SOLID, "white", "#3B3B3B", FontAwesomeIcons.rotate_right, 16),
+                         highlight_icon=GuiUtils.fa_image(FA_SOLID, "white", "#3B3B3B", FontAwesomeIcons.rotate_right,
+                                                          16),
                          shortcut="<Control-Shift-z>",
                          shortcut_label="Ctrl+Shift+Z"
                          ),
@@ -179,8 +182,9 @@ class MainWindow:
             MenuItem(label="Pomoc", underline_index=0, submenu=[
                 MenuItem(label="O programe",
                          icon=GuiUtils.fa_image(FA_SOLID, "#3B3B3B", "white", FontAwesomeIcons.question_circle, 16),
-                         highlight_icon=GuiUtils.fa_image(FA_SOLID, "white", "#3B3B3B", FontAwesomeIcons.question_circle,
-                                                       16),
+                         highlight_icon=GuiUtils.fa_image(FA_SOLID, "white", "#3B3B3B",
+                                                          FontAwesomeIcons.question_circle,
+                                                          16),
                          command=self.show_about
                          ),
                 MenuItem(
@@ -1066,47 +1070,41 @@ class MainWindow:
         splash = SplashWindow(self.root)
         # noinspection PyBroadException
         splash.update_status("aktualizujem a reinicializujem slovníky...")
-        Service.prepare_dictionaries_for_upgrade()
-        dictionaries = Service.initialize_dictionaries()
-        if dictionaries["spellcheck"] is not None and dictionaries["thesaurus"] is not None:
+        dictionaries = Service.upgrade_dictionaries()
+        splash.close()
+        if dictionaries is not None:
             self.spellcheck_dictionary = dictionaries["spellcheck"]
             self.thesaurus = dictionaries["thesaurus"]
-            Service.cleanup_old_dictionaries()
-            splash.close()
         else:
-            Service.on_dictionary_upgrade_error()
-            splash.close()
             messagebox.showerror("Chyba!", "Slovníky sa nepodarilo aktualizovať. Skontrolujte internetové pripojenie.")
 
+    def show_dep_image(self, event=None):
+        if self.current_instrospection_token is not None:
+            dep_window = tk.Toplevel(self.root)
+            dep_window.title("Rozbor vety")
+            rlg = svg2rlg(io.StringIO(displacy.render(self.current_instrospection_token.sent, minify=True)))
+            dep_image = renderPM.drawToPIL(rlg)
+            scaling_ratio = 1000 / dep_image.width
+            dep_view = ImageTk.PhotoImage(dep_image.resize((1000, math.ceil(dep_image.height * scaling_ratio))))
+            image_holder = ttk.Label(dep_window, image=dep_view)
+            image_holder.image = dep_view
+            image_holder.pack(fill=tk.BOTH, expand=True)
+            self.configure_modal(dep_window, width=dep_view.width(), height=dep_view.height())
 
-def show_dep_image(self, event=None):
-    if self.current_instrospection_token is not None:
-        dep_window = tk.Toplevel(self.root)
-        dep_window.title("Rozbor vety")
-        rlg = svg2rlg(io.StringIO(displacy.render(self.current_instrospection_token.sent, minify=True)))
-        dep_image = renderPM.drawToPIL(rlg)
-        scaling_ratio = 1000 / dep_image.width
-        dep_view = ImageTk.PhotoImage(dep_image.resize((1000, math.ceil(dep_image.height * scaling_ratio))))
-        image_holder = ttk.Label(dep_window, image=dep_view)
-        image_holder.image = dep_view
-        image_holder.pack(fill=tk.BOTH, expand=True)
-        self.configure_modal(dep_window, width=dep_view.width(), height=dep_view.height())
-
-
-def configure_modal(self, modal, width=600, height=400):
-    if platform.system() == "Windows":
-        scaling_factor = Utils.get_windows_scaling_factor()
-        width = width * scaling_factor
-        height = height * scaling_factor
-    modal.bind('<Escape>', lambda e: modal.destroy())
-    modal.geometry("%dx%d" % (width, height))
-    modal.resizable(False, False)
-    screen_width = self.root.winfo_screenwidth()
-    screen_height = self.root.winfo_screenheight()
-    x = screen_width / 2 - (width / 2)
-    y = screen_height / 2 - (height / 2)
-    modal.geometry("+%d+%d" % (x, y))
-    modal.wait_visibility()
-    modal.grab_set()
-    modal.focus_set()
-    modal.transient(self.root)
+    def configure_modal(self, modal, width=600, height=400):
+        if platform.system() == "Windows":
+            scaling_factor = Utils.get_windows_scaling_factor()
+            width = width * scaling_factor
+            height = height * scaling_factor
+        modal.bind('<Escape>', lambda e: modal.destroy())
+        modal.geometry("%dx%d" % (width, height))
+        modal.resizable(False, False)
+        screen_width = self.root.winfo_screenwidth()
+        screen_height = self.root.winfo_screenheight()
+        x = screen_width / 2 - (width / 2)
+        y = screen_height / 2 - (height / 2)
+        modal.geometry("+%d+%d" % (x, y))
+        modal.wait_visibility()
+        modal.grab_set()
+        modal.focus_set()
+        modal.transient(self.root)

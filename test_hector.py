@@ -504,8 +504,25 @@ def test_offline_updates(setup_teardown, monkeypatch):
     # After first stable release add tests for stable
 
 
+def test_dictionary_upgrades(setup_teardown, monkeypatch):
+    github_token = setup_teardown[3]
+    github_user = setup_teardown[4]
+    result = Service.upgrade_dictionaries(github_token, github_user)
+    assert result is not None
+    assert result["thesaurus"] is not None
+    assert result["spellcheck"] is not None
+    TestUtils.disable_socket(monkeypatch)
+    result = Service.upgrade_dictionaries(github_token, github_user)
+    assert result is None
+    TestUtils.enable_socket(monkeypatch)
+    result = Service.upgrade_dictionaries(github_token, github_user)
+    assert result is not None
+    assert result["thesaurus"] is not None
+    assert result["spellcheck"] is not None
+
+
 @pytest.mark.disable_socket
-def test_offline_inicialization(request):
+def test_offline_initialization(request):
     if os.path.isdir(DATA_DIRECTORY):
         shutil.rmtree(DATA_DIRECTORY)
     nlp = Service.initialize_nlp()
