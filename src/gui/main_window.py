@@ -475,13 +475,21 @@ class MainWindow:
     def highlight_long_sentences(self, doc: Doc):
         if not self.config.analysis_settings.enable_long_sentences:
             return
+        doc_size = len(doc.text)
+        doc_text = doc.text
         for sentence in doc.sents:
             if sentence._.is_long_sentence:
-                start_index = f"1.0 + {sentence.start_char} chars"
+                start = sentence.start_char
+                while start < doc_size - 1 and (doc_text[start] == '\n' or doc_text[start] == '\r'):
+                    start += 1
+                start_index = f"1.0 + {start} chars"
                 end_index = f"1.0 + {sentence.end_char} chars"
                 self.text_editor.tag_add(LONG_SENTENCE_TAG_NAME_HIGH, start_index, end_index)
             elif sentence._.is_mid_sentence:
-                start_index = f"1.0 + {sentence.start_char} chars"
+                start = sentence.start_char
+                while start < doc_size - 1 and (doc_text[start] == '\n' or doc_text[start] == '\r'):
+                    start += 1
+                start_index = f"1.0 + {start} chars"
                 end_index = f"1.0 + {sentence.end_char} chars"
                 self.text_editor.tag_add(LONG_SENTENCE_TAG_NAME_MID, start_index, end_index)
 

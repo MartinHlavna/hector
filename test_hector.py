@@ -542,6 +542,5 @@ def test_get_windows_scaling():
     else:
         assert scaling_factor is None
 
-
 if __name__ == '__main__':
     pytest.main()
