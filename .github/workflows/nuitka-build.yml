@@ -90,7 +90,7 @@ jobs:
         with:
           nuitka-version: develop
           script-name: hector.py
-          onefile: true
+          mode: onefile
           enable-plugins: tk-inter
           include-package: |
             ttkthemes
