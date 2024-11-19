@@ -32,13 +32,14 @@ from src.const.tags import CLOSE_WORD_PREFIX, LONG_SENTENCE_TAG_NAME_HIGH, LONG_
     PARAGRAPH_TAG_NAME, TRAILING_SPACES_TAG_NAME, MULTIPLE_PUNCTUATION_TAG_NAME, MULTIPLE_SPACES_TAG_NAME, \
     SEARCH_RESULT_TAG_NAME, CURRENT_SEARCH_RESULT_TAG_NAME, GRAMMAR_ERROR_TAG_NAME, CLOSE_WORD_TAG_NAME, \
     FREQUENT_WORD_PREFIX, FREQUENT_WORD_TAG_NAME, COMPUTER_QUOTE_MARKS_TAG_NAME, DANGLING_QUOTE_MARK_TAG_NAME, \
-    SHOULD_USE_LOWER_QUOTE_MARK_TAG_NAME, SHOULD_USE_UPPER_QUOTE_MARK_TAG_NAME
+    SHOULD_USE_LOWER_QUOTE_MARK_TAG_NAME, SHOULD_USE_UPPER_QUOTE_MARK_TAG_NAME, FORMATTING_TAGS
 from src.const.values import READABILITY_MAX_VALUE, DOCUMENTATION_LINK, NLP_BATCH_SIZE
 from src.gui.analysis_settings_modal import AnalysisSettingsModal
 from src.gui.appearance_settings_modal import AppearanceSettingsModal
 from src.gui.gui_utils import GuiUtils
 from src.gui.menu import MenuItem, SimpleMenu
 from src.gui.splash_window import SplashWindow
+from src.gui.tooltip import Tooltip
 from src.utils import Utils
 
 # A4 SIZE IN INCHES. WE LATER USE DPI TO SET EDITOR WIDTH
@@ -92,7 +93,9 @@ class MainWindow:
         # CLOSE WORD, THAT IS CURRENTLY HIGHLIGHTED
         self.highlighted_word = ''
         # TOOLTIP WINDOW
-        self.tooltip = None
+        self.tooltip = Tooltip(self.root)
+        self.last_tags = set()
+
         # DEFAULT NLP DOCUMENT INITIALIZED ON EMPTY TEXT
         self.doc = self.nlp('')
         # TOKEN SELECTED IN LEFT BOTTOM INTOSPECTION WINDOW
@@ -367,6 +370,8 @@ class MainWindow:
         self.text_editor.bind("<Control-a>", self.select_all)
         self.text_editor.bind("<Control-A>", self.select_all)
         self.text_editor.bind("<<Paste>>", self.handle_clipboard_paste)
+        self.text_editor.bind('<Motion>', self.editor_on_mouse_motion)
+        self.text_editor.bind('<Leave>', self.editor_on_mouse_leave)
         self.root.bind("<Control-F>", self.focus_search)
         self.root.bind("<Control-f>", self.focus_search)
         self.root.bind("<Control-e>", self.focus_editor)
@@ -458,7 +463,7 @@ class MainWindow:
             self.bind_tag_mouse_event(tag_name,
                                       self.word_freq_text,
                                       on_enter=lambda e: self.highlight_same_word(
-                                          e, self.word_freq_text, False, tag_prefix=FREQUENT_WORD_PREFIX),
+                                          e, self.word_freq_text, tag_prefix=FREQUENT_WORD_PREFIX),
                                       on_leave=lambda e: self.unhighlight_same_word(e),
                                       on_click=lambda e: self.jump_to_next_word_occourence(
                                           e, self.word_freq_text, tag_prefix=FREQUENT_WORD_PREFIX)
@@ -572,7 +577,7 @@ class MainWindow:
                 start_char += len(word_text)
                 self.bind_tag_mouse_event(tag_name,
                                           self.close_words_text,
-                                          lambda e: self.highlight_same_word(e, self.close_words_text, False),
+                                          lambda e: self.highlight_same_word(e, self.close_words_text),
                                           lambda e: self.unhighlight_same_word(e),
                                           on_click=lambda e: self.jump_to_next_word_occourence(
                                               e, self.close_words_text, tag_prefix=CLOSE_WORD_PREFIX)
@@ -603,35 +608,13 @@ class MainWindow:
         if on_click is not None:
             text.tag_bind(tag_name, "<Button-1>", on_click)
 
-    def highlight_grammar_error(self, event):
-        # Získanie indexu myši
-        mouse_index = self.text_editor.index(f"@{event.x},{event.y}")
-        word_position = self.text_editor.count("1.0", mouse_index, "chars")
-        if word_position is not None:
-            span = self.doc.char_span(word_position[0], word_position[0], alignment_mode='expand')
-            if span is not None:
-                token = span.root
-                if token._.grammar_error_type == GRAMMAR_ERROR_TYPE_MISSPELLED_WORD:
-                    suggestions = self.spellcheck_dictionary.suggest(span.root.text)
-                    self.show_tooltip(event, f'Možný preklep v slove.\n\nNávrhy: {", ".join(suggestions)}')
-                elif token._.grammar_error_type == GRAMMAR_ERROR_TYPE_WRONG_Y_SUFFIX:
-                    self.show_tooltip(event, f'Slovo by malo končiť na í.\n\nNávrhy: {span.root.text[:-1] + "í"}')
-                elif token._.grammar_error_type == GRAMMAR_ERROR_TYPE_WRONG_I_SUFFIX:
-                    self.show_tooltip(event, f'Slovo by malo končiť na ý.\n\nNávrhy: {span.root.text[:-1] + "ý"}')
-                elif token._.grammar_error_type == GRAMMAR_ERROR_TYPE_WRONG_YSI_SUFFIX:
-                    self.show_tooltip(event, f'Slovo by malo končiť na ísi.\n\nNávrhy: {span.root.text[:-3] + "ísi"}')
-                elif token._.grammar_error_type == GRAMMAR_ERROR_TYPE_WRONG_ISI_SUFFIX:
-                    self.show_tooltip(event, f'Slovo by malo končiť na ýsi.\n\nNávrhy: {span.root.text[:-3] + "ýsi"}')
-
     # HIGHLIGHT SAME WORD ON MOUSE OVER
-    def highlight_same_word(self, event, trigger, with_tooltip=True, tag_prefix=CLOSE_WORD_PREFIX):
+    def highlight_same_word(self, event, trigger, tag_prefix=CLOSE_WORD_PREFIX):
         self.unhighlight_same_word(event)
         # Získanie indexu myši
         mouse_index = trigger.index(f"@{event.x},{event.y}")
         # Získanie všetkých tagov na pozícii myši
         tags_at_mouse = trigger.tag_names(mouse_index)
-        if with_tooltip:
-            self.show_tooltip(event, 'Toto slovo sa opakuje viackrát na krátkom úseku')
         for tag in tags_at_mouse:
             if tag.startswith(tag_prefix):
                 self.highlighted_word = tag
@@ -662,34 +645,81 @@ class MainWindow:
 
     # REMOVE HIGHLIGHTING FROM SAME WORD ON MOUSE OVER END
     def unhighlight_same_word(self, event):
-        self.hide_tooltip(event)
         if self.highlighted_word is not None and len(self.highlighted_word) > 0:
             original_color = self.close_word_colors.get(self.highlighted_word, "")
             self.text_editor.tag_config(self.highlighted_word, background="", foreground=original_color)
             self.close_words_text.tag_config(self.highlighted_word, background="", foreground="")
             self.word_freq_text.tag_config(self.highlighted_word, background="", foreground="")
 
-    def show_tooltip(self, event, text):
-        if self.tooltip:
-            self.tooltip.destroy()
-        # Get the position of the mouse
-        x = event.x_root + 10
-        y = event.y_root + 10
-        # Create a Toplevel window
-        self.tooltip = tk.Toplevel(self.root)
-        self.tooltip.wm_overrideredirect(True)
-        self.tooltip.wm_geometry(f"+{x}+{y}")
-        # Add content to the tooltip
-        label = tk.Label(self.tooltip, text=f"{text}", background=ACCENT_COLOR, foreground=PANEL_TEXT_COLOR,
-                         relief="solid", borderwidth=1,
-                         wraplength=240,
-                         justify="left", padx=5, pady=5)
-        label.pack()
+    def editor_on_mouse_motion(self, event):
+        x, y = event.x, event.y
+        index = self.text_editor.index(f"@{x},{y}")
+        current_tags = set(self.text_editor.tag_names(index)) - FORMATTING_TAGS
+        if current_tags != self.last_tags:
+            if current_tags:
+                # There are tags under the mouse
+                error_messages = set()
+                for tag in current_tags:
+                    if tag == LONG_SENTENCE_TAG_NAME_MID:
+                        error_messages.add('Táto veta je trochu dlhšia.')
+                    elif tag == LONG_SENTENCE_TAG_NAME_HIGH:
+                        error_messages.add('Táto veta je dlhá.')
+                    elif tag == MULTIPLE_PUNCTUATION_TAG_NAME:
+                        error_messages.add('Viacnásobná interpunkcia.')
+                    elif tag == TRAILING_SPACES_TAG_NAME:
+                        error_messages.add('Zbytočná medzera na konci odstavca.')
+                    elif tag == COMPUTER_QUOTE_MARKS_TAG_NAME:
+                        error_messages.add('Počítačová úvodzovka. V beletrii by sa mali používať '
+                                           'slovenské úvodzovky „ “.\n\nPOZOR! Nesprávne úvodzovky '
+                                           'môžu narušiť správne určenie hraníc viet!')
+                    elif tag == DANGLING_QUOTE_MARK_TAG_NAME:
+                        error_messages.add('Úvodzovka by nemala mať medzeru z oboch strán.')
+                    elif tag == SHOULD_USE_LOWER_QUOTE_MARK_TAG_NAME:
+                        error_messages.add('Tu by mala byť použitá spodná („) úvozdovka.')
+                    elif tag == SHOULD_USE_UPPER_QUOTE_MARK_TAG_NAME:
+                        error_messages.add('Tu by mala byť použitá horná (“) úvozdovka.')
+                    elif tag == MULTIPLE_SPACES_TAG_NAME:
+                        error_messages.add('Viacnásobná medzera.')
+                    elif tag == CLOSE_WORD_TAG_NAME:
+                        error_messages.add('Toto slovo sa opakuje viackrát na krátkom úseku')
+                    elif tag == GRAMMAR_ERROR_TAG_NAME:
+                        word_position = self.text_editor.count("1.0", index, "chars")
+                        if word_position is not None:
+                            span = self.doc.char_span(word_position[0], word_position[0], alignment_mode='expand')
+                            if span is not None:
+                                token = span.root
+                                if token._.grammar_error_type == GRAMMAR_ERROR_TYPE_MISSPELLED_WORD:
+                                    suggestions = self.spellcheck_dictionary.suggest(span.root.text)
+                                    error_messages.add(f'Možný preklep v slove.\n\nNávrhy: {", ".join(suggestions)}')
+                                elif token._.grammar_error_type == GRAMMAR_ERROR_TYPE_WRONG_Y_SUFFIX:
+                                    error_messages.add(
+                                        f'Slovo by malo končiť na í.\n\nNávrhy: {span.root.text[:-1] + "í"}')
+                                elif token._.grammar_error_type == GRAMMAR_ERROR_TYPE_WRONG_I_SUFFIX:
+                                    error_messages.add(
+                                        f'Slovo by malo končiť na ý.\n\nNávrhy: {span.root.text[:-1] + "ý"}')
+                                elif token._.grammar_error_type == GRAMMAR_ERROR_TYPE_WRONG_YSI_SUFFIX:
+                                    error_messages.add(
+                                        f'Slovo by malo končiť na ísi.\n\nNávrhy: {span.root.text[:-3] + "ísi"}')
+                                elif token._.grammar_error_type == GRAMMAR_ERROR_TYPE_WRONG_ISI_SUFFIX:
+                                    error_messages.add(
+                                        f'Slovo by malo končiť na ýsi.\n\nNávrhy: {span.root.text[:-3] + "ýsi"}')
 
-    def hide_tooltip(self, event):
-        if self.tooltip:
-            self.tooltip.destroy()
-            self.tooltip = None
+                if error_messages:
+                    tooltip_text = "\n---\n".join(error_messages)
+                    # Get the absolute position of the mouse
+                    abs_x = self.text_editor.winfo_rootx() + x
+                    abs_y = self.text_editor.winfo_rooty() + y
+                    self.tooltip.show(tooltip_text, abs_x, abs_y)
+                else:
+                    self.tooltip.hide()
+            else:
+                # No tags under the mouse
+                self.tooltip.hide()
+        self.last_tags = current_tags
+
+    def editor_on_mouse_leave(self, event):
+        self.tooltip.hide()
+        self.last_tags = set()
 
     # LOAD TEXT FILE
     def load_file_contents(self, file_path=None):
@@ -853,66 +883,6 @@ class MainWindow:
                                   self.text_editor,
                                   lambda e: self.highlight_same_word(e, self.text_editor),
                                   lambda e: self.unhighlight_same_word(e)
-                                  )
-        self.bind_tag_mouse_event(GRAMMAR_ERROR_TAG_NAME,
-                                  self.text_editor,
-                                  lambda e: self.highlight_grammar_error(e),
-                                  lambda e: self.hide_tooltip(e)
-                                  )
-        self.bind_tag_mouse_event(TRAILING_SPACES_TAG_NAME,
-                                  self.text_editor,
-                                  lambda e: self.show_tooltip(e, 'Zbytočná medzera na konci odstavca.'),
-                                  lambda e: self.hide_tooltip(e)
-                                  )
-        self.bind_tag_mouse_event(COMPUTER_QUOTE_MARKS_TAG_NAME,
-                                  self.text_editor,
-                                  lambda e: self.show_tooltip(e,
-                                                              'Počítačová úvodzovka. V beletrii by sa mali používať '
-                                                              'slovenské úvodzovky „ “.\n\nPOZOR! Nesprávne úvodzovky '
-                                                              'môžu narušiť správne určenie hraníc viet!'
-                                                              ),
-                                  lambda e: self.hide_tooltip(e)
-                                  )
-        self.bind_tag_mouse_event(DANGLING_QUOTE_MARK_TAG_NAME,
-                                  self.text_editor,
-                                  lambda e: self.show_tooltip(e,
-                                                              'Úvodzovka by nemala mať medzeru z oboch strán.'
-                                                              ),
-                                  lambda e: self.hide_tooltip(e)
-                                  )
-        self.bind_tag_mouse_event(SHOULD_USE_LOWER_QUOTE_MARK_TAG_NAME,
-                                  self.text_editor,
-                                  lambda e: self.show_tooltip(e,
-                                                              'Tu by mala byť použitá spodná („) úvozdovka.'
-                                                              ),
-                                  lambda e: self.hide_tooltip(e)
-                                  )
-        self.bind_tag_mouse_event(SHOULD_USE_UPPER_QUOTE_MARK_TAG_NAME,
-                                  self.text_editor,
-                                  lambda e: self.show_tooltip(e,
-                                                              'Tu by mala byť použitá horná (“) úvozdovka.'
-                                                              ),
-                                  lambda e: self.hide_tooltip(e)
-                                  )
-        self.bind_tag_mouse_event(LONG_SENTENCE_TAG_NAME_MID,
-                                  self.text_editor,
-                                  lambda e: self.show_tooltip(e, 'Táto veta je trochu dlhšia.'),
-                                  lambda e: self.hide_tooltip(e)
-                                  )
-        self.bind_tag_mouse_event(LONG_SENTENCE_TAG_NAME_HIGH,
-                                  self.text_editor,
-                                  lambda e: self.show_tooltip(e, 'Táto veta je dlhá.'),
-                                  lambda e: self.hide_tooltip(e)
-                                  )
-        self.bind_tag_mouse_event(MULTIPLE_PUNCTUATION_TAG_NAME,
-                                  self.text_editor,
-                                  lambda e: self.show_tooltip(e, 'Viacnásobná interpunkcia.'),
-                                  lambda e: self.hide_tooltip(e)
-                                  )
-        self.bind_tag_mouse_event(MULTIPLE_SPACES_TAG_NAME,
-                                  self.text_editor,
-                                  lambda e: self.show_tooltip(e, 'Viacnásobná medzera.'),
-                                  lambda e: self.hide_tooltip(e)
                                   )
         readability = Service.evaluate_readability(self.doc)
         self.readability_value.configure(text=f"{readability: .0f} / {READABILITY_MAX_VALUE}")
