@@ -156,6 +156,13 @@ class MainWindow:
                          highlight_icon=GuiUtils.fa_image(FA_SOLID, "white", "#3B3B3B", FontAwesomeIcons.rotate, 16),
                          )
             ]),
+            MenuItem(label="Nástroje", underline_index=0, submenu=[
+                MenuItem(
+                    label="Zalomiť každú vetu na nový riadok",
+                    command=self.break_sentences_to_new_lines,
+                ),
+
+            ]),
             MenuItem(label="Nastavenia", underline_index=0, submenu=[
                 MenuItem(
                     label="Parametre analýzy",
@@ -781,6 +788,40 @@ class MainWindow:
 
     def undo(self, event=None):
         self.text_editor.edit_undo()
+        self.analyze_text()
+        return 'break'
+
+    def break_sentences_to_new_lines(self, event=None):
+        add_more_blank_lines = messagebox.askyesnocancel("Zalomenie textu", "Pridať medzi vety prázdny riadok?")
+        if add_more_blank_lines is None:
+            # USER HAS CANCELLED FUNCTION
+            return 'break'
+        text = ""
+        cur_sent = ""
+        for sent in self.doc.sents:
+            sent_text = sent.text
+            # STRIP NEWLINES FROM START OF SENTENCE
+            while len(sent_text) > 0 and sent_text[0] == '\n':
+                sent_text = sent_text[1:]
+            if len(sent_text) > 1:
+                # ADD CURRENT SENTENCE TO TEXT
+                if len(cur_sent) > 0:
+                    text += f"{cur_sent}\n"
+                    if add_more_blank_lines:
+                        text += '\n'
+                    cur_sent = ""
+                if len(sent_text) > 0:
+                    cur_sent = sent_text
+            elif len(sent_text) > 0:
+                # MERGE TO PREVIOUS SENTENCE
+                cur_sent += sent_text
+        # ADD LAST SENTENCE TO TEXT
+        if len(cur_sent) > 0:
+            text += f"{cur_sent}\n"
+            if add_more_blank_lines:
+                text += '\n'
+        self.text_editor.delete(1.0, tk.END)
+        self.text_editor.insert(tk.END, text)
         self.analyze_text()
         return 'break'
 

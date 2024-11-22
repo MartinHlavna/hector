@@ -6,6 +6,7 @@ class FontAwesomeIcons:
     file_export = '\uf56e'
     file_import = '\uf56f'
     gears = '\uf013'
+    wrench = '\uf0ad'
     pallete = '\uf53f'
     book = '\uf02d'
     question_circle = '\uf059'
