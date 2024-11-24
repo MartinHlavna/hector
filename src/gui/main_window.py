@@ -158,8 +158,8 @@ class MainWindow:
             ]),
             MenuItem(label="Nástroje", underline_index=0, submenu=[
                 MenuItem(
-                    label="Zalomiť každú vetu na nový riadok",
-                    command=self.break_sentences_to_new_lines,
+                    label="Exportovať zoznam viet",
+                    command=self.export_sentences,
                 ),
 
             ]),
@@ -791,38 +791,14 @@ class MainWindow:
         self.analyze_text()
         return 'break'
 
-    def break_sentences_to_new_lines(self, event=None):
+    def export_sentences(self, event=None):
         add_more_blank_lines = messagebox.askyesnocancel("Zalomenie textu", "Pridať medzi vety prázdny riadok?")
         if add_more_blank_lines is None:
             # USER HAS CANCELLED FUNCTION
             return 'break'
-        text = ""
-        cur_sent = ""
-        for sent in self.doc.sents:
-            sent_text = sent.text
-            # STRIP NEWLINES FROM START OF SENTENCE
-            while len(sent_text) > 0 and sent_text[0] == '\n':
-                sent_text = sent_text[1:]
-            if len(sent_text) > 1:
-                # ADD CURRENT SENTENCE TO TEXT
-                if len(cur_sent) > 0:
-                    text += f"{cur_sent}\n"
-                    if add_more_blank_lines:
-                        text += '\n'
-                    cur_sent = ""
-                if len(sent_text) > 0:
-                    cur_sent = sent_text
-            elif len(sent_text) > 0:
-                # MERGE TO PREVIOUS SENTENCE
-                cur_sent += sent_text
-        # ADD LAST SENTENCE TO TEXT
-        if len(cur_sent) > 0:
-            text += f"{cur_sent}\n"
-            if add_more_blank_lines:
-                text += '\n'
-        self.text_editor.delete(1.0, tk.END)
-        self.text_editor.insert(tk.END, text)
-        self.analyze_text()
+        file_path = filedialog.asksaveasfilename(defaultextension=".txt", filetypes=[("Textové súbory", "*.txt")])
+        if file_path:
+            Service.export_sentences(file_path, self.doc, add_more_blank_lines)
         return 'break'
 
     def redo(self, event=None):
