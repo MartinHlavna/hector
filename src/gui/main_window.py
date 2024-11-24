@@ -156,6 +156,13 @@ class MainWindow:
                          highlight_icon=GuiUtils.fa_image(FA_SOLID, "white", "#3B3B3B", FontAwesomeIcons.rotate, 16),
                          )
             ]),
+            MenuItem(label="Nástroje", underline_index=0, submenu=[
+                MenuItem(
+                    label="Exportovať zoznam viet",
+                    command=self.export_sentences,
+                ),
+
+            ]),
             MenuItem(label="Nastavenia", underline_index=0, submenu=[
                 MenuItem(
                     label="Parametre analýzy",
@@ -782,6 +789,16 @@ class MainWindow:
     def undo(self, event=None):
         self.text_editor.edit_undo()
         self.analyze_text()
+        return 'break'
+
+    def export_sentences(self, event=None):
+        add_more_blank_lines = messagebox.askyesnocancel("Zalomenie textu", "Pridať medzi vety prázdny riadok?")
+        if add_more_blank_lines is None:
+            # USER HAS CANCELLED FUNCTION
+            return 'break'
+        file_path = filedialog.asksaveasfilename(defaultextension=".txt", filetypes=[("Textové súbory", "*.txt")])
+        if file_path:
+            Service.export_sentences(file_path, self.doc, add_more_blank_lines)
         return 'break'
 
     def redo(self, event=None):

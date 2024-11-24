@@ -18,6 +18,8 @@ from src.domain.metadata import Metadata
 from src.utils import Utils
 from test_utils import TestUtils
 
+SENTENCES_FILE = "sentences.txt"
+
 TEST_TEXT_1 = 'Toto je testovací text.\nToto je veta.'
 TEST_TEXT_2 = 'Toto  je testovací text. Toto      je veta. Haló! A toto je čo?! '
 TEST_TEXT_3 = 'Afto išlo po ceste. Tamtý chlapci sú pekný.'
@@ -482,6 +484,23 @@ def test_config_save_load(setup_teardown):
     Service.save_config(c, c_path)
     c = Service.load_config(c_path)
     assert c.analysis_settings.long_sentence_words_high == 999
+
+
+def test_export_sentences(setup_teardown):
+    nlp = setup_teardown[0]
+    doc = Service.full_nlp(TEST_TEXT_1, nlp, NLP_BATCH_SIZE, Config())
+    Service.export_sentences(SENTENCES_FILE, doc, False)
+    assert os.path.isfile(SENTENCES_FILE)
+    with open(SENTENCES_FILE, 'r', encoding='utf-8') as file:
+        sents = file.read()
+    assert sents == f'{TEST_TEXT_1}\n'
+    os.remove(SENTENCES_FILE)
+    Service.export_sentences(SENTENCES_FILE, doc, True)
+    assert os.path.isfile(SENTENCES_FILE)
+    with open(SENTENCES_FILE, 'r', encoding='utf-8') as file:
+        sents = file.read()
+    with_spaces = "\n\n".join(TEST_TEXT_1.split("\n"))
+    assert sents == f'{with_spaces}\n\n'
 
 
 def test_metadata_save_load(setup_teardown):
