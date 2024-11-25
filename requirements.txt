@@ -1,7 +1,7 @@
 spacy~=3.8.2
 ttkthemes~=3.2.2
 pillow~=11.0.0
-setuptools~=75.5.0
+setuptools~=75.6.0
 fsspec~=2024.10.0
 cyhunspell @ https://github.com/MSeal/cython_hunspell/archive/refs/tags/2.0.3.tar.gz
 svglib~=1.5.1
