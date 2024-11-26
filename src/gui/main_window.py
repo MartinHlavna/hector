@@ -262,7 +262,7 @@ class MainWindow:
         left_side_frame_scroll.pack(side=tk.RIGHT, fill=tk.Y)
         self.close_words_text = tk.Text(left_side_panel, highlightthickness=0, bd=0, wrap=tk.WORD, state=tk.DISABLED,
                                         width=20, background=PRIMARY_COLOR, foreground=PANEL_TEXT_COLOR,
-                                        yscrollcommand=left_side_frame_scroll.set)
+                                        yscrollcommand=left_side_frame_scroll.set, cursor="xterm")
         self.close_words_text.pack(fill=tk.BOTH, expand=1, pady=10, padx=10)
         left_side_frame_scroll.config(command=self.close_words_text.yview)
         # MIDDLE TEXT EDITOR CONTENTS
@@ -313,7 +313,7 @@ class MainWindow:
         right_side_frame_scroll.pack(side=tk.RIGHT, fill=tk.Y)
         self.word_freq_text = tk.Text(right_side_panel, highlightthickness=0, bd=0, wrap=tk.WORD, state=tk.DISABLED,
                                       width=20, background=PRIMARY_COLOR, foreground=PANEL_TEXT_COLOR,
-                                      yscrollcommand=right_side_frame_scroll.set)
+                                      yscrollcommand=right_side_frame_scroll.set, cursor="xterm")
         self.word_freq_text.pack(fill=tk.BOTH, expand=1, pady=10, padx=10)
         right_side_frame_scroll.config(command=self.word_freq_text.yview)
         # BOTTOM PANEL CONTENTS
@@ -622,6 +622,8 @@ class MainWindow:
         mouse_index = trigger.index(f"@{event.x},{event.y}")
         # Získanie všetkých tagov na pozícii myši
         tags_at_mouse = trigger.tag_names(mouse_index)
+        self.word_freq_text.config(cursor="hand2")
+        self.close_words_text.config(cursor="hand2")
         for tag in tags_at_mouse:
             if tag.startswith(tag_prefix):
                 self.highlighted_word = tag
@@ -653,6 +655,8 @@ class MainWindow:
     # REMOVE HIGHLIGHTING FROM SAME WORD ON MOUSE OVER END
     def unhighlight_same_word(self, event):
         if self.highlighted_word is not None and len(self.highlighted_word) > 0:
+            self.word_freq_text.config(cursor="xterm")
+            self.close_words_text.config(cursor="xterm")
             original_color = self.close_word_colors.get(self.highlighted_word, "")
             self.text_editor.tag_config(self.highlighted_word, background="", foreground=original_color)
             self.close_words_text.tag_config(self.highlighted_word, background="", foreground="")
