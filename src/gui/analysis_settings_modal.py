@@ -26,7 +26,7 @@ class AnalysisSettingsModal:
         frequent_words_checkbox.grid(row=row, column=1, padx=(6, 10), pady=2, sticky='w')
 
         row += 1
-        tk.Label(self.toplevel, text="Porovnávať z tvar slova", anchor='w').grid(
+        tk.Label(self.toplevel, text="Porovnávať základný tvar slova", anchor='w').grid(
             row=row, column=0, padx=10, pady=2, sticky='w'
         )
         self.frequent_words_use_lemma_var = tk.BooleanVar(value=self.config.analysis_settings.repeated_words_use_lemma)
