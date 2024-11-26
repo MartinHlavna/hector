@@ -47,13 +47,13 @@ class AnalysisSettings:
         self.close_words_min_word_length = data.get('close_words_min_word_length', 3)
         # USE LEMMA COMPARISION IN CLOSE_WORDS FUNCTIONALITY
         self.close_words_use_lemma = data.get('close_words_use_lemma', False)
-        # MINIMAL DISTANCE BETWEEN REPEATED WORDS
+        # MINIMAL DISTANCE BETWEEN REPEATED WORDS (DEFAULT VALUE IS ABOUT THIRD OF PAGE)
         self.close_words_min_distance_between_words = data.get(
             'close_words_min_distance_between_words',
             100
         )
         # MINIMAL FREQUENCY FOR REPEATED WORD TO BE HIGHLIGHTED
-        self.close_words_min_frequency = data.get('close_words_min_frequency', 2)
+        self.close_words_min_frequency = data.get('close_words_min_frequency', 3)
         # ENABLE FREQUENT WORDS SIDE PANEL
         self.enable_frequent_words = data.get('enable_frequent_words', True)
         # ENABLE HIGHLIGHTING OF LONG SENTENCES
