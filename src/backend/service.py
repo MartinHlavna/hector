@@ -123,6 +123,7 @@ class Service:
                                       rules=nlp.Defaults.tokenizer_exceptions)
             # SPACY EXTENSIONS
             Token.set_extension("is_word", default=False, force=True)
+            Token.set_extension("word_index", default=None, force=True)
             Token.set_extension("grammar_error_type", default=None, force=True)
             Token.set_extension("has_grammar_error", default=False, force=True)
             Token.set_extension("paragraph", default=None, force=True)
@@ -275,6 +276,7 @@ class Service:
     def fill_custom_data(doc: Doc, config: Config):
         word_pattern = re.compile("\\w+")
         words = []
+        word_index = 0
         paragraphs = []
         cur_paragraph_start = 0
         lemmas = {}
@@ -289,6 +291,8 @@ class Service:
 
             token._.is_word = re.match(word_pattern, token.lower_) is not None
             if token._.is_word:
+                token._.word_index = word_index
+                word_index += 1
                 words.append(token)
                 lemma = token.lemma_.lower()
                 unique_word = unique_words.get(token.text.lower(), None)
@@ -473,7 +477,7 @@ class Service:
             for idx, word_occource in enumerate(unique_word.occourences):
                 repetitions = []
                 for possible_repetition in unique_word.occourences[idx + 1:len(unique_word.occourences) + 1]:
-                    if possible_repetition.i - word_occource.i <= config.analysis_settings.close_words_min_distance_between_words:
+                    if possible_repetition._.word_index - word_occource._.word_index <= config.analysis_settings.close_words_min_distance_between_words:
                         repetitions.append(word_occource)
                         repetitions.append(possible_repetition)
                     else:
