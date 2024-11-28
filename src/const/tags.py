@@ -1,4 +1,5 @@
 CLOSE_WORD_PREFIX = "close_word_"
+CLOSE_WORD_RANGE_PREFIX = "_range_"
 FREQUENT_WORD_PREFIX = "frequent_word_"
 CLOSE_WORD_TAG_NAME = "close_word"
 FREQUENT_WORD_TAG_NAME = "frequent_word"

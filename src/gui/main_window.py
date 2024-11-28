@@ -32,7 +32,7 @@ from src.const.tags import CLOSE_WORD_PREFIX, LONG_SENTENCE_TAG_NAME_HIGH, LONG_
     PARAGRAPH_TAG_NAME, TRAILING_SPACES_TAG_NAME, MULTIPLE_PUNCTUATION_TAG_NAME, MULTIPLE_SPACES_TAG_NAME, \
     SEARCH_RESULT_TAG_NAME, CURRENT_SEARCH_RESULT_TAG_NAME, GRAMMAR_ERROR_TAG_NAME, CLOSE_WORD_TAG_NAME, \
     FREQUENT_WORD_PREFIX, FREQUENT_WORD_TAG_NAME, COMPUTER_QUOTE_MARKS_TAG_NAME, DANGLING_QUOTE_MARK_TAG_NAME, \
-    SHOULD_USE_LOWER_QUOTE_MARK_TAG_NAME, SHOULD_USE_UPPER_QUOTE_MARK_TAG_NAME, FORMATTING_TAGS
+    SHOULD_USE_LOWER_QUOTE_MARK_TAG_NAME, SHOULD_USE_UPPER_QUOTE_MARK_TAG_NAME, FORMATTING_TAGS, CLOSE_WORD_RANGE_PREFIX
 from src.const.values import READABILITY_MAX_VALUE, DOCUMENTATION_LINK, NLP_BATCH_SIZE
 from src.gui.analysis_settings_modal import AnalysisSettingsModal
 from src.gui.appearance_settings_modal import AppearanceSettingsModal
@@ -470,7 +470,11 @@ class MainWindow:
             self.bind_tag_mouse_event(tag_name,
                                       self.word_freq_text,
                                       on_enter=lambda e: self.highlight_same_word(
-                                          e, self.word_freq_text, tag_prefix=FREQUENT_WORD_PREFIX),
+                                          e,
+                                          self.word_freq_text,
+                                          tag_prefix=FREQUENT_WORD_PREFIX,
+                                          tooltip="Kliknutím nájsť další výskyt."
+                                      ),
                                       on_leave=lambda e: self.unhighlight_same_word(e),
                                       on_click=lambda e: self.jump_to_next_word_occourence(
                                           e, self.word_freq_text, tag_prefix=FREQUENT_WORD_PREFIX)
@@ -568,45 +572,78 @@ class MainWindow:
             # There is way of making canvas with scrollregion but this is more performant
             self.close_words_text.config(state=tk.NORMAL)
             self.close_words_text.delete(1.0, tk.END)
-            start_char = 0
+            panel_start_char = 0
             for word in close_words:
-                word_text = f"{word.lower()}\t\t{len(close_words[word])}x\n"
+                total_repetitions = len(close_words[word])
+                word_text = f"{word.lower()}\t\t{total_repetitions}x\n"
                 tag_name = f"{CLOSE_WORD_PREFIX}{word}"
-
                 # Insert the text
                 self.close_words_text.insert(tk.END, word_text)
-
                 # Add the tag to the inserted text
-                start_index = f"1.0 + {start_char} chars"
-                end_index = f"1.0 + {start_char + len(word_text)} chars"
-                self.close_words_text.tag_add(tag_name, start_index, end_index)
-                self.close_words_text.tag_add(CLOSE_WORD_TAG_NAME, start_index, end_index)
-                start_char += len(word_text)
+                panel_start_index = f"1.0 + {panel_start_char} chars"
+                panel_end_index = f"1.0 + {panel_start_char + len(word_text)} chars"
+                self.close_words_text.tag_add(tag_name, panel_start_index, panel_end_index)
+                self.close_words_text.tag_add(CLOSE_WORD_TAG_NAME, panel_start_index, panel_end_index)
+                panel_start_char += len(word_text)
                 self.bind_tag_mouse_event(tag_name,
                                           self.close_words_text,
-                                          lambda e: self.highlight_same_word(e, self.close_words_text),
+                                          lambda e: self.highlight_same_word(
+                                              e,
+                                              self.close_words_text,
+                                              tooltip="Kliknutím nájsť další výskyt."
+                                          ),
                                           lambda e: self.unhighlight_same_word(e),
                                           on_click=lambda e: self.jump_to_next_word_occourence(
                                               e, self.close_words_text, tag_prefix=CLOSE_WORD_PREFIX)
                                           )
-            self.close_words_text.config(state=tk.DISABLED)
+                word_partitions = Service.partition_close_words(
+                    close_words[word],
+                    self.config.analysis_settings.close_words_min_distance_between_words
+                )
 
-            for word in close_words.items():
-                key = word[0]
-                for occ in word[1]:
-                    color = random.choice(CLOSE_WORDS_PALLETE)
-                    start_index = f"1.0 + {occ.idx} chars"
-                    end_index = f"1.0 + {occ.idx + len(occ.lower_)} chars"
-                    tag_name = f"{CLOSE_WORD_PREFIX}{key}"
-                    original_color = self.close_word_colors.get(tag_name, "")
-                    if original_color != "":
-                        color = original_color
-                    else:
-                        self.close_word_colors[tag_name] = color
-                    self.text_editor.tag_add(tag_name, start_index, end_index)
-                    self.text_editor.tag_add(CLOSE_WORD_TAG_NAME, start_index, end_index)
-                    self.text_editor.tag_config(tag_name, foreground=color,
-                                                font=(HELVETICA_FONT_NAME, self.text_size + 2, BOLD_FONT))
+                for word_partition in word_partitions:
+                    first_token = word_partition[0]
+                    last_token = word_partition[-1]
+                    first_token_index = self.text_editor.index(f"1.0+{first_token.idx} chars")
+                    first_token_par = first_token_index.split(".")[0]
+                    last_token_par = self.text_editor.index(f"1.0+{last_token.idx} chars").split(".")[0]
+                    prefix = f"{tag_name}:{CLOSE_WORD_RANGE_PREFIX}"
+                    range_tag_name = f"{prefix}{first_token_par}"
+                    if len(word_partitions) > 1:
+                        partition_text = f" ods.{first_token_par}-{last_token_par} \t\t{len(word_partition)}x\n"
+                        panel_start_index = f"1.0 + {panel_start_char} chars"
+                        panel_end_index = f"1.0 + {panel_start_char + len(partition_text)} chars"
+                        self.close_words_text.insert(tk.END, partition_text)
+                        self.close_words_text.tag_add(range_tag_name, panel_start_index, panel_end_index)
+                        tooltip = f"Kliknutím prejsť na odsek {first_token_par}."
+                        self.bind_tag_mouse_event(range_tag_name,
+                                                  self.close_words_text,
+                                                  lambda e, p=prefix, t=tooltip: self.highlight_same_word(
+                                                      e,
+                                                      self.close_words_text,
+                                                      tag_prefix=p,
+                                                      tooltip=t
+                                                  ),
+                                                  lambda e: self.unhighlight_same_word(e),
+                                                  on_click=lambda e, fti=first_token_index: self.move_carret(fti)
+                                                  )
+                        panel_start_char += len(partition_text)
+                    for occ in word_partition:
+                        color = random.choice(CLOSE_WORDS_PALLETE)
+                        start_index = f"1.0 + {occ.idx} chars"
+                        end_index = f"1.0 + {occ.idx + len(occ.lower_)} chars"
+                        tag_name = f"{CLOSE_WORD_PREFIX}{word}"
+                        original_color = self.close_word_colors.get(tag_name, "")
+                        if original_color != "":
+                            color = original_color
+                        else:
+                            self.close_word_colors[tag_name] = color
+                        self.text_editor.tag_add(tag_name, start_index, end_index)
+                        self.text_editor.tag_add(range_tag_name, start_index, end_index)
+                        self.text_editor.tag_add(CLOSE_WORD_TAG_NAME, start_index, end_index)
+                        self.text_editor.tag_config(tag_name, foreground=color,
+                                                    font=(HELVETICA_FONT_NAME, self.text_size + 2, BOLD_FONT))
+            self.close_words_text.config(state=tk.DISABLED)
 
     # BIND MOUSE ENTER AND MOUSE LEAVE EVENTS
     def bind_tag_mouse_event(self, tag_name, text, on_enter, on_leave, on_click=None):
@@ -616,10 +653,14 @@ class MainWindow:
             text.tag_bind(tag_name, "<Button-1>", on_click)
 
     # HIGHLIGHT SAME WORD ON MOUSE OVER
-    def highlight_same_word(self, event, trigger, tag_prefix=CLOSE_WORD_PREFIX):
+    def highlight_same_word(self, event, trigger, tag_prefix=CLOSE_WORD_PREFIX, tooltip=None):
         self.unhighlight_same_word(event)
         # Získanie indexu myši
         mouse_index = trigger.index(f"@{event.x},{event.y}")
+        if tooltip is not None:
+            abs_x = trigger.winfo_rootx() + event.x
+            abs_y = trigger.winfo_rooty() + event.y
+            self.tooltip.show(tooltip, abs_x, abs_y)
         # Získanie všetkých tagov na pozícii myši
         tags_at_mouse = trigger.tag_names(mouse_index)
         self.word_freq_text.config(cursor="hand2")
@@ -655,12 +696,19 @@ class MainWindow:
     # REMOVE HIGHLIGHTING FROM SAME WORD ON MOUSE OVER END
     def unhighlight_same_word(self, event):
         if self.highlighted_word is not None and len(self.highlighted_word) > 0:
-            self.word_freq_text.config(cursor="xterm")
-            self.close_words_text.config(cursor="xterm")
-            original_color = self.close_word_colors.get(self.highlighted_word, "")
-            self.text_editor.tag_config(self.highlighted_word, background="", foreground=original_color)
-            self.close_words_text.tag_config(self.highlighted_word, background="", foreground="")
-            self.word_freq_text.tag_config(self.highlighted_word, background="", foreground="")
+            tags = [self.highlighted_word]
+            parts = self.highlighted_word.split(":")
+            if len(parts) > 1:
+                tags.append(parts[0])
+            for tag in tags:
+                self.word_freq_text.config(cursor="xterm")
+                self.close_words_text.config(cursor="xterm")
+                original_color = self.close_word_colors.get(tag, "")
+                self.text_editor.tag_config(tag, background="", foreground=original_color)
+                self.close_words_text.tag_config(tag, background="", foreground="")
+                self.word_freq_text.tag_config(tag, background="", foreground="")
+            self.tooltip.hide()
+            self.highlighted_word = None
 
     def editor_on_mouse_motion(self, event):
         x, y = event.x, event.y

@@ -284,8 +284,18 @@ def test_evaluate_close_words(setup_teardown):
     c.analysis_settings.close_words_min_frequency = 1
     doc = Service.full_nlp(TEST_TEXT_1, nlp, NLP_BATCH_SIZE, c)
     close_words = Service.evaluate_close_words(doc, c)
+    # ONE REPEATED WORD
     assert len(close_words) == 1
-    assert "toto" in close_words and len(close_words["toto"]) == 2
+    assert "toto" in close_words
+    cw_partitions = Service.partition_close_words(
+        close_words["toto"],
+        c.analysis_settings.close_words_min_distance_between_words
+    )
+    # ONE REPETITION GROUP
+    assert len(cw_partitions) == 1
+    # TWO OCCOURENCES
+    assert sum(len(rgroup) for rgroup in cw_partitions) == 2
+    assert len(close_words["toto"]) == 2
 
 
 def test_remove_accents(setup_teardown):

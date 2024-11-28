@@ -488,6 +488,26 @@ class Service:
                     close_words[key].update(repetitions)
         return dict(sorted(close_words.items(), key=lambda item: len(item[1]), reverse=True))
 
+    @staticmethod
+    def partition_close_words(close_words, max_distance):
+        if close_words is None:
+            return []
+        repetition_groups = []
+        cw = (list(close_words))
+        cw.sort(key=lambda x: x._.word_index)
+        current_group = [cw[0]]
+        for i in range(1, len(cw)):
+            if cw[i]._.word_index - cw[i - 1]._.word_index > max_distance:
+                repetition_groups.append(current_group)
+                current_group = []
+            current_group.append(cw[i])
+
+        # Append the last subarray
+        if current_group:
+            repetition_groups.append(current_group)
+
+        return repetition_groups
+
     # METHOD THAT REMOVES ACCENTS FROM STRING
     @staticmethod
     def remove_accents(text):
