@@ -23,18 +23,18 @@ Ak má súbor v názve ```debug``` ide o ladiacu verziu. Momentálne sa to použ
 konzolu z ktorej je možné v prípade chyby odčítať problém.
 
 <!-- BEGIN DOWNLOAD LINKS -->
-
 ## Beta
 
-**Najnovšia testovacia verzia:** [v.0.10.6-beta](https://github.com/MartinHlavna/hector/releases/tag/v.0.10.6-beta)
+**Najnovšia testovacia verzia:** [v.0.10.7-beta](https://github.com/MartinHlavna/hector/releases/tag/v.0.10.7-beta)
 
 ### Súbory:
 
-| Súbor                          | Stiahnuť                                                                                                          |
-|--------------------------------|-------------------------------------------------------------------------------------------------------------------|
-| hector-linux-amd64.bin         | [Download](https://github.com/MartinHlavna/hector/releases/download/v.0.10.6-beta/hector-linux-amd64.bin)         |
-| hector-windows-amd64-debug.exe | [Download](https://github.com/MartinHlavna/hector/releases/download/v.0.10.6-beta/hector-windows-amd64-debug.exe) |
-| hector-windows-amd64.exe       | [Download](https://github.com/MartinHlavna/hector/releases/download/v.0.10.6-beta/hector-windows-amd64.exe)       |
+| Súbor | Stiahnuť |
+|------|----------|
+| hector-linux-amd64.bin | [Download](https://github.com/MartinHlavna/hector/releases/download/v.0.10.7-beta/hector-linux-amd64.bin) |
+| hector-windows-amd64-debug.exe | [Download](https://github.com/MartinHlavna/hector/releases/download/v.0.10.7-beta/hector-windows-amd64-debug.exe) |
+| hector-windows-amd64.exe | [Download](https://github.com/MartinHlavna/hector/releases/download/v.0.10.7-beta/hector-windows-amd64.exe) |
+
 
 <!-- END DOWNLOAD LINKS -->
 
