@@ -17,22 +17,24 @@ dotiahnuť implementáciu na macOS.
 Pre dalšie možnosti ako sa zapojiť si prečítajte [túto sekciu](CONTRIBUTING.md)
 
 ## NA STIAHNUTIE
+
 Poznámka:
-Ak má súbor v názve ```debug``` ide o ladiacu verziu. Momentálne sa to používa len pre windows. Ladiaca verzia otvára aj konzolu z ktorej je možné v prípade chyby odčítať problém.
+Ak má súbor v názve ```debug``` ide o ladiacu verziu. Momentálne sa to používa len pre windows. Ladiaca verzia otvára aj
+konzolu z ktorej je možné v prípade chyby odčítať problém.
 
 <!-- BEGIN DOWNLOAD LINKS -->
+
 ## Beta
 
 **Najnovšia testovacia verzia:** [v.0.10.6-beta](https://github.com/MartinHlavna/hector/releases/tag/v.0.10.6-beta)
 
 ### Súbory:
 
-| Súbor | Stiahnuť |
-|------|----------|
-| hector-linux-amd64.bin | [Download](https://github.com/MartinHlavna/hector/releases/download/v.0.10.6-beta/hector-linux-amd64.bin) |
+| Súbor                          | Stiahnuť                                                                                                          |
+|--------------------------------|-------------------------------------------------------------------------------------------------------------------|
+| hector-linux-amd64.bin         | [Download](https://github.com/MartinHlavna/hector/releases/download/v.0.10.6-beta/hector-linux-amd64.bin)         |
 | hector-windows-amd64-debug.exe | [Download](https://github.com/MartinHlavna/hector/releases/download/v.0.10.6-beta/hector-windows-amd64-debug.exe) |
-| hector-windows-amd64.exe | [Download](https://github.com/MartinHlavna/hector/releases/download/v.0.10.6-beta/hector-windows-amd64.exe) |
-
+| hector-windows-amd64.exe       | [Download](https://github.com/MartinHlavna/hector/releases/download/v.0.10.6-beta/hector-windows-amd64.exe)       |
 
 <!-- END DOWNLOAD LINKS -->
 
@@ -44,10 +46,15 @@ problémov, ktoré má autor určite opraviť, ale len zvýrazniť potenciálne 
 na autorovi.
 
 ### Aktuálny cieľ projektu
-Momentálny focus projektu sa sústredí na vytvorenie verzie [1.0.0](https://github.com/MartinHlavna/hector/milestone/2). Táto verzia by mala byť plnohodnotným štylistickým korektorom, ktorý poskytuje základné funkcie dobre, je stabilný a má praktické využitie. Súčasný stav projektu je tomuto cieľu veľmi bizko.
+
+Momentálny focus projektu sa sústredí na vytvorenie verzie [1.0.0](https://github.com/MartinHlavna/hector/milestone/2).
+Táto verzia by mala byť plnohodnotným štylistickým korektorom, ktorý poskytuje základné funkcie dobre, je stabilný a má
+praktické využitie. Súčasný stav projektu je tomuto cieľu veľmi bizko.
 
 ### Dlhodobý cieľ projektu
-Z dlhodobého hľadiska je  cieľom vytvoriť komplexný nástroj určený na písanie a editovanie beletristického textu. K tomuto mǐľniku však vedie ešte dlhá cesta plná výziev.
+
+Z dlhodobého hľadiska je cieľom vytvoriť komplexný nástroj určený na písanie a editovanie beletristického textu. K
+tomuto mǐľniku však vedie ešte dlhá cesta plná výziev.
 
 ## Funkcie programu
 
@@ -107,6 +114,10 @@ Po prejdení myšou nad takéto slovo (buď v editore alebo v ľavom paneli) sa 
 Kliknutím sa editor presunie na daný výskyt smerom dopredu. Takýmto spôsobom je možné jednoducho hľadať problémové
 slová.
 
+Okrem samotných slov ľavý panel zobrazuje aj úseky, v ktorých sa slovo opakuje. Úseky sú zobrazené, len pokiaľ ich je
+viac ako 1. Úseky sú zhluky opakovania rozdelené minimálnou medzerou medzi slovami. Prejdením myšou nad úsek sa
+zvýraznia opakované slová len v danom úseku. Kliknutím na úsek sa editor nastaví na prvý výskyt v danom úseku.
+
 V prípade, že je v nastaveniach zapnutá možnosť "porovnávať základný tvar slova", program používa základný tvar a voči
 nemu aplikuje aj ostatné obmedzenia (napr. základný tvar slova "sú" je "byť". Ak je nastavená minimálna dĺžka slova 3
 znaky, program zvýrazní aj kratšie výskyty).
@@ -119,7 +130,7 @@ znaky, program zvýrazní aj kratšie výskyty).
 | Porovnávať základný tvar slova | Prísnejšie vyhodnocovanie, ktoré ignoruje skloňovanie a časovanie slova                                     | Vypnuté          |
 | Minimálna dĺžka slova          | Umožňuje určiť dĺžku slov, ktoré sa zobrazujú v ľavom paneli.                                               | 3 znaky          |
 | Minimálna vzdialenosť slov     | Požadovaná medzera medzi jednotlivými výskytmi rovnakého slova                                              | 100 slov         |
-| Minimálny počet opakovaní      | Slovo sa zobrazí v ľavom paneli, len ak sa opakuje aspoň toľkokrát (berú sa do úvahy iba jednotlivé zhluky) | 2 opakovania     |
+| Minimálny počet opakovaní      | Slovo sa zobrazí v ľavom paneli, len ak sa opakuje aspoň toľkokrát (berú sa do úvahy iba jednotlivé zhluky) | 3 opakovania     |
 
 #### Odporúčanie
 
@@ -129,7 +140,7 @@ znaky, program zvýrazní aj kratšie výskyty).
 
 #### Slová spojené spojovníkom
 
-Slová spojené spojovníkom sú aktuálne považované za dva tokeny. Napríklad "tik-tak" berie momentálne ako dve rôzne
+Slová spojené spojovníkom sú aktuálne považované za dva tokeny. Napríklad „tik-tak“ berie momentálne ako dve rôzne
 slová. Bude treba v praxi overiť, čo je výhodnejšie.
 
 ### Zvýraznenie viacnásobnej medzery
@@ -301,7 +312,7 @@ stačí stiahnuť a skopírovať do vlastného priečinka.
 
 ### Spustenie zo zdrojového kódu (napr. pre účely vývoja)
 
-Kód bol testovaný s použitím Python interpretera verzie 3.10.
+Kód bol testovaný s použitím Python interpretera verzie 3.11.
 
 #### Špeciálne kroky pre Linux (debian-based)
 
