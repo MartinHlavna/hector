@@ -6,7 +6,7 @@ fsspec~=2024.10.0
 cyhunspell @ https://github.com/MSeal/cython_hunspell/archive/refs/tags/2.0.3.tar.gz
 svglib~=1.5.1
 reportlab~=4.2.5
-pytest~=8.3.3
+pytest~=8.3.4
 pythes @ git+https://github.com/corerd/pythes
 tkinter-autoscrollbar @ git+https://github.com/MartinHlavna/tkinter-autoscrollbar
 pypandoc~=1.14
