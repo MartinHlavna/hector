@@ -9,6 +9,7 @@ import unicodedata
 import urllib
 
 import fsspec
+import ufal.morphodita as morphodita
 import spacy
 import pypandoc
 from hunspell import Hunspell
@@ -16,18 +17,21 @@ from pythes import PyThes
 from spacy.lang.char_classes import LIST_ELLIPSES, LIST_ICONS, ALPHA_LOWER, ALPHA_UPPER, CONCAT_QUOTES, ALPHA
 from spacy.matcher import DependencyMatcher
 from spacy.tokenizer import Tokenizer
+from spacy.language import Language
 from spacy.tokens import Doc, Token, Span
 from spacy.util import compile_infix_regex
 
 from src.const.grammar_error_types import GRAMMAR_ERROR_TYPE_MISSPELLED_WORD, GRAMMAR_ERROR_TYPE_WRONG_Y_SUFFIX, \
     GRAMMAR_ERROR_TYPE_WRONG_YSI_SUFFIX, GRAMMAR_ERROR_TYPE_WRONG_I_SUFFIX, GRAMMAR_ERROR_TYPE_WRONG_ISI_SUFFIX
 from src.const.paths import DATA_DIRECTORY, SPACY_MODELS_DIR, SK_SPACY_MODEL_DIR, DICTIONARY_DIR, SK_DICTIONARY_DIR, \
-    SK_SPELL_DICTIONARY_DIR, CURRENT_SK_SPACY_MODEL_DIR, DICTIONARY_DIR_BACKUP
+    SK_SPELL_DICTIONARY_DIR, CURRENT_SK_SPACY_MODEL_DIR, DICTIONARY_DIR_BACKUP, SK_MORPHODITA_MODEL_DIR, \
+    SK_MORPHODITA_TAGGER
 from src.const.values import SPACY_MODEL_NAME_WITH_VERSION, SPACY_MODEL_LINK, SPACY_MODEL_NAME, READABILITY_MAX_VALUE
 from src.domain.config import Config
 from src.domain.metadata import Metadata
 from src.domain.unique_word import UniqueWord
 from src.utils import Utils
+import src.backend.morphodita_tagger_morphologizer_lemmatizer
 
 PATTERN_TRAILING_SPACES = r' +$'
 PATTERN_MULTIPLE_PUNCTUACTION = r'([!?.,:;]){2,}'
@@ -121,6 +125,18 @@ class Service:
                                       infix_finditer=infix_re.finditer,
                                       token_match=nlp.tokenizer.token_match,
                                       rules=nlp.Defaults.tokenizer_exceptions)
+
+            nlp.add_pipe(
+                'morphodita_tagger_morphologizer_lemmatizer',
+                name='morphodita_tagger_morphologizer_lemmatizer',
+                after='trainable_lemmatizer',
+                config={"tagger_path": SK_MORPHODITA_TAGGER}
+            )
+            print(nlp.pipe_names)
+            nlp.remove_pipe('tagger')
+            nlp.remove_pipe('morphologizer')
+            nlp.remove_pipe('trainable_lemmatizer')
+            print(nlp.pipe_names)
             # SPACY EXTENSIONS
             Token.set_extension("is_word", default=False, force=True)
             Token.set_extension("word_index", default=None, force=True)
@@ -551,4 +567,3 @@ class Service:
                 text += '\n'
         with open(path, 'w', encoding='utf-8') as file:
             file.write(text)
-
