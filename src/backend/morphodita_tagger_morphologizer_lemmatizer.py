@@ -221,7 +221,7 @@ class MorphoditaTaggerMorphologizerLemmatizer:
         if gender in gender_map:
             morph_attrs['Gender'] = gender_map[gender]
         if poss_gender in possessor_gender_map:
-            morph_attrs['Gender'] = possessor_gender_map[gender]
+            morph_attrs['Gender'] = possessor_gender_map[poss_gender]
             morph_attrs['Poss'] = 'Yes'
         if number in plurality_map:
             morph_attrs['Number'] = plurality_map[number]
