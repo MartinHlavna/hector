@@ -362,6 +362,12 @@ data/dictionary/sk-skspell     -- slovenský slovník projektu skspell
 data/dictionary/sk-libreoffice -- slovenský slovník projektu LibreOffice
 ```
 
+Od verzie 0.11.0 Hector pri prvom štarte automaticky sťahuje slovenský model pre [MorphoDiTa](https://ufal.mff.cuni.cz/morphodita).:
+
+```
+data/morphodita     -- jazykový model pre spracovanie prirodzeného jazyka pomocou morfologického analyzátora MorphoDiTa
+```
+
 ## Technické informácie
 
 ### Spracovanie prirodzeného jazyka

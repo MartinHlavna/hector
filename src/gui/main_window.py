@@ -234,7 +234,7 @@ class MainWindow:
         bottom_panel.pack(fill=tk.BOTH, side=tk.BOTTOM)
         # LEFT PANEL CONTENTS
         self.introspection_text = tk.Text(left_side_panel, highlightthickness=0, bd=0, wrap=tk.WORD, state=tk.DISABLED,
-                                          width=30, background=PRIMARY_COLOR, foreground=PANEL_TEXT_COLOR, height=15,
+                                          width=30, background=PRIMARY_COLOR, foreground=PANEL_TEXT_COLOR, height=30,
                                           font=(HELVETICA_FONT_NAME, 9), insertbackground=PANEL_TEXT_COLOR,
                                           )
         if ENABLE_DEBUG_DEP_IMAGE:
@@ -983,10 +983,14 @@ class MainWindow:
                     self.dep_image_holder.image = dep_view
                 thes_result = self.thesaurus.lookup(self.current_instrospection_token.lemma_)
                 morph = self.current_instrospection_token.morph.to_dict()
+                formatted_morph = ''.join([f"  {key}:\t{value}\n" for key, value in morph.items()])
+
                 introspection_resut = f'Slovo: {self.current_instrospection_token}\n\n' \
                                       f'Základný tvar: {self.current_instrospection_token.lemma_}\n' \
-                                      f'Morfológia: {morph}\n' \
-                                      f'Morfológia PDT: {self.current_instrospection_token._.pdt_morph}\n' \
+                                      f'Komentár: {self.current_instrospection_token._.lemma_comments}\n' \
+                                      f'Morfológia: \n' \
+                                      f'{formatted_morph}\n' \
+                                      f'PDT tag: {self.current_instrospection_token._.pdt_morph}\n' \
                                       f'Slovný druh: {POS_TAG_TRANSLATIONS[self.current_instrospection_token.pos_]}\n' \
                                       f'Vetný člen: {DEP_TAG_TRANSLATION[self.current_instrospection_token.dep_.lower()]}'
                 if thes_result is not None:

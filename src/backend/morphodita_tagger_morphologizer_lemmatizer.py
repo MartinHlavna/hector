@@ -175,6 +175,8 @@ class MorphoditaTaggerMorphologizerLemmatizer:
         self.morpho = self.tagger.getMorpho()
         if not Token.has_extension("full_lemma"):
             Token.set_extension("full_lemma", default='')
+        if not Token.has_extension("lemma_comments"):
+            Token.set_extension("lemma_comments", default='')
         if not Token.has_extension("pdt_morph"):
             Token.set_extension("pdt_morph", default='')
 
@@ -251,6 +253,11 @@ class MorphoditaTaggerMorphologizerLemmatizer:
                 token._.full_lemma = lemma
                 token._.pdt_morph = tag
                 token.lemma_ = self.morpho.rawLemma(lemma)
+                token._.lemma_comments = (lemma.replace(token.lemma_, "")
+                                          .replace("_", " ")
+                                          .replace("^", "")
+                                          .replace("`", "")
+                                          .strip())
                 morph_attrs = self.convert_pdt_tag_to_spacy(tag)
                 token.pos_ = morph_attrs.get('POS', 'X')
                 morph_attrs.pop('POS', None)
