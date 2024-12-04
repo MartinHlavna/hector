@@ -372,6 +372,8 @@ rozširovanie. [Model](https://github.com/MartinHlavna/hector-spacy-model), ktor
 projektu [Slovak Universal Dependencies](https://universaldependencies.org/treebanks/sk_snk/index.html) (Licencia CC
 BY-SA 4.0).
 
+Okrem toho program kombinuje výsledky spacy modelu aj s morfologickým analyzátorom [MorphoDiTa](https://ufal.mff.cuni.cz/morphodita).
+
 ### Slovníky
 
 Program využíva synonymický slovník z

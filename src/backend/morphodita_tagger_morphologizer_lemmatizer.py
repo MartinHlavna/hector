@@ -3,6 +3,8 @@ from spacy.language import Language
 import ufal.morphodita as morphodita
 from spacy.tokens import Token, Doc
 
+MORPHODITA_COMPONENT_FACTORY_NAME = "morphodita_tagger_morphologizer_lemmatizer"
+
 # MAPPING BETWEEN PDT TAGS AND SPACY TAGS
 
 pos_map = {
@@ -256,6 +258,6 @@ class MorphoditaTaggerMorphologizerLemmatizer:
         return doc
 
 
-@Language.factory("morphodita_tagger_morphologizer_lemmatizer", default_config={"tagger_path": None})
+@Language.factory(MORPHODITA_COMPONENT_FACTORY_NAME, default_config={"tagger_path": None})
 def morphodita_tagger_morphologizer_lemmatizer(nlp, name, tagger_path: str):
     return MorphoditaTaggerMorphologizerLemmatizer(nlp, tagger_path=tagger_path)
