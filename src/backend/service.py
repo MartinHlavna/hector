@@ -7,8 +7,10 @@ import sys
 import tarfile
 import unicodedata
 import urllib
+import zipfile
 
 import fsspec
+import ufal.morphodita as morphodita
 import spacy
 import pypandoc
 from hunspell import Hunspell
@@ -16,18 +18,22 @@ from pythes import PyThes
 from spacy.lang.char_classes import LIST_ELLIPSES, LIST_ICONS, ALPHA_LOWER, ALPHA_UPPER, CONCAT_QUOTES, ALPHA
 from spacy.matcher import DependencyMatcher
 from spacy.tokenizer import Tokenizer
+from spacy.language import Language
 from spacy.tokens import Doc, Token, Span
 from spacy.util import compile_infix_regex
 
 from src.const.grammar_error_types import GRAMMAR_ERROR_TYPE_MISSPELLED_WORD, GRAMMAR_ERROR_TYPE_WRONG_Y_SUFFIX, \
     GRAMMAR_ERROR_TYPE_WRONG_YSI_SUFFIX, GRAMMAR_ERROR_TYPE_WRONG_I_SUFFIX, GRAMMAR_ERROR_TYPE_WRONG_ISI_SUFFIX
 from src.const.paths import DATA_DIRECTORY, SPACY_MODELS_DIR, SK_SPACY_MODEL_DIR, DICTIONARY_DIR, SK_DICTIONARY_DIR, \
-    SK_SPELL_DICTIONARY_DIR, CURRENT_SK_SPACY_MODEL_DIR, DICTIONARY_DIR_BACKUP
-from src.const.values import SPACY_MODEL_NAME_WITH_VERSION, SPACY_MODEL_LINK, SPACY_MODEL_NAME, READABILITY_MAX_VALUE
+    SK_SPELL_DICTIONARY_DIR, CURRENT_SK_SPACY_MODEL_DIR, DICTIONARY_DIR_BACKUP, SK_MORPHODITA_MODEL_DIR, \
+    SK_MORPHODITA_TAGGER, MORPHODITA_MODELS_DIR
+from src.const.values import SPACY_MODEL_NAME_WITH_VERSION, SPACY_MODEL_LINK, SPACY_MODEL_NAME, READABILITY_MAX_VALUE, \
+    MORPHODITA_MODEL_NAME, MORPHODITA_MODEL_LINK
 from src.domain.config import Config
 from src.domain.metadata import Metadata
 from src.domain.unique_word import UniqueWord
 from src.utils import Utils
+from src.backend.morphodita_tagger_morphologizer_lemmatizer import MORPHODITA_COMPONENT_FACTORY_NAME
 
 PATTERN_TRAILING_SPACES = r' +$'
 PATTERN_MULTIPLE_PUNCTUACTION = r'([!?.,:;]){2,}'
@@ -95,6 +101,15 @@ class Service:
                 with tarfile.open(archive_file_name) as tar_file:
                     tar_file.extractall(SK_SPACY_MODEL_DIR)
                 os.remove(archive_file_name)
+            if not os.path.isdir(MORPHODITA_MODELS_DIR):
+                os.mkdir(MORPHODITA_MODELS_DIR)
+            if not os.path.isdir(SK_MORPHODITA_MODEL_DIR):
+                archive_file_name = os.path.join(MORPHODITA_MODELS_DIR, f'{MORPHODITA_MODEL_NAME}.zip')
+                with urllib.request.urlopen(MORPHODITA_MODEL_LINK) as response, open(archive_file_name, 'wb') as out_file:
+                    shutil.copyfileobj(response, out_file)
+                with zipfile.ZipFile(archive_file_name, 'r') as zip_file:
+                    zip_file.extractall(MORPHODITA_MODELS_DIR)
+                os.remove(archive_file_name)
             nlp = spacy.load(os.path.join(
                 SK_SPACY_MODEL_DIR,
                 SPACY_MODEL_NAME_WITH_VERSION,
@@ -121,6 +136,16 @@ class Service:
                                       infix_finditer=infix_re.finditer,
                                       token_match=nlp.tokenizer.token_match,
                                       rules=nlp.Defaults.tokenizer_exceptions)
+
+            nlp.add_pipe(
+                MORPHODITA_COMPONENT_FACTORY_NAME,
+                name='morphodita_tagger_morphologizer_lemmatizer',
+                after='trainable_lemmatizer',
+                config={"tagger_path": SK_MORPHODITA_TAGGER}
+            )
+            nlp.remove_pipe('tagger')
+            nlp.remove_pipe('morphologizer')
+            nlp.remove_pipe('trainable_lemmatizer')
             # SPACY EXTENSIONS
             Token.set_extension("is_word", default=False, force=True)
             Token.set_extension("word_index", default=None, force=True)
@@ -551,4 +576,3 @@ class Service:
                 text += '\n'
         with open(path, 'w', encoding='utf-8') as file:
             file.write(text)
-

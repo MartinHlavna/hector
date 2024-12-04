@@ -12,3 +12,4 @@ tkinter-autoscrollbar @ git+https://github.com/MartinHlavna/tkinter-autoscrollba
 pypandoc~=1.14
 requests~=2.32.3
 semver~=3.0.2
+ufal.morphodita==1.11.2.1
