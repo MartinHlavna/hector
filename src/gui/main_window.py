@@ -49,7 +49,7 @@ A4_SIZE_INCHES = 8.27
 EDITOR_LOGO_HEIGHT = 300
 EDITOR_LOGO_WIDTH = 300
 NLP_DEBOUNCE_LENGTH = 500
-ENABLE_DEBUG_DEP_IMAGE = True
+ENABLE_DEBUG_DEP_IMAGE = False
 
 with open(Utils.resource_path(os.path.join('data_files', 'pos_tag_translations.json')), 'r', encoding='utf-8') as file:
     POS_TAG_TRANSLATIONS = json.load(file)
