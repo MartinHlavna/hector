@@ -193,6 +193,15 @@ Odstrániť medzery na konci odstavcov.
 - Program automaticky porovnáva slová voči slovníku a slová, ktoré v ňom nenájde, zvýrazní
 - Kvalita závisí od dostupných slovníkov
 
+#### Kontrola spisovnosti
+
+- Program označí ako chyby nasledovné výrazy:
+  - môžte namiesto spisovného môžete
+  - môžme namiesto spisovného môžeme
+  - tohoto namiesto spisovného tohto
+  - výraz chápať tomu namiesto spisovného chápeť to v rôznych variantoch (napr. chápem tomu, nechápem tomu, chápeš aj tomu, …)
+
+
 #### Kontrola í/ý v niektorých prípadoch
 
 - Program automaticky kontroluje, či je použité **í** v:
