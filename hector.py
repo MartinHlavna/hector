@@ -62,10 +62,10 @@ if __name__ == "__main__":
     splash.update_status("kontrolujem aktualizácie...")
     has_available_update = False
     build_info = Utils.get_build_info()
-    if build_info['channel'] == "beta":
+    if build_info['channel'].lower() == "beta":
         has_available_update = Utils.check_updates(VERSION, True,
                                                    github_token=args.github_token, github_user=args.github_user)
-    if build_info['channel'] == "stable":
+    if build_info['channel'].lower() == "stable":
         has_available_update = Utils.check_updates(VERSION, False,
                                                    github_token=args.github_token, github_user=args.github_user)
     splash.update_status("inicializujem textový processor...")
