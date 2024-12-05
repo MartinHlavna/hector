@@ -44,7 +44,7 @@ PATTERN_INCORRECT_UPPER_QUOTE_MARKS = r'[“]\S'
 PATTERN_UPPER_QUOTE_MARKS_FROM_DIFFERENT_LANGUAGES = r'[‟]'
 UPPER_QUOTE_MARK = "“"
 with open(Utils.resource_path(os.path.join('data_files', 'misstagged_words.json')), 'r', encoding='utf-8') as file:
-    MISSTAGGED_WORDS = json.load(file)
+    EXCEPTIONS = json.load(file)
 
 
 # MAIN BACKEND LOGIC IMPLEMENTATION
@@ -431,7 +431,7 @@ class Service:
             if (doc[target].pos_ == "DET" or doc[target].pos_ == "PRON") and target_morph.get("Case") != "Nom":
                 continue
             # KNOWN MISTAGS
-            if doc[target].lower_ in MISSTAGGED_WORDS:
+            if doc[target].lower_ in EXCEPTIONS or doc[modifier].lower_ in EXCEPTIONS:
                 continue
             if doc[target].pos_ == "NOUN" and (
                     target_morph.get("Gender") != "Masc" or target_morph.get("Case") != "Nom"):
