@@ -10,20 +10,20 @@ import urllib
 import zipfile
 
 import fsspec
-import ufal.morphodita as morphodita
-import spacy
 import pypandoc
+import spacy
 from hunspell import Hunspell
 from pythes import PyThes
 from spacy.lang.char_classes import LIST_ELLIPSES, LIST_ICONS, ALPHA_LOWER, ALPHA_UPPER, CONCAT_QUOTES, ALPHA
 from spacy.matcher import DependencyMatcher
 from spacy.tokenizer import Tokenizer
-from spacy.language import Language
 from spacy.tokens import Doc, Token, Span
 from spacy.util import compile_infix_regex
 
+from src.backend.morphodita_tagger_morphologizer_lemmatizer import MORPHODITA_COMPONENT_FACTORY_NAME
 from src.const.grammar_error_types import GRAMMAR_ERROR_TYPE_MISSPELLED_WORD, GRAMMAR_ERROR_TYPE_WRONG_Y_SUFFIX, \
-    GRAMMAR_ERROR_TYPE_WRONG_YSI_SUFFIX, GRAMMAR_ERROR_TYPE_WRONG_I_SUFFIX, GRAMMAR_ERROR_TYPE_WRONG_ISI_SUFFIX
+    GRAMMAR_ERROR_TYPE_WRONG_YSI_SUFFIX, GRAMMAR_ERROR_TYPE_WRONG_I_SUFFIX, GRAMMAR_ERROR_TYPE_WRONG_ISI_SUFFIX, \
+    NON_LITERAL_WORDS, GRAMMAR_ERROR_NON_LITERAL_WORD, GRAMMAR_ERROR_TOMU_INSTEAD_OF_TO
 from src.const.paths import DATA_DIRECTORY, SPACY_MODELS_DIR, SK_SPACY_MODEL_DIR, DICTIONARY_DIR, SK_DICTIONARY_DIR, \
     SK_SPELL_DICTIONARY_DIR, CURRENT_SK_SPACY_MODEL_DIR, DICTIONARY_DIR_BACKUP, SK_MORPHODITA_MODEL_DIR, \
     SK_MORPHODITA_TAGGER, MORPHODITA_MODELS_DIR
@@ -33,7 +33,6 @@ from src.domain.config import Config
 from src.domain.metadata import Metadata
 from src.domain.unique_word import UniqueWord
 from src.utils import Utils
-from src.backend.morphodita_tagger_morphologizer_lemmatizer import MORPHODITA_COMPONENT_FACTORY_NAME
 
 PATTERN_TRAILING_SPACES = r' +$'
 PATTERN_MULTIPLE_PUNCTUACTION = r'([!?.,:;]){2,}'
@@ -389,6 +388,10 @@ class Service:
                     if not spellcheck_dictionary.spell(token.text):
                         token._.has_grammar_error = True
                         token._.grammar_error_type = GRAMMAR_ERROR_TYPE_MISSPELLED_WORD
+                    if token.lower_ in NON_LITERAL_WORDS:
+                        token._.has_grammar_error = True
+                        token._.grammar_error_type = GRAMMAR_ERROR_NON_LITERAL_WORD
+
         # PATTERN TO FIND ALL ADJECTIVE / DETERMINER / PRONOUN -> NOUN PAIRS
         pattern1 = [
             {
@@ -458,6 +461,43 @@ class Service:
                         "Degree") == "Pos":
                     mod._.has_grammar_error = True
                     mod._.grammar_error_type = GRAMMAR_ERROR_TYPE_WRONG_ISI_SUFFIX
+        # PATTERN FOR CHÁPEM TOMU
+        pattern3 = [
+            {
+                "RIGHT_ID": "verb",
+                "RIGHT_ATTRS": {"LEMMA": "chápať"}
+            },
+            # founded -> subject
+            {
+                "LEFT_ID": "verb",
+                "REL_OP": ">",
+                "RIGHT_ID": "pron",
+                "RIGHT_ATTRS": {"LEMMA": "ten"}
+            },
+        ]
+        # PATTERN FOR TOMU CHÁPEM
+        pattern4 = [
+            {
+                "RIGHT_ID": "verb",
+                "RIGHT_ATTRS": {"LEMMA": "chápať"}
+            },
+            # founded -> subject
+            {
+                "LEFT_ID": "verb",
+                "REL_OP": "<",
+                "RIGHT_ID": "pron",
+                "RIGHT_ATTRS": {"LEMMA": "ten"}
+            },
+        ]
+
+        matcher = DependencyMatcher(doc.vocab)
+        matcher.add("PATTERN_3", [pattern3])
+        matcher.add("PATTERN_4", [pattern4])
+        for match_id, (verb, pron) in matcher(doc):
+            pron_token = doc[pron]
+            if pron_token.lower_ == "tomu":
+                pron_token._.has_grammar_error = True
+                pron_token._.grammar_error_type = GRAMMAR_ERROR_TOMU_INSTEAD_OF_TO
 
     # FUNCTION THAT CALCULATE READABILITY INDICES
     @staticmethod

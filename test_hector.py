@@ -10,7 +10,8 @@ from spacy.tokens import Doc
 
 from src.backend.service import Service
 from src.const.grammar_error_types import GRAMMAR_ERROR_TYPE_MISSPELLED_WORD, GRAMMAR_ERROR_TYPE_WRONG_Y_SUFFIX, \
-    GRAMMAR_ERROR_TYPE_WRONG_I_SUFFIX
+    GRAMMAR_ERROR_TYPE_WRONG_I_SUFFIX, NON_LITERAL_WORDS, GRAMMAR_ERROR_NON_LITERAL_WORD, \
+    GRAMMAR_ERROR_TOMU_INSTEAD_OF_TO
 from src.const.paths import DATA_DIRECTORY, CONFIG_FILE_PATH, METADATA_FILE_PATH
 from src.const.values import NLP_BATCH_SIZE
 from src.domain.config import Config
@@ -421,6 +422,40 @@ def test_spellcheck_handles_special_characters(setup_teardown):
         if not token.is_alpha:
             continue
         assert not token._.has_grammar_error
+
+
+def test_spellcheck_checks_non_literal_words(setup_teardown):
+    nlp = setup_teardown[0]
+    hunspell = setup_teardown[1]
+    text = " ".join(NON_LITERAL_WORDS.keys())
+    doc = Service.full_nlp(text, nlp, NLP_BATCH_SIZE, Config())
+    Service.spellcheck(hunspell, doc)
+    for token in doc:
+        assert token._.has_grammar_error
+        assert token._.grammar_error_type == GRAMMAR_ERROR_NON_LITERAL_WORD
+
+
+def test_spellcheck_ignore_literal_words_correct_form(setup_teardown):
+    nlp = setup_teardown[0]
+    hunspell = setup_teardown[1]
+    text = " ".join(NON_LITERAL_WORDS.values())
+    doc = Service.full_nlp(text, nlp, NLP_BATCH_SIZE, Config())
+    Service.spellcheck(hunspell, doc)
+    for token in doc:
+        assert not token._.has_grammar_error
+        assert not token._.grammar_error_type == GRAMMAR_ERROR_NON_LITERAL_WORD
+
+
+def test_spellcheck_checks_non_literal_phrases(setup_teardown):
+    nlp = setup_teardown[0]
+    hunspell = setup_teardown[1]
+    text = "Chápem tomu. Chápem aj tomu. Nechápem ani tomu. Aj tomu chápem."
+    doc = Service.full_nlp(text, nlp, NLP_BATCH_SIZE, Config())
+    Service.spellcheck(hunspell, doc)
+    for token in doc:
+        if token.lower_ == "tomu":
+            assert token._.has_grammar_error
+            assert token._.grammar_error_type == GRAMMAR_ERROR_TOMU_INSTEAD_OF_TO
 
 
 def test_spellcheck_handles_hyphenated_words(setup_teardown):
