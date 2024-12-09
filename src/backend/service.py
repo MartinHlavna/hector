@@ -23,7 +23,8 @@ from spacy.util import compile_infix_regex
 from src.backend.morphodita_tagger_morphologizer_lemmatizer import MORPHODITA_COMPONENT_FACTORY_NAME
 from src.const.grammar_error_types import GRAMMAR_ERROR_TYPE_MISSPELLED_WORD, GRAMMAR_ERROR_TYPE_WRONG_Y_SUFFIX, \
     GRAMMAR_ERROR_TYPE_WRONG_YSI_SUFFIX, GRAMMAR_ERROR_TYPE_WRONG_I_SUFFIX, GRAMMAR_ERROR_TYPE_WRONG_ISI_SUFFIX, \
-    NON_LITERAL_WORDS, GRAMMAR_ERROR_NON_LITERAL_WORD, GRAMMAR_ERROR_TOMU_INSTEAD_OF_TO
+    NON_LITERAL_WORDS, GRAMMAR_ERROR_NON_LITERAL_WORD, GRAMMAR_ERROR_TOMU_INSTEAD_OF_TO, \
+    GRAMMAR_ERROR_S_INSTEAD_OF_Z, GRAMMAR_ERROR_Z_INSTEAD_OF_S
 from src.const.paths import DATA_DIRECTORY, SPACY_MODELS_DIR, SK_SPACY_MODEL_DIR, DICTIONARY_DIR, SK_DICTIONARY_DIR, \
     SK_SPELL_DICTIONARY_DIR, CURRENT_SK_SPACY_MODEL_DIR, DICTIONARY_DIR_BACKUP, SK_MORPHODITA_MODEL_DIR, \
     SK_MORPHODITA_TAGGER, MORPHODITA_MODELS_DIR
@@ -498,6 +499,60 @@ class Service:
             if pron_token.lower_ == "tomu":
                 pron_token._.has_grammar_error = True
                 pron_token._.grammar_error_type = GRAMMAR_ERROR_TOMU_INSTEAD_OF_TO
+        # PATTERN FOR INCCORECT USAGE OF z/zo with instrumental case
+        pattern5 = [
+            {
+                "RIGHT_ID": "preposition",
+                "RIGHT_ATTRS": {"LEMMA": "z"}
+            },
+            # founded -> subject
+            {
+                "LEFT_ID": "preposition",
+                "REL_OP": "<",
+                "RIGHT_ID": "noun",
+                "RIGHT_ATTRS": {"MORPH": {"INTERSECTS": ["Case=Ins"]}}
+            },
+        ]
+        matcher = DependencyMatcher(doc.vocab)
+        matcher.add("PATTERN_5", [pattern5])
+        for match_id, (preposition, noun) in matcher(doc):
+            preposition_token = doc[preposition]
+            preposition_token._.has_grammar_error = True
+            preposition_token._.grammar_error_type = GRAMMAR_ERROR_Z_INSTEAD_OF_S
+        # PATTERN FOR INCCORECT USAGE OF s/so with genitive case
+        pattern6 = [
+            {
+                "RIGHT_ID": "preposition",
+                "RIGHT_ATTRS": {"LEMMA": "s"}
+            },
+            # founded -> subject
+            {
+                "LEFT_ID": "preposition",
+                "REL_OP": "<",
+                "RIGHT_ID": "noun",
+                "RIGHT_ATTRS": {"MORPH": {"INTERSECTS": ["Case=Gen"]}}
+            },
+        ]
+        pattern7 = [
+            {
+                "RIGHT_ID": "preposition",
+                "RIGHT_ATTRS": {"LEMMA": "s"}
+            },
+            # founded -> subject
+            {
+                "LEFT_ID": "preposition",
+                "REL_OP": "<",
+                "RIGHT_ID": "noun",
+                "RIGHT_ATTRS": {"MORPH": {"INTERSECTS": ["Case=Nom"]}}
+            },
+        ]
+        matcher = DependencyMatcher(doc.vocab)
+        matcher.add("PATTERN_6", [pattern6])
+        matcher.add("PATTERN_7", [pattern7])
+        for match_id, (preposition, noun) in matcher(doc):
+            preposition_token = doc[preposition]
+            preposition_token._.has_grammar_error = True
+            preposition_token._.grammar_error_type = GRAMMAR_ERROR_S_INSTEAD_OF_Z
 
     # FUNCTION THAT CALCULATE READABILITY INDICES
     @staticmethod

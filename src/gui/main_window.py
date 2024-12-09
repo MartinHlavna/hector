@@ -27,7 +27,8 @@ from src.const.font_awesome_icons import FontAwesomeIcons
 from src.const.fonts import HELVETICA_FONT_NAME, TEXT_SIZE_SECTION_HEADER, TEXT_SIZE_BOTTOM_BAR, BOLD_FONT, FA_SOLID
 from src.const.grammar_error_types import GRAMMAR_ERROR_TYPE_MISSPELLED_WORD, GRAMMAR_ERROR_TYPE_WRONG_Y_SUFFIX, \
     GRAMMAR_ERROR_TYPE_WRONG_I_SUFFIX, GRAMMAR_ERROR_TYPE_WRONG_YSI_SUFFIX, GRAMMAR_ERROR_TYPE_WRONG_ISI_SUFFIX, \
-    GRAMMAR_ERROR_NON_LITERAL_WORD, NON_LITERAL_WORDS, GRAMMAR_ERROR_TOMU_INSTEAD_OF_TO
+    GRAMMAR_ERROR_NON_LITERAL_WORD, NON_LITERAL_WORDS, GRAMMAR_ERROR_S_INSTEAD_OF_Z, \
+    GRAMMAR_ERROR_Z_INSTEAD_OF_S, GRAMMAR_ERROR_TOMU_INSTEAD_OF_TO
 from src.const.paths import CONFIG_FILE_PATH, METADATA_FILE_PATH
 from src.const.tags import CLOSE_WORD_PREFIX, LONG_SENTENCE_TAG_NAME_HIGH, LONG_SENTENCE_TAG_NAME_MID, \
     PARAGRAPH_TAG_NAME, TRAILING_SPACES_TAG_NAME, MULTIPLE_PUNCTUATION_TAG_NAME, MULTIPLE_SPACES_TAG_NAME, \
@@ -49,7 +50,7 @@ A4_SIZE_INCHES = 8.27
 EDITOR_LOGO_HEIGHT = 300
 EDITOR_LOGO_WIDTH = 300
 NLP_DEBOUNCE_LENGTH = 500
-ENABLE_DEBUG_DEP_IMAGE = False
+ENABLE_DEBUG_DEP_IMAGE = True
 
 with open(Utils.resource_path(os.path.join('data_files', 'pos_tag_translations.json')), 'r', encoding='utf-8') as file:
     POS_TAG_TRANSLATIONS = json.load(file)
@@ -756,6 +757,10 @@ class MainWindow:
                                     error_messages.add(f'Slovo nie je spisovné.\n\nNávrh: {suggestion}')
                                 elif token._.grammar_error_type == GRAMMAR_ERROR_TOMU_INSTEAD_OF_TO:
                                     error_messages.add(f'Výraz nie je spisovný.\n\nNávrh: to')
+                                elif token._.grammar_error_type == GRAMMAR_ERROR_S_INSTEAD_OF_Z:
+                                    error_messages.add(f'Chybná predložka.\n\nNávrh: z/zo')
+                                elif token._.grammar_error_type == GRAMMAR_ERROR_Z_INSTEAD_OF_S:
+                                    error_messages.add(f'Chybná predložka.\n\nNávrh: s/so')
                                 elif token._.grammar_error_type == GRAMMAR_ERROR_TYPE_WRONG_Y_SUFFIX:
                                     error_messages.add(
                                         f'Slovo by malo končiť na í.\n\nNávrhy: {span.root.text[:-1] + "í"}')
