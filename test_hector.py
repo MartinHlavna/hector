@@ -11,7 +11,7 @@ from spacy.tokens import Doc
 from src.backend.service import Service
 from src.const.grammar_error_types import GRAMMAR_ERROR_TYPE_MISSPELLED_WORD, GRAMMAR_ERROR_TYPE_WRONG_Y_SUFFIX, \
     GRAMMAR_ERROR_TYPE_WRONG_I_SUFFIX, NON_LITERAL_WORDS, GRAMMAR_ERROR_NON_LITERAL_WORD, \
-    GRAMMAR_ERROR_TOMU_INSTEAD_OF_TO
+    GRAMMAR_ERROR_TOMU_INSTEAD_OF_TO, GRAMMAR_ERROR_Z_INSTEAD_OF_S, GRAMMAR_ERROR_S_INSTEAD_OF_Z
 from src.const.paths import DATA_DIRECTORY, CONFIG_FILE_PATH, METADATA_FILE_PATH
 from src.const.values import NLP_BATCH_SIZE
 from src.domain.config import Config
@@ -433,6 +433,39 @@ def test_spellcheck_checks_non_literal_words(setup_teardown):
     for token in doc:
         assert token._.has_grammar_error
         assert token._.grammar_error_type == GRAMMAR_ERROR_NON_LITERAL_WORD
+
+
+def test_spellcheck_sso_adpositions(setup_teardown):
+    nlp = setup_teardown[0]
+    hunspell = setup_teardown[1]
+    text = "Prišiel zo susedou. Odišiel z otcom. Prišiel so susedou. Odišiel s otcom."
+    doc = Service.full_nlp(text, nlp, NLP_BATCH_SIZE, Config())
+    Service.spellcheck(hunspell, doc)
+    assert doc[1]._.has_grammar_error
+    assert doc[1]._.grammar_error_type == GRAMMAR_ERROR_Z_INSTEAD_OF_S
+    assert doc[5]._.has_grammar_error
+    assert doc[5]._.grammar_error_type == GRAMMAR_ERROR_Z_INSTEAD_OF_S
+    assert not doc[9]._.has_grammar_error
+    assert not doc[9]._.grammar_error_type == GRAMMAR_ERROR_Z_INSTEAD_OF_S
+    assert not doc[13]._.has_grammar_error
+    assert not doc[13]._.grammar_error_type == GRAMMAR_ERROR_Z_INSTEAD_OF_S
+
+
+def test_spellcheck_zzo_adpositions(setup_teardown):
+    nlp = setup_teardown[0]
+    hunspell = setup_teardown[1]
+    text = "Odišiel so školy. Prehodil s kopy. Odišiel zo školy. Prehodil z kopy."
+    doc = Service.full_nlp(text, nlp, NLP_BATCH_SIZE, Config())
+    Service.spellcheck(hunspell, doc)
+    assert doc[1]._.has_grammar_error
+    assert doc[1]._.grammar_error_type == GRAMMAR_ERROR_S_INSTEAD_OF_Z
+    assert doc[5]._.has_grammar_error
+    assert doc[5]._.grammar_error_type == GRAMMAR_ERROR_S_INSTEAD_OF_Z
+    assert not doc[9]._.has_grammar_error
+    assert not doc[9]._.grammar_error_type == GRAMMAR_ERROR_S_INSTEAD_OF_Z
+    assert not doc[13]._.has_grammar_error
+    assert not doc[13]._.grammar_error_type == GRAMMAR_ERROR_S_INSTEAD_OF_Z
+
 
 
 def test_spellcheck_ignore_literal_words_correct_form(setup_teardown):
