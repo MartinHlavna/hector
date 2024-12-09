@@ -193,6 +193,10 @@ Odstrániť medzery na konci odstavcov.
 - Program automaticky porovnáva slová voči slovníku a slová, ktoré v ňom nenájde, zvýrazní
 - Kvalita závisí od dostupných slovníkov
 
+#### Kontrola predložiek s/so a z/zo
+- Program označí ako chybné použitie predložky **s/so** s iným pádom ako inštrumentálom
+- Program označí ako chybné použitie predložky **z/zo** s iným pádom ako genitívom
+
 #### Kontrola spisovnosti
 
 - Program označí ako chyby nasledovné výrazy:
