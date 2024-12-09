@@ -28,6 +28,8 @@ from src.const.grammar_error_types import GRAMMAR_ERROR_TYPE_MISSPELLED_WORD, GR
 from src.const.paths import DATA_DIRECTORY, SPACY_MODELS_DIR, SK_SPACY_MODEL_DIR, DICTIONARY_DIR, SK_DICTIONARY_DIR, \
     SK_SPELL_DICTIONARY_DIR, CURRENT_SK_SPACY_MODEL_DIR, DICTIONARY_DIR_BACKUP, SK_MORPHODITA_MODEL_DIR, \
     SK_MORPHODITA_TAGGER, MORPHODITA_MODELS_DIR
+from src.const.spellcheck_dep_patterns import TYPE_PEKNY_PATTERNS, CHAPEM_TO_TOMU_PATTERNS, ZZO_INSTEAD_OF_SSO_PATTERNS, \
+    SSO_INSTEAD_OF_ZZO_PATTERNS
 from src.const.values import SPACY_MODEL_NAME_WITH_VERSION, SPACY_MODEL_LINK, SPACY_MODEL_NAME, READABILITY_MAX_VALUE, \
     MORPHODITA_MODEL_NAME, MORPHODITA_MODEL_LINK
 from src.domain.config import Config
@@ -392,39 +394,8 @@ class Service:
                     if token.lower_ in NON_LITERAL_WORDS:
                         token._.has_grammar_error = True
                         token._.grammar_error_type = GRAMMAR_ERROR_NON_LITERAL_WORD
-
-        # PATTERN TO FIND ALL ADJECTIVE / DETERMINER / PRONOUN -> NOUN PAIRS
-        pattern1 = [
-            {
-                "RIGHT_ID": "target",
-                "RIGHT_ATTRS": {"POS": {"IN": ["NOUN", "DET", "PRON"]}}
-            },
-            # founded -> subject
-            {
-                "LEFT_ID": "target",
-                "REL_OP": ">",
-                "RIGHT_ID": "modifier",
-                "RIGHT_ATTRS": {"POS": {"IN": ["ADJ", "DET", "PRON"]}}
-            },
-        ]
-
-        pattern2 = [
-            {
-                "RIGHT_ID": "target",
-                "RIGHT_ATTRS": {"POS": {"IN": ["NOUN", "DET", "PRON"]}}
-            },
-            # founded -> subject
-            {
-                "LEFT_ID": "target",
-                "REL_OP": "<",
-                "RIGHT_ID": "modifier",
-                "RIGHT_ATTRS": {"POS": {"IN": ["ADJ", "DET", "PRON"]}}
-            },
-        ]
-
         matcher = DependencyMatcher(doc.vocab)
-        matcher.add("PATTERN_1", [pattern1])
-        matcher.add("PATTERN_2", [pattern2])
+        matcher.add("TYPE_PEKNY_PATTERNS", TYPE_PEKNY_PATTERNS)
         for match_id, (target, modifier) in matcher(doc):
             target_morph = doc[target].morph.to_dict()
             if not doc[target]._.is_word or not doc[modifier]._.is_word:
@@ -462,93 +433,22 @@ class Service:
                         "Degree") == "Pos":
                     mod._.has_grammar_error = True
                     mod._.grammar_error_type = GRAMMAR_ERROR_TYPE_WRONG_ISI_SUFFIX
-        # PATTERN FOR CHÁPEM TOMU
-        pattern3 = [
-            {
-                "RIGHT_ID": "verb",
-                "RIGHT_ATTRS": {"LEMMA": "chápať"}
-            },
-            # founded -> subject
-            {
-                "LEFT_ID": "verb",
-                "REL_OP": ">",
-                "RIGHT_ID": "pron",
-                "RIGHT_ATTRS": {"LEMMA": "ten"}
-            },
-        ]
-        # PATTERN FOR TOMU CHÁPEM
-        pattern4 = [
-            {
-                "RIGHT_ID": "verb",
-                "RIGHT_ATTRS": {"LEMMA": "chápať"}
-            },
-            # founded -> subject
-            {
-                "LEFT_ID": "verb",
-                "REL_OP": "<",
-                "RIGHT_ID": "pron",
-                "RIGHT_ATTRS": {"LEMMA": "ten"}
-            },
-        ]
 
         matcher = DependencyMatcher(doc.vocab)
-        matcher.add("PATTERN_3", [pattern3])
-        matcher.add("PATTERN_4", [pattern4])
+        matcher.add("CHAPEM_TO_TOMU_PATTERNS", CHAPEM_TO_TOMU_PATTERNS)
         for match_id, (verb, pron) in matcher(doc):
             pron_token = doc[pron]
             if pron_token.lower_ == "tomu":
                 pron_token._.has_grammar_error = True
                 pron_token._.grammar_error_type = GRAMMAR_ERROR_TOMU_INSTEAD_OF_TO
-        # PATTERN FOR INCCORECT USAGE OF z/zo with instrumental case
-        pattern5 = [
-            {
-                "RIGHT_ID": "preposition",
-                "RIGHT_ATTRS": {"LEMMA": "z"}
-            },
-            # founded -> subject
-            {
-                "LEFT_ID": "preposition",
-                "REL_OP": "<",
-                "RIGHT_ID": "noun",
-                "RIGHT_ATTRS": {"MORPH": {"INTERSECTS": ["Case=Ins"]}}
-            },
-        ]
         matcher = DependencyMatcher(doc.vocab)
-        matcher.add("PATTERN_5", [pattern5])
+        matcher.add("ZZO_INSTEAD_OF_SSO_PATTERNS", ZZO_INSTEAD_OF_SSO_PATTERNS)
         for match_id, (preposition, noun) in matcher(doc):
             preposition_token = doc[preposition]
             preposition_token._.has_grammar_error = True
             preposition_token._.grammar_error_type = GRAMMAR_ERROR_Z_INSTEAD_OF_S
-        # PATTERN FOR INCCORECT USAGE OF s/so with genitive case
-        pattern6 = [
-            {
-                "RIGHT_ID": "preposition",
-                "RIGHT_ATTRS": {"LEMMA": "s"}
-            },
-            # founded -> subject
-            {
-                "LEFT_ID": "preposition",
-                "REL_OP": "<",
-                "RIGHT_ID": "noun",
-                "RIGHT_ATTRS": {"MORPH": {"INTERSECTS": ["Case=Gen"]}}
-            },
-        ]
-        pattern7 = [
-            {
-                "RIGHT_ID": "preposition",
-                "RIGHT_ATTRS": {"LEMMA": "s"}
-            },
-            # founded -> subject
-            {
-                "LEFT_ID": "preposition",
-                "REL_OP": "<",
-                "RIGHT_ID": "noun",
-                "RIGHT_ATTRS": {"MORPH": {"INTERSECTS": ["Case=Nom"]}}
-            },
-        ]
         matcher = DependencyMatcher(doc.vocab)
-        matcher.add("PATTERN_6", [pattern6])
-        matcher.add("PATTERN_7", [pattern7])
+        matcher.add("SSO_INSTEAD_OF_ZZO_PATTERNS", SSO_INSTEAD_OF_ZZO_PATTERNS)
         for match_id, (preposition, noun) in matcher(doc):
             preposition_token = doc[preposition]
             preposition_token._.has_grammar_error = True

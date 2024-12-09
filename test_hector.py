@@ -467,7 +467,6 @@ def test_spellcheck_zzo_adpositions(setup_teardown):
     assert not doc[13]._.grammar_error_type == GRAMMAR_ERROR_S_INSTEAD_OF_Z
 
 
-
 def test_spellcheck_ignore_literal_words_correct_form(setup_teardown):
     nlp = setup_teardown[0]
     hunspell = setup_teardown[1]
