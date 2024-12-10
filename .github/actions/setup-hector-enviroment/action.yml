@@ -23,12 +23,6 @@ runs:
       if: matrix.os == 'ubuntu-latest'
       shell: bash
       run: sudo apt install -y autoconf libtool gettext autopoint
-    - name: Symlink tcl 8.6 for macos-13
-      shell: bash
-      if: matrix.os == 'macos-13' && inputs.python_version == '3.10'
-      run: |
-        ln -s /Users/runner/hostedtoolcache/PyPy/3.7.13/x64/lib/libtcl8.6.dylib /usr/local/lib/libtcl8.6.dylib
-        ln -s /Users/runner/hostedtoolcache/PyPy/3.7.13/x64/lib/libtk8.6.dylib /usr/local/lib/libtk8.6.dylib
     - name: Install requirements for macOS
       shell: bash
       if: matrix.os == 'macos-latest' || matrix.os == 'macos-13' || matrix.os == 'macos-12'
