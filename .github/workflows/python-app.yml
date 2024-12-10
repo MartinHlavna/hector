@@ -34,7 +34,7 @@ jobs:
       id: setup-hector-enviroment
       uses: ./.github/actions/setup-hector-enviroment
       with:
-        os: ${{matrix.python_version}}
+        python_version: ${{matrix.python_version}}
     - name: Check dependencies licences
       if: matrix.os == 'ubuntu-latest'
       id: generate-licence-check-report
