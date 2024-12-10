@@ -104,3 +104,60 @@ SSO_INSTEAD_OF_ZZO_PATTERNS = [
         },
     ]
 ]
+SVOJ_MOJ_TVOJ_PLUR_PATTERNS = [
+    # FIND INSTRUMENTAL FORMS OF PRONOUNS svoj, môj, tvoj THAT IS RELATED TO NOUN IN DATIVE CASE
+    [
+        {
+            "RIGHT_ID": "pronoun",
+            "RIGHT_ATTRS": {"LEMMA": {"IN": ["svoj", "môj", "tvoj"]}, "MORPH": {"INTERSECTS": ["Case=Ins"]}}
+        },
+        {
+            "LEFT_ID": "pronoun",
+            "REL_OP": "<",
+            "RIGHT_ID": "noun",
+            "RIGHT_ATTRS": {"MORPH": {"INTERSECTS": ["Case=Dat"]}}
+        },
+    ],
+    # PATTERN FOR REVERSE ORDER
+    [
+        {
+            "RIGHT_ID": "pronoun",
+            "RIGHT_ATTRS": {"LEMMA": {"IN": ["svoj", "môj", "tvoj"]}, "MORPH": {"INTERSECTS": ["Case=Ins"]}}
+        },
+        {
+            "LEFT_ID": "pronoun",
+            "REL_OP": ">",
+            "RIGHT_ID": "noun",
+            "RIGHT_ATTRS": {"MORPH": {"INTERSECTS": ["Case=Dat"]}}
+        },
+    ]
+]
+SVOJ_MOJ_TVOJ_SING_PATTERNS = [
+    # FIND DATIVE FORMS OF PRONOUNS svoj, môj, tvoj THAT IS RELATED TO NOUN IN INSTRUMENTAL CASE
+    [
+        {
+            "RIGHT_ID": "pronoun",
+            "RIGHT_ATTRS": {"LEMMA": {"IN": ["svoj", "môj", "tvoj"]}, "MORPH": {"INTERSECTS": ["Case=Dat"]}}
+        },
+        {
+            "LEFT_ID": "pronoun",
+            "REL_OP": "<",
+            "RIGHT_ID": "noun",
+            "RIGHT_ATTRS": {"MORPH": {"INTERSECTS": ["Case=Ins"]}}
+        },
+    ],
+    # PATTERN FOR REVERSE ORDER
+    [
+        {
+            "RIGHT_ID": "pronoun",
+            "RIGHT_ATTRS": {"LEMMA": {"IN": ["svoj", "môj", "tvoj"]}, "MORPH": {"INTERSECTS": ["Case=Dat"]}}
+        },
+        {
+            "LEFT_ID": "pronoun",
+            "REL_OP": ">",
+            "RIGHT_ID": "noun",
+            "RIGHT_ATTRS": {"MORPH": {"INTERSECTS": ["Case=Ins"]}}
+        },
+    ]
+]
+
