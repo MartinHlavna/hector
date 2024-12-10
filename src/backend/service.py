@@ -20,7 +20,8 @@ from spacy.tokenizer import Tokenizer
 from spacy.tokens import Doc, Token, Span
 from spacy.util import compile_infix_regex
 
-from src.backend.morphodita_tagger_morphologizer_lemmatizer import MORPHODITA_COMPONENT_FACTORY_NAME
+from src.backend.morphodita_tagger_morphologizer_lemmatizer import MORPHODITA_COMPONENT_FACTORY_NAME, \
+    MORPHODITA_RESET_SENTENCES_COMPONENT
 from src.const.grammar_error_types import GRAMMAR_ERROR_TYPE_MISSPELLED_WORD, GRAMMAR_ERROR_TYPE_WRONG_Y_SUFFIX, \
     GRAMMAR_ERROR_TYPE_WRONG_YSI_SUFFIX, GRAMMAR_ERROR_TYPE_WRONG_I_SUFFIX, GRAMMAR_ERROR_TYPE_WRONG_ISI_SUFFIX, \
     NON_LITERAL_WORDS, GRAMMAR_ERROR_NON_LITERAL_WORD, GRAMMAR_ERROR_TOMU_INSTEAD_OF_TO, \
@@ -139,16 +140,18 @@ class Service:
                                       infix_finditer=infix_re.finditer,
                                       token_match=nlp.tokenizer.token_match,
                                       rules=nlp.Defaults.tokenizer_exceptions)
-
+            nlp.add_pipe('sentencizer', after='trainable_lemmatizer')
             nlp.add_pipe(
                 MORPHODITA_COMPONENT_FACTORY_NAME,
                 name='morphodita_tagger_morphologizer_lemmatizer',
-                after='trainable_lemmatizer',
+                after='sentencizer',
                 config={"tagger_path": SK_MORPHODITA_TAGGER}
             )
+            nlp.add_pipe(MORPHODITA_RESET_SENTENCES_COMPONENT, after='morphodita_tagger_morphologizer_lemmatizer')
             nlp.remove_pipe('tagger')
             nlp.remove_pipe('morphologizer')
             nlp.remove_pipe('trainable_lemmatizer')
+            print(nlp.pipe_names)
             # SPACY EXTENSIONS
             Token.set_extension("is_word", default=False, force=True)
             Token.set_extension("word_index", default=None, force=True)
