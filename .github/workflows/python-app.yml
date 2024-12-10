@@ -39,6 +39,8 @@ jobs:
       if: matrix.os == 'ubuntu-latest'
       id: generate-licence-check-report
       uses: ./.github/actions/generate-licence-check-report
+      with:
+        python_version: ${{matrix.python_version}}
     - name: Lint with flake8
       run: |
         # stop the build if there are Python syntax errors or undefined names
