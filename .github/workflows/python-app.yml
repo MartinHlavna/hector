@@ -26,12 +26,15 @@ jobs:
       fail-fast: false
       matrix:
         os: [ubuntu-latest, windows-latest, macos-latest, macos-13] #macos-13 because macos-latest is arm64 only and we also need to support intell CPUs
+        python_version: [3.11, 3.12, 3.13]
     runs-on: ${{ matrix.os }}
     steps:
     - uses: actions/checkout@v4
     - name: Setup hector enviroment
       id: setup-hector-enviroment
       uses: ./.github/actions/setup-hector-enviroment
+      with:
+        os: ${{matrix.python_version}}
     - name: Check dependencies licences
       if: matrix.os == 'ubuntu-latest'
       id: generate-licence-check-report

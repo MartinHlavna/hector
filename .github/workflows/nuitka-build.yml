@@ -77,6 +77,8 @@ jobs:
       - name: Setup hector enviroment
         id: setup-hector-enviroment
         uses: ./.github/actions/setup-hector-enviroment
+        with:
+          os: "3.11"
       - name: Install additional dependencies
         run: |
           pip install imageio

@@ -2,13 +2,18 @@ name: Setup hector enviroment
 description: Setup python and dependencies
 # Schema: https://json.schemastore.org/github-action.json
 
+inputs:
+  python_version:
+    description: 'Os to run against'
+    required: true
+
 runs:
   using: 'composite'
   steps:
-    - name: Set up Python 3.11
+    - name: Set up Python
       uses: actions/setup-python@v5
       with:
-        python-version: "3.11"
+        python-version: ${{inputs.python_version}}
         cache: 'pip'
         check-latest: true
     - name: Install GCC for linux
