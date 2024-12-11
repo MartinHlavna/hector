@@ -25,7 +25,7 @@ runs:
       run: sudo apt install -y autoconf libtool gettext autopoint
     - name: Install requirements for macOS
       shell: bash
-      if: matrix.os == 'macos-latest' || matrix.os == 'macos-13' || matrix.os == 'macos-12'
+      if: matrix.os == 'macos-latest' || matrix.os == 'macos-15' || matrix.os == 'macos-14' || matrix.os == 'macos-13'
       run: brew install automake autoconf libtool
     - name: Install dependencies
       shell: bash
