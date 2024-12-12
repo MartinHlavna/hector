@@ -74,7 +74,12 @@ class MainWindow:
                        {'children': [('Vertical.Scrollbar.thumb',
                                       {'expand': '1', 'sticky': 'nswe'})],
                         'sticky': 'ns'})])
-        self.root.eval('tk::PlaceWindow . center')
+        screen_width = self.root.winfo_screenwidth()
+        screen_height = self.root.winfo_screenheight()
+        self.root.geometry("800x600")
+        x = screen_width / 2 - (800 / 2)
+        y = screen_height / 2 - (600 / 2)
+        self.root.geometry("+%d+%d" % (x, y))
         # OPEN WINDOW IN MAXIMIZED STATE
         # FOR WINDOWS AND MAC OS SET STATE ZOOMED
         # FOR LINUX SET ATTRIBUTE ZOOMED
