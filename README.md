@@ -325,7 +325,7 @@ stačí stiahnuť a skopírovať do vlastného priečinka.
 
 ### Spustenie zo zdrojového kódu (napr. pre účely vývoja)
 
-Kód bol testovaný s použitím Python interpretera verzie 3.11.
+Kód bol testovaný s použitím Python interpretera verzie 3.9, 3.10, 3.11 a 3.12. Odporúčaná verzia je 3.12.
 
 #### Špeciálne kroky pre Linux (debian-based)
 
@@ -333,6 +333,13 @@ Nainštalovať balíčky:
 
 ```
 sudo apt install -y autoconf libtool gettext autopoint
+```
+
+Tiež je potrebné mať nainštalovanú podporu pre tkinter a dev v pythone (x prispôsobiť konkrétnej verzii)
+
+```
+sudo apt install -y python3.x-dev
+sudo apt install -y python3.x-tk
 ```
 
 #### Špeciálne kroky pre macOS
