@@ -86,7 +86,7 @@ SSO_INSTEAD_OF_ZZO_PATTERNS = [
             "LEFT_ID": "preposition",
             "REL_OP": "<",
             "RIGHT_ID": "noun",
-            "RIGHT_ATTRS": {"MORPH": {"INTERSECTS": ["Case=Gen"]}}
+            "RIGHT_ATTRS": {"MORPH": {"INTERSECTS": ["Case=Gen", "Case=Acc"]}}
         },
     ],
     # FIND ANY FORM OF S PREPOSITION THAT RELATES TO NOUN IN NOMINATIVE CASE
@@ -104,3 +104,33 @@ SSO_INSTEAD_OF_ZZO_PATTERNS = [
         },
     ]
 ]
+SVOJ_MOJ_TVOJ_PATTERNS = [
+    # FIND DATIVE FORMS OF PRONOUNS svoj, môj, tvoj THAT IS RELATED TO NOUN IN INSTRUMENTAL CASE
+    # FURTHER CHECKINGS DONE IN CODE
+    [
+        {
+            "RIGHT_ID": "pronoun",
+            "RIGHT_ATTRS": {"LEMMA": {"IN": ["svoj", "môj", "tvoj"]}, "MORPH": {"INTERSECTS": ["Gender=Masc", "Gender=Neut", "Gender=Com"]}}
+        },
+        {
+            "LEFT_ID": "pronoun",
+            "REL_OP": "<",
+            "RIGHT_ID": "noun",
+            "RIGHT_ATTRS": {"POS": {"IN": ["NOUN"]}}
+        },
+    ],
+    # PATTERN FOR REVERSE ORDER
+    [
+        {
+            "RIGHT_ID": "pronoun",
+            "RIGHT_ATTRS": {"LEMMA": {"IN": ["svoj", "môj", "tvoj"]}}
+        },
+        {
+            "LEFT_ID": "pronoun",
+            "REL_OP": ">",
+            "RIGHT_ID": "noun",
+            "RIGHT_ATTRS": {"POS": {"IN": ["NOUN"]}}
+        },
+    ]
+]
+

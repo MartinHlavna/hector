@@ -3,6 +3,7 @@ from spacy.language import Language
 import ufal.morphodita as morphodita
 from spacy.tokens import Token, Doc
 
+MORPHODITA_RESET_SENTENCES_COMPONENT = "reset_sentences_after_morphodita_component"
 MORPHODITA_COMPONENT_FACTORY_NAME = "morphodita_tagger_morphologizer_lemmatizer"
 
 # MAPPING BETWEEN PDT TAGS AND SPACY TAGS
@@ -243,13 +244,22 @@ class MorphoditaTaggerMorphologizerLemmatizer:
         return morph_attrs
 
     def __call__(self, doc: Doc) -> Doc:
-        for i, token in enumerate(doc):
-            self.forms.clear()
-            self.forms.push_back(token.text)
-            self.tagger.tag(self.forms, self.lemmas)
-            if len(self.lemmas) > 0:
-                lemma = self.lemmas[0].lemma
-                tag = self.lemmas[0].tag
+        # FOR EVERY SENTENCE
+        for sent in doc.sents:
+            forms = morphodita.Forms()
+            # WE NEED TO RETAIN TOKEN INDEXES
+            sentence_tokens = [token for token in sent]
+            for token in sent:
+                forms.push_back(token.text)
+
+            lemmas = morphodita.TaggedLemmas()
+            # TAG SENTENCE
+            self.tagger.tag(forms, lemmas)
+
+            # PROCESS TOKEN LEMMA PAIRS
+            for token, tagged_lemma in zip(sentence_tokens, lemmas):
+                lemma = tagged_lemma.lemma
+                tag = tagged_lemma.tag
                 token._.full_lemma = lemma
                 token._.pdt_morph = tag
                 token.lemma_ = self.morpho.rawLemma(lemma)
@@ -268,3 +278,11 @@ class MorphoditaTaggerMorphologizerLemmatizer:
 @Language.factory(MORPHODITA_COMPONENT_FACTORY_NAME, default_config={"tagger_path": None})
 def morphodita_tagger_morphologizer_lemmatizer(nlp, name, tagger_path: str):
     return MorphoditaTaggerMorphologizerLemmatizer(nlp, tagger_path=tagger_path)
+
+
+@Language.component(MORPHODITA_RESET_SENTENCES_COMPONENT)
+def reset_sentences_component(doc):
+    if len(doc) > 0:
+        for token in doc:
+            token.is_sent_start = None
+    return doc

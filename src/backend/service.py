@@ -20,16 +20,18 @@ from spacy.tokenizer import Tokenizer
 from spacy.tokens import Doc, Token, Span
 from spacy.util import compile_infix_regex
 
-from src.backend.morphodita_tagger_morphologizer_lemmatizer import MORPHODITA_COMPONENT_FACTORY_NAME
+from src.backend.morphodita_tagger_morphologizer_lemmatizer import MORPHODITA_COMPONENT_FACTORY_NAME, \
+    MORPHODITA_RESET_SENTENCES_COMPONENT
 from src.const.grammar_error_types import GRAMMAR_ERROR_TYPE_MISSPELLED_WORD, GRAMMAR_ERROR_TYPE_WRONG_Y_SUFFIX, \
     GRAMMAR_ERROR_TYPE_WRONG_YSI_SUFFIX, GRAMMAR_ERROR_TYPE_WRONG_I_SUFFIX, GRAMMAR_ERROR_TYPE_WRONG_ISI_SUFFIX, \
     NON_LITERAL_WORDS, GRAMMAR_ERROR_NON_LITERAL_WORD, GRAMMAR_ERROR_TOMU_INSTEAD_OF_TO, \
-    GRAMMAR_ERROR_S_INSTEAD_OF_Z, GRAMMAR_ERROR_Z_INSTEAD_OF_S
+    GRAMMAR_ERROR_S_INSTEAD_OF_Z, GRAMMAR_ERROR_Z_INSTEAD_OF_S, GRAMMAR_ERROR_SVOJ_MOJ_TVOJ_PLUR, \
+    GRAMMAR_ERROR_SVOJ_MOJ_TVOJ_SING
 from src.const.paths import DATA_DIRECTORY, SPACY_MODELS_DIR, SK_SPACY_MODEL_DIR, DICTIONARY_DIR, SK_DICTIONARY_DIR, \
     SK_SPELL_DICTIONARY_DIR, CURRENT_SK_SPACY_MODEL_DIR, DICTIONARY_DIR_BACKUP, SK_MORPHODITA_MODEL_DIR, \
     SK_MORPHODITA_TAGGER, MORPHODITA_MODELS_DIR
 from src.const.spellcheck_dep_patterns import TYPE_PEKNY_PATTERNS, CHAPEM_TO_TOMU_PATTERNS, ZZO_INSTEAD_OF_SSO_PATTERNS, \
-    SSO_INSTEAD_OF_ZZO_PATTERNS
+    SSO_INSTEAD_OF_ZZO_PATTERNS, SVOJ_MOJ_TVOJ_PATTERNS
 from src.const.values import SPACY_MODEL_NAME_WITH_VERSION, SPACY_MODEL_LINK, SPACY_MODEL_NAME, READABILITY_MAX_VALUE, \
     MORPHODITA_MODEL_NAME, MORPHODITA_MODEL_LINK
 from src.domain.config import Config
@@ -138,16 +140,18 @@ class Service:
                                       infix_finditer=infix_re.finditer,
                                       token_match=nlp.tokenizer.token_match,
                                       rules=nlp.Defaults.tokenizer_exceptions)
-
+            nlp.add_pipe('sentencizer', after='trainable_lemmatizer')
             nlp.add_pipe(
                 MORPHODITA_COMPONENT_FACTORY_NAME,
                 name='morphodita_tagger_morphologizer_lemmatizer',
-                after='trainable_lemmatizer',
+                after='sentencizer',
                 config={"tagger_path": SK_MORPHODITA_TAGGER}
             )
+            nlp.add_pipe(MORPHODITA_RESET_SENTENCES_COMPONENT, after='morphodita_tagger_morphologizer_lemmatizer')
             nlp.remove_pipe('tagger')
             nlp.remove_pipe('morphologizer')
             nlp.remove_pipe('trainable_lemmatizer')
+            print(nlp.pipe_names)
             # SPACY EXTENSIONS
             Token.set_extension("is_word", default=False, force=True)
             Token.set_extension("word_index", default=None, force=True)
@@ -453,6 +457,34 @@ class Service:
             preposition_token = doc[preposition]
             preposition_token._.has_grammar_error = True
             preposition_token._.grammar_error_type = GRAMMAR_ERROR_S_INSTEAD_OF_Z
+        matcher = DependencyMatcher(doc.vocab)
+        matcher.add("SVOJ_MOJ_TVOJ_PATTERNS", SVOJ_MOJ_TVOJ_PATTERNS)
+        for match_id, (pronoun, noun) in matcher(doc):
+            pronoun_token = doc[pronoun]
+            noun_token = doc[noun]
+            case_marking = None
+            for left_token in noun_token.lefts:
+                if left_token != pronoun_token and left_token.dep_ == "case":
+                    case_marking = left_token
+            pronoun_morph = pronoun_token.morph.to_dict()
+            noun_morph = noun_token.morph.to_dict()
+            # LETS CHECK RELATION BETWEEN PRONOUN AND NOUN
+            if (pronoun_morph.get("Case") == "Ins") and (noun_morph.get("Case") == "Dat" or noun_morph.get("Number") == "Plur"):
+                pronoun_token._.has_grammar_error = True
+                pronoun_token._.grammar_error_type = GRAMMAR_ERROR_SVOJ_MOJ_TVOJ_PLUR
+            elif pronoun_morph.get("Case") == "Dat" and noun_morph.get("Case") == "Ins":
+                pronoun_token._.has_grammar_error = True
+                pronoun_token._.grammar_error_type = GRAMMAR_ERROR_SVOJ_MOJ_TVOJ_SING
+            elif case_marking is not None:
+                # RELATION BETWEEN PRONOUN AND NOUN LOOKS GOOD, BUT WE ALSO HAVE CASE MARKING DEP AVAILABLE
+                # LET'S DOUBLECHECK, NOUN WITH PRONOUN MAY HAVE BEEN MISSTAGGED
+                case_marking_morph = case_marking.morph.to_dict()
+                if pronoun_morph.get("Case") == "Ins" and (case_marking_morph.get("Case") == "Dat" or case_marking_morph.get("Number") == "Plur"):
+                    pronoun_token._.has_grammar_error = True
+                    pronoun_token._.grammar_error_type = GRAMMAR_ERROR_SVOJ_MOJ_TVOJ_PLUR
+                elif pronoun_morph.get("Case") == "Dat" and case_marking_morph.get("Case") == "Ins":
+                    pronoun_token._.has_grammar_error = True
+                    pronoun_token._.grammar_error_type = GRAMMAR_ERROR_SVOJ_MOJ_TVOJ_SING
 
     # FUNCTION THAT CALCULATE READABILITY INDICES
     @staticmethod

@@ -28,7 +28,8 @@ from src.const.fonts import HELVETICA_FONT_NAME, TEXT_SIZE_SECTION_HEADER, TEXT_
 from src.const.grammar_error_types import GRAMMAR_ERROR_TYPE_MISSPELLED_WORD, GRAMMAR_ERROR_TYPE_WRONG_Y_SUFFIX, \
     GRAMMAR_ERROR_TYPE_WRONG_I_SUFFIX, GRAMMAR_ERROR_TYPE_WRONG_YSI_SUFFIX, GRAMMAR_ERROR_TYPE_WRONG_ISI_SUFFIX, \
     GRAMMAR_ERROR_NON_LITERAL_WORD, NON_LITERAL_WORDS, GRAMMAR_ERROR_S_INSTEAD_OF_Z, \
-    GRAMMAR_ERROR_Z_INSTEAD_OF_S, GRAMMAR_ERROR_TOMU_INSTEAD_OF_TO
+    GRAMMAR_ERROR_Z_INSTEAD_OF_S, GRAMMAR_ERROR_TOMU_INSTEAD_OF_TO, GRAMMAR_ERROR_SVOJ_MOJ_TVOJ_PLUR, \
+    GRAMMAR_ERROR_SVOJ_MOJ_TVOJ_SING
 from src.const.paths import CONFIG_FILE_PATH, METADATA_FILE_PATH
 from src.const.tags import CLOSE_WORD_PREFIX, LONG_SENTENCE_TAG_NAME_HIGH, LONG_SENTENCE_TAG_NAME_MID, \
     PARAGRAPH_TAG_NAME, TRAILING_SPACES_TAG_NAME, MULTIPLE_PUNCTUATION_TAG_NAME, MULTIPLE_SPACES_TAG_NAME, \
@@ -766,6 +767,12 @@ class MainWindow:
                                     error_messages.add(f'Chybná predložka.\n\nNávrh: z/zo')
                                 elif token._.grammar_error_type == GRAMMAR_ERROR_Z_INSTEAD_OF_S:
                                     error_messages.add(f'Chybná predložka.\n\nNávrh: s/so')
+                                elif token._.grammar_error_type == GRAMMAR_ERROR_SVOJ_MOJ_TVOJ_PLUR:
+                                    error_messages.add(f'Privlasťnovacie zámená majú v datíve množného tvar bez dĺžňa.')
+                                elif token._.grammar_error_type == GRAMMAR_ERROR_SVOJ_MOJ_TVOJ_SING:
+                                    error_messages.add(
+                                        f'Privlasťnovacie zámená majú v inštrumentáli jednotného čísla tvar s dĺžňom.'
+                                    )
                                 elif token._.grammar_error_type == GRAMMAR_ERROR_TYPE_WRONG_Y_SUFFIX:
                                     error_messages.add(
                                         f'Slovo by malo končiť na í.\n\nNávrhy: {span.root.text[:-1] + "í"}')
@@ -991,7 +998,8 @@ class MainWindow:
             if span.root._.is_word:
                 self.current_instrospection_token = span.root
                 if ENABLE_DEBUG_DEP_IMAGE:
-                    rlg = svg2rlg(io.StringIO(displacy.render(span.root.sent, minify=True)))
+                    svg = io.StringIO(displacy.render(span.root.sent, minify=True))
+                    rlg = svg2rlg(svg)
                     dep_image = renderPM.drawToPIL(rlg)
                     scaling_ratio = 200 / dep_image.width
                     dep_view = ImageTk.PhotoImage(dep_image.resize((200, math.ceil(dep_image.height * scaling_ratio))))
@@ -1150,7 +1158,8 @@ class MainWindow:
         if self.current_instrospection_token is not None:
             dep_window = tk.Toplevel(self.root)
             dep_window.title("Rozbor vety")
-            rlg = svg2rlg(io.StringIO(displacy.render(self.current_instrospection_token.sent, minify=True)))
+            svg = io.StringIO(displacy.render(self.current_instrospection_token.sent, minify=True))
+            rlg = svg2rlg(svg)
             dep_image = renderPM.drawToPIL(rlg)
             scaling_ratio = 1000 / dep_image.width
             dep_view = ImageTk.PhotoImage(dep_image.resize((1000, math.ceil(dep_image.height * scaling_ratio))))
