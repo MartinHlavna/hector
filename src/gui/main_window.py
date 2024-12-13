@@ -51,7 +51,7 @@ A4_SIZE_INCHES = 8.27
 EDITOR_LOGO_HEIGHT = 300
 EDITOR_LOGO_WIDTH = 300
 NLP_DEBOUNCE_LENGTH = 500
-ENABLE_DEBUG_DEP_IMAGE = False
+ENABLE_DEBUG_DEP_IMAGE = True
 
 with open(Utils.resource_path(os.path.join('data_files', 'pos_tag_translations.json')), 'r', encoding='utf-8') as file:
     POS_TAG_TRANSLATIONS = json.load(file)
@@ -998,7 +998,8 @@ class MainWindow:
             if span.root._.is_word:
                 self.current_instrospection_token = span.root
                 if ENABLE_DEBUG_DEP_IMAGE:
-                    rlg = svg2rlg(io.StringIO(displacy.render(span.root.sent, minify=True)))
+                    svg = io.StringIO(displacy.render(span.root.sent, minify=True))
+                    rlg = svg2rlg(svg)
                     dep_image = renderPM.drawToPIL(rlg)
                     scaling_ratio = 200 / dep_image.width
                     dep_view = ImageTk.PhotoImage(dep_image.resize((200, math.ceil(dep_image.height * scaling_ratio))))
@@ -1157,7 +1158,8 @@ class MainWindow:
         if self.current_instrospection_token is not None:
             dep_window = tk.Toplevel(self.root)
             dep_window.title("Rozbor vety")
-            rlg = svg2rlg(io.StringIO(displacy.render(self.current_instrospection_token.sent, minify=True)))
+            svg = io.StringIO(displacy.render(self.current_instrospection_token.sent, minify=True))
+            rlg = svg2rlg(svg)
             dep_image = renderPM.drawToPIL(rlg)
             scaling_ratio = 1000 / dep_image.width
             dep_view = ImageTk.PhotoImage(dep_image.resize((1000, math.ceil(dep_image.height * scaling_ratio))))

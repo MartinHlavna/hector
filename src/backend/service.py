@@ -31,7 +31,7 @@ from src.const.paths import DATA_DIRECTORY, SPACY_MODELS_DIR, SK_SPACY_MODEL_DIR
     SK_SPELL_DICTIONARY_DIR, CURRENT_SK_SPACY_MODEL_DIR, DICTIONARY_DIR_BACKUP, SK_MORPHODITA_MODEL_DIR, \
     SK_MORPHODITA_TAGGER, MORPHODITA_MODELS_DIR
 from src.const.spellcheck_dep_patterns import TYPE_PEKNY_PATTERNS, CHAPEM_TO_TOMU_PATTERNS, ZZO_INSTEAD_OF_SSO_PATTERNS, \
-    SSO_INSTEAD_OF_ZZO_PATTERNS, SVOJ_MOJ_TVOJ_PLUR_PATTERNS, SVOJ_MOJ_TVOJ_SING_PATTERNS
+    SSO_INSTEAD_OF_ZZO_PATTERNS, SVOJ_MOJ_TVOJ_PATTERNS
 from src.const.values import SPACY_MODEL_NAME_WITH_VERSION, SPACY_MODEL_LINK, SPACY_MODEL_NAME, READABILITY_MAX_VALUE, \
     MORPHODITA_MODEL_NAME, MORPHODITA_MODEL_LINK
 from src.domain.config import Config
@@ -458,16 +458,33 @@ class Service:
             preposition_token._.has_grammar_error = True
             preposition_token._.grammar_error_type = GRAMMAR_ERROR_S_INSTEAD_OF_Z
         matcher = DependencyMatcher(doc.vocab)
-        matcher.add("SVOJ_MOJ_TVOJ_PLUR_PATTERNS", SVOJ_MOJ_TVOJ_PLUR_PATTERNS)
-        for match_id, (preposition, noun) in matcher(doc):
-            preposition_token = doc[preposition]
-            preposition_token._.has_grammar_error = True
-            preposition_token._.grammar_error_type = GRAMMAR_ERROR_SVOJ_MOJ_TVOJ_PLUR
-        matcher.add("SVOJ_MOJ_TVOJ_SING_PATTERNS", SVOJ_MOJ_TVOJ_SING_PATTERNS)
-        for match_id, (preposition, noun) in matcher(doc):
-            preposition_token = doc[preposition]
-            preposition_token._.has_grammar_error = True
-            preposition_token._.grammar_error_type = GRAMMAR_ERROR_SVOJ_MOJ_TVOJ_SING
+        matcher.add("SVOJ_MOJ_TVOJ_PATTERNS", SVOJ_MOJ_TVOJ_PATTERNS)
+        for match_id, (pronoun, noun) in matcher(doc):
+            pronoun_token = doc[pronoun]
+            noun_token = doc[noun]
+            case_marking = None
+            for left_token in noun_token.lefts:
+                if left_token != pronoun_token and left_token.dep_ == "case":
+                    case_marking = left_token
+            pronoun_morph = pronoun_token.morph.to_dict()
+            noun_morph = noun_token.morph.to_dict()
+            # LETS CHECK RELATION BETWEEN PRONOUN AND NOUN
+            if (pronoun_morph.get("Case") == "Ins") and (noun_morph.get("Case") == "Dat" or noun_morph.get("Number") == "Plur"):
+                pronoun_token._.has_grammar_error = True
+                pronoun_token._.grammar_error_type = GRAMMAR_ERROR_SVOJ_MOJ_TVOJ_PLUR
+            elif pronoun_morph.get("Case") == "Dat" and noun_morph.get("Case") == "Ins":
+                pronoun_token._.has_grammar_error = True
+                pronoun_token._.grammar_error_type = GRAMMAR_ERROR_SVOJ_MOJ_TVOJ_SING
+            elif case_marking is not None:
+                # RELATION BETWEEN PRONOUN AND NOUN LOOKS GOOD, BUT WE ALSO HAVE CASE MARKING DEP AVAILABLE
+                # LET'S DOUBLECHECK, NOUN WITH PRONOUN MAY HAVE BEEN MISSTAGGED
+                case_marking_morph = case_marking.morph.to_dict()
+                if pronoun_morph.get("Case") == "Ins" and (case_marking_morph.get("Case") == "Dat" or case_marking_morph.get("Number") == "Plur"):
+                    pronoun_token._.has_grammar_error = True
+                    pronoun_token._.grammar_error_type = GRAMMAR_ERROR_SVOJ_MOJ_TVOJ_PLUR
+                elif pronoun_morph.get("Case") == "Dat" and case_marking_morph.get("Case") == "Ins":
+                    pronoun_token._.has_grammar_error = True
+                    pronoun_token._.grammar_error_type = GRAMMAR_ERROR_SVOJ_MOJ_TVOJ_SING
 
     # FUNCTION THAT CALCULATE READABILITY INDICES
     @staticmethod
