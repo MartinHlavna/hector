@@ -11,7 +11,8 @@ from spacy.tokens import Doc
 from src.backend.service import Service
 from src.const.grammar_error_types import GRAMMAR_ERROR_TYPE_MISSPELLED_WORD, GRAMMAR_ERROR_TYPE_WRONG_Y_SUFFIX, \
     GRAMMAR_ERROR_TYPE_WRONG_I_SUFFIX, NON_LITERAL_WORDS, GRAMMAR_ERROR_NON_LITERAL_WORD, \
-    GRAMMAR_ERROR_TOMU_INSTEAD_OF_TO, GRAMMAR_ERROR_Z_INSTEAD_OF_S, GRAMMAR_ERROR_S_INSTEAD_OF_Z
+    GRAMMAR_ERROR_TOMU_INSTEAD_OF_TO, GRAMMAR_ERROR_Z_INSTEAD_OF_S, GRAMMAR_ERROR_S_INSTEAD_OF_Z, \
+    GRAMMAR_ERROR_SVOJ_MOJ_TVOJ_PLUR, GRAMMAR_ERROR_SVOJ_MOJ_TVOJ_SING
 from src.const.paths import DATA_DIRECTORY, CONFIG_FILE_PATH, METADATA_FILE_PATH
 from src.const.values import NLP_BATCH_SIZE
 from src.domain.config import Config
@@ -467,6 +468,61 @@ def test_spellcheck_zzo_adpositions(setup_teardown):
     assert not doc[13]._.grammar_error_type == GRAMMAR_ERROR_S_INSTEAD_OF_Z
 
 
+def test_spellcheck_svoj_moj_tvoj_nas_vas(setup_teardown):
+    nlp = setup_teardown[0]
+    hunspell = setup_teardown[1]
+    sentences = [
+        "Chodil so svojim psom každé ráno na prechádzku."
+        "S tvojim kamarátom som včera diskutoval o novom projekte."
+        "S vašim autom sa ťažko manévruje na úzkej ceste."
+        "Pod svojim kabátom schovával malý darček."
+        "Nad našim mestom sa usadil hustý mrak."
+        "Za tvojim domom rastú divoké maliny."
+        # NOT WORKING: "Svojim názorom si často vyvolávaš zbytočné hádky."
+        "Tvojím slovám chýba presvedčivosť."
+        "S mojim starým bicyklom som najazdil stovky kilometrov."
+        # NOT WORKING: "Ľúbim ťa, ale svojím rodičom si to vravieť nemusel."
+        "Ľúbim ťa, ale tvojím rodičom si to vravieť nemusel."
+        "Ľúbim ťa, ale mojím rodičom si to vravieť nemusel."
+        # NOT WORKING: "Stal sa mojim učiteľom."
+        "Daj to mojím učiteľom."
+    ]
+    text = " ".join(sentences)
+    doc = Service.full_nlp(text, nlp, NLP_BATCH_SIZE, Config())
+    Service.spellcheck(hunspell, doc)
+    for token in doc:
+        if token.lemma_ in ['môj', 'tvoj', 'svoj']:
+            assert token._.has_grammar_error
+            assert token._.grammar_error_type in [GRAMMAR_ERROR_SVOJ_MOJ_TVOJ_PLUR, GRAMMAR_ERROR_SVOJ_MOJ_TVOJ_SING]
+
+
+def test_spellcheck_correct_svoj_moj_tvoj_nas_vas(setup_teardown):
+    nlp = setup_teardown[0]
+    hunspell = setup_teardown[1]
+    sentences = [
+        "Chodil so svojím psom každé ráno na prechádzku."
+        "S tvojím kamarátom som včera diskutoval o novom projekte."
+        "S vaším autom sa ťažko manévruje na úzkej ceste."
+        "Pod svojím kabátom schovával malý darček."
+        "Nad naším mestom sa usadil hustý mrak."
+        "Za tvojím domom rastú divoké maliny."
+        "Svojím názorom si často vyvolávaš zbytočné hádky."
+        "Tvojim slovám chýba presvedčivosť."
+        "S mojím starým bicyklom som najazdil stovky kilometrov."
+        "Ľúbim ťa, ale svojim rodičom si to vravieť nemusel."
+        "Ľúbim ťa, ale tvojim rodičom si to vravieť nemusel."
+        "Ľúbim ťa, ale mojim rodičom si to vravieť nemusel."
+        "Stal sa mojím učiteľom."
+        "Daj to mojim učiteľom."
+    ]
+    text = " ".join(sentences)
+    doc = Service.full_nlp(text, nlp, NLP_BATCH_SIZE, Config())
+    Service.spellcheck(hunspell, doc)
+    for token in doc:
+        if token.lemma_ in ['môj', 'tvoj', 'svoj']:
+            assert not token._.has_grammar_error
+
+
 def test_spellcheck_ignore_literal_words_correct_form(setup_teardown):
     nlp = setup_teardown[0]
     hunspell = setup_teardown[1]
@@ -637,6 +693,7 @@ def test_get_windows_scaling():
         assert scaling_factor is not None and scaling_factor != 0
     else:
         assert scaling_factor is None
+
 
 if __name__ == '__main__':
     pytest.main()
