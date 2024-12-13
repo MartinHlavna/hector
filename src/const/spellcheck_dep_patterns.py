@@ -86,7 +86,7 @@ SSO_INSTEAD_OF_ZZO_PATTERNS = [
             "LEFT_ID": "preposition",
             "REL_OP": "<",
             "RIGHT_ID": "noun",
-            "RIGHT_ATTRS": {"MORPH": {"INTERSECTS": ["Case=Gen"]}}
+            "RIGHT_ATTRS": {"MORPH": {"INTERSECTS": ["Case=Gen", "Case=Acc"]}}
         },
     ],
     # FIND ANY FORM OF S PREPOSITION THAT RELATES TO NOUN IN NOMINATIVE CASE
