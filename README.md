@@ -200,6 +200,10 @@ Odstrániť medzery na konci odstavcov.
 - Program označí ako chybné použitie predložky **s/so** s iným pádom ako inštrumentálom
 - Program označí ako chybné použitie predložky **z/zo** s iným pádom ako genitívom
 
+#### Kontrola i/í pri použití zvratných zámen svoj, môj, tvoj, náš, váš
+- Program označí ako chybný tvar mojim pri použití s inštrumentálom jednotného čísla (napr. S mojim psom)
+- Program označí ako chybný tvar mojím pri použití s datívom množného čísla (napr. Daj mojím psom)
+
 #### Kontrola spisovnosti
 
 - Program označí ako chyby nasledovné výrazy:
