@@ -203,7 +203,7 @@ Odstrániť medzery na konci odstavcov.
 #### Kontrola i/í pri použití zvratných zámen svoj, môj, tvoj, náš, váš
 - Program označí ako chybný tvar mojim pri použití s inštrumentálom jednotného čísla (napr. S mojim psom)
 - Program označí ako chybný tvar mojím pri použití s datívom množného čísla (napr. Daj mojím psom)
-
+- Nie všetky tvary je možné skontrolovať. Z testovacej sady kontrola úspešne odhalí 11 zo 14 prípadov. Ďalšie spresňovanie už označuje ako chybné aj niektoré správne tvary viď [#67](https://github.com/MartinHlavna/hector/issues/67)
 #### Kontrola spisovnosti
 
 - Program označí ako chyby nasledovné výrazy:
