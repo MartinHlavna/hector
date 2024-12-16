@@ -1,4 +1,4 @@
-spacy~=3.8.2
+spacy~=3.8.3
 ttkthemes~=3.2.2
 pillow~=11.0.0
 setuptools~=75.6.0
