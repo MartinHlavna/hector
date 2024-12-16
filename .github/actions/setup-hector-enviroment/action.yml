@@ -22,7 +22,7 @@ runs:
     - name: Install hunspell requirements for linux
       if: matrix.os == 'ubuntu-latest'
       shell: bash
-      run: sudo apt install -y autoconf libtool gettext autopoint
+      run: sudo apt install -y autoconf libtool gettext autopoint libcairo2-dev
     - name: Install requirements for macOS
       shell: bash
       if: matrix.os == 'macos-latest' || matrix.os == 'macos-15' || matrix.os == 'macos-14' || matrix.os == 'macos-13'

@@ -339,7 +339,7 @@ Kód bol testovaný s použitím Python interpretera verzie 3.9, 3.10, 3.11 a 3.
 Nainštalovať balíčky:
 
 ```
-sudo apt install -y autoconf libtool gettext autopoint cmake
+sudo apt install -y autoconf libtool gettext autopoint cmake libcairo2-dev
 ```
 
 Tiež je potrebné mať nainštalovanú podporu pre tkinter a dev v pythone (x prispôsobiť konkrétnej verzii)
