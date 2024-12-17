@@ -573,6 +573,7 @@ class Service:
                 return file.read()
         extra_args = (
             '--wrap=none',
+            f'--lua-filter={Utils.resource_path(os.path.join("data_files", "fix_odt_blockquotes.lua"))}'
         )
         text = pypandoc.convert_file(file_path, 'plain', extra_args=extra_args)
         return Service.normalize_text(os.linesep.join([s for s in text.splitlines() if s]))
