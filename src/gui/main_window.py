@@ -897,7 +897,7 @@ class MainWindow:
         # NORMALIZE TEXT
         text = Service.normalize_text(clipboard_text)
         event.widget.insert(tk.INSERT, text)
-
+        self.analyze_text(force_reload=True, event=event)
         # CANCEL DEFAULT PASTE
         return "break"
 
@@ -982,10 +982,10 @@ class MainWindow:
 
     # RUN ANALYSIS ONE SECOND AFTER LAST CHANGE
     def analyze_text_debounced(self, event):
-        if event.state & 0x0004 and event.keysym != 'v':
-            return
         if self.analyze_text_debounce_timer is not None:
             self.root.after_cancel(self.analyze_text_debounce_timer)
+        if event.state & 0x0004 and event.keysym != 'v':
+            return
         self.analyze_text_debounce_timer = self.root.after(NLP_DEBOUNCE_LENGTH, self.analyze_text)
 
     def introspect(self, event=None):
