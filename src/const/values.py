@@ -8,5 +8,5 @@ DOCUMENTATION_LINK = "https://github.com/MartinHlavna/hector"
 SPACY_MODEL_LINK = f"https://github.com/MartinHlavna/hector-spacy-model/releases/download/v.{SPACY_MODEL_VERSION}/{SPACY_MODEL_NAME_WITH_VERSION}.tar.gz"
 MORPHODITA_MODEL_LINK = f"https://lindat.mff.cuni.cz/repository/xmlui/bitstream/handle/11234/1-3278/{MORPHODITA_MODEL_NAME}.zip"
 NLP_BATCH_SIZE = 8000
-VERSION = "0.11.2"
+VERSION = "0.11.3"
 GITHUB_REPO = "MartinHlavna/hector"
