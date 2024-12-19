@@ -1,6 +1,7 @@
 import platform
 import tkinter as tk
 import tkinter.font as tkFont
+from functools import partial
 
 from src.utils import Utils
 
@@ -79,17 +80,11 @@ class SimpleMenu:
                                pady=2
                                )
             # Bind focus events
-            button.bind("<Enter>",
-                        lambda e, i=item, btn=button: self._on_main_menu_hover(btn, i))
-            button.bind("<FocusIn>",
-                        lambda e, i=item, btn=button: self._on_main_menu_focus(btn, i))
-            button.bind("<Leave>",
-                        lambda e, i=item, btn=button: self._on_main_menu_hover_loss(btn, i))
-            button.bind("<FocusOut>",
-                        lambda e, i=item, btn=button: self.on_main_menu_focus_loss(btn, i))
-            button.config(
-                command=lambda cmd=command, sub=submenu, idx=index, btn=button: self._handle_menu(cmd, sub, btn, idx)
-            )
+            button.bind("<Enter>", partial(self._on_main_menu_hover, button, item))
+            button.bind("<FocusIn>", partial(self._on_main_menu_focus, button, item))
+            button.bind("<Leave>", partial(self._on_main_menu_hover_loss, button, item))
+            button.bind("<FocusOut>", partial(self.on_main_menu_focus_loss, button, item))
+            button.config(command=partial(self._handle_menu, command, submenu, button, index))
             button.pack(side=tk.LEFT, padx=5)
 
             # Set underline and Alt + key shortcut
@@ -99,31 +94,29 @@ class SimpleMenu:
                 self.accelerators[key] = (submenu, command, index, button)
 
             if shortcut:
-                self.shortcuts[shortcut] = lambda e, cmd=command: self._execute_command(cmd)
+                self.shortcuts[shortcut] = self.shortcuts[shortcut] = partial(self._execute_command, command)
             if item.submenu is not None:
                 for submenu_item in item.submenu:
                     if submenu_item.shortcut:
-                        self.shortcuts[submenu_item.shortcut] = lambda e, cmd=submenu_item.command: (
-                            self._execute_command(cmd)
-                        )
+                        self.shortcuts[submenu_item.shortcut] = partial(self._execute_command, submenu_item.command)
 
             self.menu_buttons.append(button)
 
-    def on_main_menu_focus_loss(self, btn, i):
+    def on_main_menu_focus_loss(self, btn, i, e):
         btn.configure(foreground=self.foreground, background=self.background,
                       image=i.icon)
 
-    def _on_main_menu_hover_loss(self, btn, i):
+    def _on_main_menu_hover_loss(self, btn, i, e):
         # IF SUBMENU IS OPENED, DO NOT UNHLIGHLIGHT TO KEEP HIGHLIGHTED MENU
         if not self.active_submenu:
             btn.configure(foreground=self.foreground, background=self.background,
                           image=i.icon)
 
-    def _on_main_menu_focus(self, btn, i):
+    def _on_main_menu_focus(self, btn, i, e):
         btn.configure(foreground=self.background, background=self.foreground,
                       image=i.highlight_icon)
 
-    def _on_main_menu_hover(self, btn, i):
+    def _on_main_menu_hover(self, btn, i, e):
         # IF SUBMENU IS OPENED, HANDLE HOVER AS CLICK TO OPEN HOVERED SUBMENU
         if self.active_submenu:
             btn.invoke()
@@ -135,9 +128,13 @@ class SimpleMenu:
         for i, key in enumerate(self.accelerators):
             self.root.bind(
                 f"<Alt-{key}>",
-                lambda e, sub=self.accelerators[key][0], cmd=self.accelerators[key][1],
-                       idx=self.accelerators[key][2], btn=self.accelerators[key][3]: self._handle_menu(cmd, sub, btn,
-                                                                                                       idx)
+                partial(
+                    self._handle_menu,
+                    self.accelerators[key][1],
+                    self.accelerators[key][0],
+                    self.accelerators[key][3],
+                    self.accelerators[key][2]
+                )
             )
         # Bind shortcuts
         for i, shortcut in enumerate(self.shortcuts):
@@ -158,14 +155,14 @@ class SimpleMenu:
             # check which widget getting the focus
             w = self.root.tk.call('focus')
             if not w:
-                self.root.after(0, lambda: self._close_all_menus())
+                self.root.after(0, self._close_all_menus)
 
     def _execute_command(self, command):
         if command:
             self._close_all_menus()
-            self.root.after(0, lambda: command())
+            self.root.after(0, command)
 
-    def _handle_menu(self, command, submenu, button, index):
+    def _handle_menu(self, command, submenu, button, index, e=None):
         self._execute_command(command)
         if submenu:
             self.current_main_menu_index = index
@@ -222,29 +219,33 @@ class SimpleMenu:
                                           fg=self.foreground, anchor="e", padx=10,
                                           font=tkFont.Font(family="Courier New", size=9))
                 shortcut_label.pack(side=tk.RIGHT, pady=(4, 0))
-            item_frame.bind("<Enter>", lambda e, frame=item_frame, i=item, il=icon_label, tl=text_label,
-                                              sl=shortcut_label: self._on_submenu_focus(e, frame, i, il, tl, sl))
-            item_frame.bind("<Leave>", lambda e, frame=item_frame, i=item, il=icon_label, tl=text_label,
-                                              sl=shortcut_label: self._on_submenu_focus_loss(e, frame, i, il, tl, sl))
+            item_frame.bind(
+                "<Enter>",
+                partial(self._on_submenu_focus, item_frame, item, icon_label, text_label, shortcut_label)
+            )
+            item_frame.bind(
+                "<Leave>",
+                partial(self._on_submenu_focus_loss, item_frame, item, icon_label, text_label, shortcut_label)
+            )
             button = _SubmenuButton(item, item_frame, icon_label, text_label, shortcut_label)
-            item_frame.bind("<Button-1>", lambda e, btn=button: self._on_submenu_click(btn))
+            item_frame.bind("<Button-1>", partial(self._on_submenu_click, button))
             if icon_label:
-                icon_label.bind("<Button-1>", lambda e, btn=button: self._on_submenu_click(btn))
+                icon_label.bind("<Button-1>", partial(self._on_submenu_click, button))
             if text_label:
-                text_label.bind("<Button-1>", lambda e, btn=button: self._on_submenu_click(btn))
+                text_label.bind("<Button-1>", partial(self._on_submenu_click, button))
             if shortcut_label:
-                shortcut_label.bind("<Button-1>", lambda e, btn=button: self._on_submenu_click(btn))
+                shortcut_label.bind("<Button-1>", partial(self._on_submenu_click, button))
             self.submenu_buttons.append(button)
 
         self.active_submenu = submenu
         self.current_submenu_index = -1  # Reset submenu index
 
-    def _on_submenu_click(self, button):
+    def _on_submenu_click(self, button, e):
         self._close_all_menus()
-        self.root.after(0, lambda: button.item.command())
+        self.root.after(0, button.item.command)
 
-    def _on_submenu_focus(self, event, frame: tk.Frame, item: MenuItem, image_label: tk.Label, text_label: tk.Label,
-                          shortcut_label: tk.Label):
+    def _on_submenu_focus(self, frame: tk.Frame, item: MenuItem, image_label: tk.Label, text_label: tk.Label,
+                          shortcut_label: tk.Label, event=None):
         frame.configure(background=self.foreground)
         text_label.configure(background=self.foreground, foreground=self.background)
         if image_label is not None:
@@ -253,8 +254,8 @@ class SimpleMenu:
         if shortcut_label is not None:
             shortcut_label.configure(background=self.foreground, foreground=self.background)
 
-    def _on_submenu_focus_loss(self, event, frame: tk.Frame, item: MenuItem, image_label: tk.Label,
-                               text_label: tk.Label, shortcut_label: tk.Label):
+    def _on_submenu_focus_loss(self, frame: tk.Frame, item: MenuItem, image_label: tk.Label,
+                               text_label: tk.Label, shortcut_label: tk.Label, event=None):
         frame.configure(background=self.background)
         text_label.configure(background=self.background, foreground=self.foreground)
         if image_label is not None:
@@ -294,13 +295,12 @@ class SimpleMenu:
     def _unhighlight_submenu_item(self):
         if self.current_submenu_index > -1:
             dto = self.submenu_buttons[self.current_submenu_index]
-            self._on_submenu_focus_loss(None, dto.outer_frame, dto.item, dto.icon_label, dto.text_label,
-                                        dto.shortcut_label)
+            self._on_submenu_focus_loss(dto.outer_frame, dto.item, dto.icon_label, dto.text_label, dto.shortcut_label)
 
     def _highlight_submenu_item(self):
         if self.current_submenu_index > -1:
             dto = self.submenu_buttons[self.current_submenu_index]
-            self._on_submenu_focus(None, dto.outer_frame, dto.item, dto.icon_label, dto.text_label, dto.shortcut_label)
+            self._on_submenu_focus(dto.outer_frame, dto.item, dto.icon_label, dto.text_label, dto.shortcut_label)
 
     def _navigate_main_menu_left(self, event=None):
         if self.current_submenu_index > -1 or self.current_main_menu_index <= -1:
@@ -330,4 +330,4 @@ class SimpleMenu:
         if self.active_submenu and self.current_submenu_index != -1:
             selected_button = self.submenu_buttons[self.current_submenu_index]
             self._close_all_menus()
-            self.root.after(0, lambda: selected_button.item.command())
+            self.root.after(0, selected_button.item.command)

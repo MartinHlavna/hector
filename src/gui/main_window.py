@@ -122,25 +122,30 @@ class MainWindow:
         # Define menu items
         menu_items = [
             MenuItem(label="Súbor",
-                     underline_index=0, submenu=[
-                    MenuItem(label="Otvoriť", command=self.load_file, shortcut="<Control-o>",
-                             icon=GuiUtils.fa_image(FA_SOLID, "#3B3B3B", "white", FontAwesomeIcons.file, 16),
-                             highlight_icon=GuiUtils.fa_image(FA_SOLID, "white", "#3B3B3B", FontAwesomeIcons.file, 16),
-                             shortcut_label="Ctrl+O"),
-                    MenuItem(label="Otvoriť posledný súbor", command=self.load_file_contents, shortcut="<Control-r>",
-                             icon=GuiUtils.fa_image(FA_SOLID, "#3B3B3B", "white", FontAwesomeIcons.rotate, 16),
-                             highlight_icon=GuiUtils.fa_image(FA_SOLID, "white", "#3B3B3B", FontAwesomeIcons.rotate,
+                     underline_index=0,
+                     submenu=[MenuItem(label="Otvoriť", command=self.load_file, shortcut="<Control-o>",
+                                       icon=GuiUtils.fa_image(FA_SOLID, "#3B3B3B", "white", FontAwesomeIcons.file, 16),
+                                       highlight_icon=GuiUtils.fa_image(FA_SOLID, "white", "#3B3B3B",
+                                                                        FontAwesomeIcons.file, 16),
+                                       shortcut_label="Ctrl+O"),
+                              MenuItem(label="Otvoriť posledný súbor", command=self.load_file_contents,
+                                       shortcut="<Control-r>",
+                                       icon=GuiUtils.fa_image(FA_SOLID, "#3B3B3B", "white", FontAwesomeIcons.rotate,
                                                               16),
-                             shortcut_label="Ctrl+R"),
-                    MenuItem(label="Uložiť",
-                             command=self.save_file,
-                             shortcut="<Control-s>",
-                             icon=GuiUtils.fa_image(FA_SOLID, "#3B3B3B", "white", FontAwesomeIcons.floppy_disk, 16),
-                             highlight_icon=GuiUtils.fa_image(FA_SOLID, "white", "#3B3B3B",
-                                                              FontAwesomeIcons.floppy_disk,
-                                                              16),
-                             shortcut_label="Ctrl+S"),
-                ]),
+                                       highlight_icon=GuiUtils.fa_image(FA_SOLID, "white", "#3B3B3B",
+                                                                        FontAwesomeIcons.rotate,
+                                                                        16),
+                                       shortcut_label="Ctrl+R"),
+                              MenuItem(label="Uložiť",
+                                       command=self.save_file,
+                                       shortcut="<Control-s>",
+                                       icon=GuiUtils.fa_image(FA_SOLID, "#3B3B3B", "white",
+                                                              FontAwesomeIcons.floppy_disk, 16),
+                                       highlight_icon=GuiUtils.fa_image(FA_SOLID, "white", "#3B3B3B",
+                                                                        FontAwesomeIcons.floppy_disk,
+                                                                        16),
+                                       shortcut_label="Ctrl+S"),
+                              ]),
             MenuItem(label="Upraviť", underline_index=0, submenu=[
                 MenuItem(
                     label="Vrátiť späť",
@@ -771,7 +776,7 @@ class MainWindow:
                                     error_messages.add('Privlasťnovacie zámená majú v datíve množného tvar bez dĺžňa.')
                                 elif token._.grammar_error_type == GRAMMAR_ERROR_SVOJ_MOJ_TVOJ_SING:
                                     error_messages.add(
-                                        f'Privlasťnovacie zámená majú v inštrumentáli jednotného čísla tvar s dĺžňom.'
+                                        'Privlasťnovacie zámená majú v inštrumentáli jednotného čísla tvar s dĺžňom.'
                                     )
                                 elif token._.grammar_error_type == GRAMMAR_ERROR_TYPE_WRONG_Y_SUFFIX:
                                     error_messages.add(
