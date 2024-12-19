@@ -181,38 +181,14 @@ class MorphoditaTaggerMorphologizerLemmatizer:
         if not Token.has_extension("pdt_morph"):
             Token.set_extension("pdt_morph", default='')
 
+    # noinspection PyMethodMayBeStatic
     def convert_pdt_tag_to_spacy(self, tag):
         morph_attrs = {}
         # https://ufal.mff.cuni.cz/pdt2.0/doc/manuals/en/m-layer/html/ch02s02s01.html
         # PDT TAGS SHOULD HAVE EXACTLY 15 POSITIONS
         tag = tag.ljust(15, '-')
-        # POS TAG
-        pos = tag[0]
-        # SUB POS
-        sub_pos = tag[1]
-        # GENDER
-        gender = tag[2]
-        # PLURALITY (Number)
-        number = tag[3]
-        # CASE
-        case = tag[4]
-        # PossGender (unused)
-        poss_gender = tag[5]
-        # PossNumber (unused)
-        poss_number = tag[6]
-        # PERSON
-        person = tag[7]
-        # TENSE
-        tense = tag[8]
-        # DEGREE
-        degree = tag[9]
-        # POLARITY
-        polarity = tag[10]
-        # VOICE
-        voice = tag[11]
-        # UNUSED
-        # UNUSED
-        # UNUSED
+        # UNPACK FIRST TWELWE CHARACTERS INTO VARIABLES. LAST THREE ARE NOT USED
+        pos, sub_pos, gender, number, case, poss_gender, poss_number, person, tense, degree, polarity, voice = tag[:12]
         # TRY TO DETERMINE POS TAG ACCORDING TO SUBPOS
         spacy_pos = sumpos_map.get(sub_pos, None)
         if spacy_pos is None:

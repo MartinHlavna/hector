@@ -157,7 +157,7 @@ class SimpleMenu:
             if not w:
                 self.root.after(0, self._close_all_menus)
 
-    def _execute_command(self, command):
+    def _execute_command(self, command, event=None):
         if command:
             self._close_all_menus()
             self.root.after(0, command)
