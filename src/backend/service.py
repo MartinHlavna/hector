@@ -266,7 +266,7 @@ class Service:
 
     @staticmethod
     def normalize_text(text):
-        clrf = re.compile(f"\r\n")
+        clrf = re.compile("\r\n")
         corrected_text = re.sub(clrf, "\n", text)
         return corrected_text
 
@@ -469,7 +469,8 @@ class Service:
             pronoun_morph = pronoun_token.morph.to_dict()
             noun_morph = noun_token.morph.to_dict()
             # LETS CHECK RELATION BETWEEN PRONOUN AND NOUN
-            if (pronoun_morph.get("Case") == "Ins") and (noun_morph.get("Case") == "Dat" or noun_morph.get("Number") == "Plur"):
+            if ((pronoun_morph.get("Case") == "Ins") and
+                    (noun_morph.get("Case") == "Dat" or noun_morph.get("Number") == "Plur")):
                 pronoun_token._.has_grammar_error = True
                 pronoun_token._.grammar_error_type = GRAMMAR_ERROR_SVOJ_MOJ_TVOJ_PLUR
             elif pronoun_morph.get("Case") == "Dat" and noun_morph.get("Case") == "Ins":
@@ -479,7 +480,8 @@ class Service:
                 # RELATION BETWEEN PRONOUN AND NOUN LOOKS GOOD, BUT WE ALSO HAVE CASE MARKING DEP AVAILABLE
                 # LET'S DOUBLECHECK, NOUN WITH PRONOUN MAY HAVE BEEN MISSTAGGED
                 case_marking_morph = case_marking.morph.to_dict()
-                if pronoun_morph.get("Case") == "Ins" and (case_marking_morph.get("Case") == "Dat" or case_marking_morph.get("Number") == "Plur"):
+                if (pronoun_morph.get("Case") == "Ins" and
+                        (case_marking_morph.get("Case") == "Dat" or case_marking_morph.get("Number") == "Plur")):
                     pronoun_token._.has_grammar_error = True
                     pronoun_token._.grammar_error_type = GRAMMAR_ERROR_SVOJ_MOJ_TVOJ_PLUR
                 elif pronoun_morph.get("Case") == "Dat" and case_marking_morph.get("Case") == "Ins":
@@ -529,7 +531,8 @@ class Service:
             for idx, word_occource in enumerate(unique_word.occourences):
                 repetitions = []
                 for possible_repetition in unique_word.occourences[idx + 1:len(unique_word.occourences) + 1]:
-                    if possible_repetition._.word_index - word_occource._.word_index <= config.analysis_settings.close_words_min_distance_between_words:
+                    word_distance = possible_repetition._.word_index - word_occource._.word_index
+                    if word_distance <= config.analysis_settings.close_words_min_distance_between_words:
                         repetitions.append(word_occource)
                         repetitions.append(possible_repetition)
                     else:

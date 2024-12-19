@@ -762,13 +762,13 @@ class MainWindow:
                                     suggestion = NON_LITERAL_WORDS[token.lower_]
                                     error_messages.add(f'Slovo nie je spisovné.\n\nNávrh: {suggestion}')
                                 elif token._.grammar_error_type == GRAMMAR_ERROR_TOMU_INSTEAD_OF_TO:
-                                    error_messages.add(f'Výraz nie je spisovný.\n\nNávrh: to')
+                                    error_messages.add('Výraz nie je spisovný.\n\nNávrh: to')
                                 elif token._.grammar_error_type == GRAMMAR_ERROR_S_INSTEAD_OF_Z:
-                                    error_messages.add(f'Chybná predložka.\n\nNávrh: z/zo')
+                                    error_messages.add('Chybná predložka.\n\nNávrh: z/zo')
                                 elif token._.grammar_error_type == GRAMMAR_ERROR_Z_INSTEAD_OF_S:
-                                    error_messages.add(f'Chybná predložka.\n\nNávrh: s/so')
+                                    error_messages.add('Chybná predložka.\n\nNávrh: s/so')
                                 elif token._.grammar_error_type == GRAMMAR_ERROR_SVOJ_MOJ_TVOJ_PLUR:
-                                    error_messages.add(f'Privlasťnovacie zámená majú v datíve množného tvar bez dĺžňa.')
+                                    error_messages.add('Privlasťnovacie zámená majú v datíve množného tvar bez dĺžňa.')
                                 elif token._.grammar_error_type == GRAMMAR_ERROR_SVOJ_MOJ_TVOJ_SING:
                                     error_messages.add(
                                         f'Privlasťnovacie zámená majú v inštrumentáli jednotného čísla tvar s dĺžňom.'

@@ -1,12 +1,6 @@
-import os
-import shutil
-from socket import socket
-
 import pytest
 
 from src.backend.service import Service
-from src.const.paths import DATA_DIRECTORY
-from src.utils import Utils
 from test_utils import TestUtils
 
 

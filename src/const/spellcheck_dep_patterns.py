@@ -110,7 +110,10 @@ SVOJ_MOJ_TVOJ_PATTERNS = [
     [
         {
             "RIGHT_ID": "pronoun",
-            "RIGHT_ATTRS": {"LEMMA": {"IN": ["svoj", "môj", "tvoj"]}, "MORPH": {"INTERSECTS": ["Gender=Masc", "Gender=Neut", "Gender=Com"]}}
+            "RIGHT_ATTRS": {
+                "LEMMA": {"IN": ["svoj", "môj", "tvoj"]},
+                "MORPH": {"INTERSECTS": ["Gender=Masc", "Gender=Neut", "Gender=Com"]}
+            }
         },
         {
             "LEFT_ID": "pronoun",
@@ -133,4 +136,3 @@ SVOJ_MOJ_TVOJ_PATTERNS = [
         },
     ]
 ]
-

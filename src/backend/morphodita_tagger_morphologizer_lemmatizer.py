@@ -212,7 +212,7 @@ class MorphoditaTaggerMorphologizerLemmatizer:
         voice = tag[11]
         # UNUSED
         # UNUSED
-        variant = tag[14]
+        # UNUSED
         # TRY TO DETERMINE POS TAG ACCORDING TO SUBPOS
         spacy_pos = sumpos_map.get(sub_pos, None)
         if spacy_pos is None:

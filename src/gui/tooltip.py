@@ -1,12 +1,6 @@
-import platform
 import tkinter as tk
-from tkinter import ttk, messagebox
 
-from src.backend.service import Service
 from src.const.colors import ACCENT_COLOR, PANEL_TEXT_COLOR
-from src.const.fonts import HELVETICA_FONT_NAME, BOLD_FONT
-from src.const.paths import CONFIG_FILE_PATH
-from src.domain.config import AnalysisSettings
 
 
 class Tooltip:
