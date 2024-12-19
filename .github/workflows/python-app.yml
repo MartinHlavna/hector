@@ -57,7 +57,7 @@ jobs:
 
         # Check if the output contains any lint issues
         if [ -n "$output" ]; then
-          message="Lint issues found:\n$output\n"
+          message="$output"
         else
           message=""
         fi
@@ -73,7 +73,7 @@ jobs:
 
         # Output warning annotation with all lint issues
         if [ -n "$message" ]; then
-          echo -e "::warning::${message}"
+          echo -e "::warning:: Lint issues found. See log for details."
         fi
     - name: Test with pytest
       run: |
