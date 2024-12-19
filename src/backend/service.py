@@ -310,45 +310,57 @@ class Service:
         word_index = 0
         paragraphs = []
         cur_paragraph_start = 0
-        lemmas = {}
+        unique_lemmas = {}
         unique_words = {}
         for token in doc:
             if token.is_space and token.text.count('\n') > 0:
                 paragraph = doc[cur_paragraph_start:token.i]
-                paragraphs.append(paragraph)
                 cur_paragraph_start = token.i
-                for t in paragraph:
-                    t._.paragraph = paragraph
-
+                Service.append_paragraph(paragraph, paragraphs)
             token._.is_word = re.match(word_pattern, token.lower_) is not None
             if token._.is_word:
-                token._.word_index = word_index
+                Service.append_word(token, word_index, unique_lemmas, unique_words, words)
                 word_index += 1
-                words.append(token)
-                lemma = token.lemma_.lower()
-                unique_word = unique_words.get(token.text.lower(), None)
-                unique_lemma = lemmas.get(lemma, None)
-                if unique_word is None:
-                    unique_word = UniqueWord(token.text.lower())
-                    unique_words[token.text.lower()] = unique_word
-                if unique_lemma is None:
-                    unique_lemma = UniqueWord(lemma)
-                    lemmas[lemma] = unique_lemma
-                unique_word.occourences.append(token)
-                unique_lemma.occourences.append(token)
         if len(doc) > cur_paragraph_start:
             paragraph = doc[cur_paragraph_start:]
-            paragraphs.append(paragraph)
-            for t in paragraph:
-                t._.paragraph = paragraph
+            Service.append_paragraph(paragraph, paragraphs)
         doc._.paragraphs = paragraphs
         doc._.words = words
         doc._.unique_words = unique_words
-        doc._.lemmas = lemmas
+        doc._.lemmas = unique_lemmas
         doc._.total_chars = len(doc.text.replace('\n', ''))
         doc._.total_words = len(words)
         doc._.total_unique_words = len(unique_words)
         doc._.total_pages = round(doc._.total_chars / 1800, 2)
+        Service.evaluate_sentence_length(config, doc)
+        return doc
+
+    # METHOD THAT ADDS WORD AND ALL WORD RELATED DATA TO TOKEN AND INPUT COLLECTIONS
+    @staticmethod
+    def append_word(token, word_index, unique_lemmas, unique_words, words):
+        token._.word_index = word_index
+        words.append(token)
+        lemma = token.lemma_.lower()
+        unique_word = unique_words.get(token.lower_, None)
+        unique_lemma = unique_lemmas.get(lemma, None)
+        if unique_word is None:
+            unique_word = UniqueWord(token.lower_)
+            unique_words[token.lower_] = unique_word
+        if unique_lemma is None:
+            unique_lemma = UniqueWord(lemma)
+            unique_lemmas[lemma] = unique_lemma
+        unique_word.occourences.append(token)
+        unique_lemma.occourences.append(token)
+
+    # METHOD THAT ADDS PARAGRAPH TO COLLECTION AND SETS REFERENCE TO ALL INNER TOKENS TO THAT PARAGRAPH
+    @staticmethod
+    def append_paragraph(paragraph, paragraphs):
+        paragraphs.append(paragraph)
+        for t in paragraph:
+            t._.paragraph = paragraph
+
+    @staticmethod
+    def evaluate_sentence_length(config, doc):
         for sentence in doc.sents:
             words = [word for word in sentence if
                      word._.is_word and len(word.text) >= config.analysis_settings.long_sentence_min_word_length]
@@ -357,7 +369,6 @@ class Service:
                     sentence._.is_long_sentence = True
                 else:
                     sentence._.is_mid_sentence = True
-        return doc
 
     @staticmethod
     def find_multiple_spaces(doc: Doc):
