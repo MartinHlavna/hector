@@ -775,12 +775,8 @@ class MainWindow:
                     if span is not None:
                         token = span.root
                         grammar_error_map = {
-                            GRAMMAR_ERROR_TYPE_MISSPELLED_WORD: lambda: f'Možný preklep v slove.\n\n'
-                                                                        f'Návrhy: {", ".join(
-                                                                            self.spellcheck_dictionary.suggest(
-                                                                                span.root.text
-                                                                            )
-                                                                        )}',
+                            GRAMMAR_ERROR_TYPE_MISSPELLED_WORD: lambda: f'Možný preklep v slove.\n\nNávrhy: '
+                                                                        f'{self.get_hunspell_suggestions(token)}',
                             GRAMMAR_ERROR_NON_LITERAL_WORD: lambda: f'Slovo nie je spisovné.\n\n'
                                                                     f'Návrh: {NON_LITERAL_WORDS[token.lower_]}',
                             GRAMMAR_ERROR_TOMU_INSTEAD_OF_TO: lambda: 'Výraz nie je spisovný.\n\nNávrh: to',
@@ -802,6 +798,9 @@ class MainWindow:
                         if token._.grammar_error_type in grammar_error_map:
                             error_messages.add(grammar_error_map[token._.grammar_error_type]())
         return error_messages
+
+    def get_hunspell_suggestions(self, token):
+        return ", ".join(self.spellcheck_dictionary.suggest(token.lower_))
 
     def editor_on_mouse_leave(self, event):
         self.tooltip.hide()
