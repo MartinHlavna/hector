@@ -199,6 +199,7 @@ class SimpleMenu:
 
         self.submenu_buttons = []
         for item in submenu_items:
+            # BUILD GUI ELEMENTS
             item_frame = tk.Frame(submenu, bg=self.background)
             item_frame.pack(fill=tk.X)
             icon_label = None
@@ -219,6 +220,8 @@ class SimpleMenu:
                                           fg=self.foreground, anchor="e", padx=10,
                                           font=tkFont.Font(family="Courier New", size=9))
                 shortcut_label.pack(side=tk.RIGHT, pady=(4, 0))
+            button = _SubmenuButton(item, item_frame, icon_label, text_label, shortcut_label)
+            # BIND KEYBOARD NAVIGATION
             item_frame.bind(
                 "<Enter>",
                 partial(self._on_submenu_focus, item_frame, item, icon_label, text_label, shortcut_label)
@@ -227,14 +230,10 @@ class SimpleMenu:
                 "<Leave>",
                 partial(self._on_submenu_focus_loss, item_frame, item, icon_label, text_label, shortcut_label)
             )
-            button = _SubmenuButton(item, item_frame, icon_label, text_label, shortcut_label)
-            item_frame.bind("<Button-1>", partial(self._on_submenu_click, button))
-            if icon_label:
-                icon_label.bind("<Button-1>", partial(self._on_submenu_click, button))
-            if text_label:
-                text_label.bind("<Button-1>", partial(self._on_submenu_click, button))
-            if shortcut_label:
-                shortcut_label.bind("<Button-1>", partial(self._on_submenu_click, button))
+            # BIND BUTTON_1 EVENTS
+            for bindable_element in [item_frame, icon_label, text_label, shortcut_label]:
+                if bindable_element is not None:
+                    bindable_element.bind("<Button-1>", partial(self._on_submenu_click, button))
             self.submenu_buttons.append(button)
 
         self.active_submenu = submenu
