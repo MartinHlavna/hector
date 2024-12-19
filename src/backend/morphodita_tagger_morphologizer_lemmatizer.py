@@ -23,7 +23,7 @@ pos_map = {
     'Z': 'PUNCT',
 }
 
-sumpos_map = {
+subpos_map = {
     '#': 'PUNCT',  # Sentence boundary
     '%': 'NOUN',  # Author's signature
     '*': 'NUM',  # Word "krát" (lit.: times)
@@ -182,18 +182,16 @@ class MorphoditaTaggerMorphologizerLemmatizer:
             Token.set_extension("pdt_morph", default='')
 
     # noinspection PyMethodMayBeStatic
-    def convert_pdt_tag_to_spacy(self, tag):
+    # SUPRESSED C901 Method too Complex. SOLVING THIS WOULD MAKE CODE HARDER TO READ
+    def convert_pdt_tag_to_spacy(self, tag):  # noqa: C901
         morph_attrs = {}
         # https://ufal.mff.cuni.cz/pdt2.0/doc/manuals/en/m-layer/html/ch02s02s01.html
         # PDT TAGS SHOULD HAVE EXACTLY 15 POSITIONS
         tag = tag.ljust(15, '-')
         # UNPACK FIRST TWELWE CHARACTERS INTO VARIABLES. LAST THREE ARE NOT USED
         pos, sub_pos, gender, number, case, poss_gender, poss_number, person, tense, degree, polarity, voice = tag[:12]
-        # TRY TO DETERMINE POS TAG ACCORDING TO SUBPOS
-        spacy_pos = sumpos_map.get(sub_pos, None)
-        if spacy_pos is None:
-            # IF FAILED TO DETERMINE FROM SUB POS, FALLBACK TO BASIC POS
-            spacy_pos = pos_map.get(pos)
+        # TRY TO DETERMINE POS TAG ACCORDING TO SUBPOS OR POS
+        spacy_pos = subpos_map.get(sub_pos) or pos_map.get(pos)
         morph_attrs['POS'] = spacy_pos
         if gender in gender_map:
             morph_attrs['Gender'] = gender_map[gender]
