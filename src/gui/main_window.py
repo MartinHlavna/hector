@@ -748,65 +748,59 @@ class MainWindow:
     # CONVERT SET OF TAGS (USUALLY UNDER CURSOR) TO SET OF ERROR MESSAGES FOR USER
     def convert_tags_to_error_messages(self, current_tags, index):
         error_messages = set()
+        tag_message_map = {
+            LONG_SENTENCE_TAG_NAME_MID: 'Táto veta je trochu dlhšia.',
+            LONG_SENTENCE_TAG_NAME_HIGH: 'Táto veta je dlhá.',
+            MULTIPLE_PUNCTUATION_TAG_NAME: 'Viacnásobná interpunkcia.',
+            TRAILING_SPACES_TAG_NAME: 'Zbytočná medzera na konci odstavca.',
+            COMPUTER_QUOTE_MARKS_TAG_NAME: 'Počítačová úvodzovka. V beletrii by sa mali používať '
+                                           'slovenské úvodzovky „ “.\n\nPOZOR! Nesprávne úvodzovky '
+                                           'môžu narušiť správne určenie hraníc viet!',
+            DANGLING_QUOTE_MARK_TAG_NAME: 'Úvodzovka by nemala mať medzeru z oboch strán.',
+            SHOULD_USE_LOWER_QUOTE_MARK_TAG_NAME: 'Tu by mala byť použitá spodná („) úvozdovka.',
+            SHOULD_USE_UPPER_QUOTE_MARK_TAG_NAME: 'Tu by mala byť použitá horná (“) úvozdovka.',
+            MULTIPLE_SPACES_TAG_NAME: 'Viacnásobná medzera.',
+            CLOSE_WORD_TAG_NAME: 'Toto slovo sa opakuje viackrát na krátkom úseku'
+        }
+
         for tag in current_tags:
-            if tag == LONG_SENTENCE_TAG_NAME_MID:
-                error_messages.add('Táto veta je trochu dlhšia.')
-            elif tag == LONG_SENTENCE_TAG_NAME_HIGH:
-                error_messages.add('Táto veta je dlhá.')
-            elif tag == MULTIPLE_PUNCTUATION_TAG_NAME:
-                error_messages.add('Viacnásobná interpunkcia.')
-            elif tag == TRAILING_SPACES_TAG_NAME:
-                error_messages.add('Zbytočná medzera na konci odstavca.')
-            elif tag == COMPUTER_QUOTE_MARKS_TAG_NAME:
-                error_messages.add('Počítačová úvodzovka. V beletrii by sa mali používať '
-                                   'slovenské úvodzovky „ “.\n\nPOZOR! Nesprávne úvodzovky '
-                                   'môžu narušiť správne určenie hraníc viet!')
-            elif tag == DANGLING_QUOTE_MARK_TAG_NAME:
-                error_messages.add('Úvodzovka by nemala mať medzeru z oboch strán.')
-            elif tag == SHOULD_USE_LOWER_QUOTE_MARK_TAG_NAME:
-                error_messages.add('Tu by mala byť použitá spodná („) úvozdovka.')
-            elif tag == SHOULD_USE_UPPER_QUOTE_MARK_TAG_NAME:
-                error_messages.add('Tu by mala byť použitá horná (“) úvozdovka.')
-            elif tag == MULTIPLE_SPACES_TAG_NAME:
-                error_messages.add('Viacnásobná medzera.')
-            elif tag == CLOSE_WORD_TAG_NAME:
-                error_messages.add('Toto slovo sa opakuje viackrát na krátkom úseku')
+            if tag in tag_message_map:
+                # MAP SIMPLE ERRORS
+                error_messages.add(tag_message_map[tag])
             elif tag == GRAMMAR_ERROR_TAG_NAME:
+                # SPECIAL HANDLING FOR GRAMMAR_ERRORS
                 word_position = self.text_editor.count("1.0", index, "chars")
                 if word_position is not None:
                     span = self.doc.char_span(word_position[0], word_position[0], alignment_mode='expand')
                     if span is not None:
                         token = span.root
-                        if token._.grammar_error_type == GRAMMAR_ERROR_TYPE_MISSPELLED_WORD:
-                            suggestions = self.spellcheck_dictionary.suggest(span.root.text)
-                            error_messages.add(f'Možný preklep v slove.\n\nNávrhy: {", ".join(suggestions)}')
-                        elif token._.grammar_error_type == GRAMMAR_ERROR_NON_LITERAL_WORD:
-                            suggestion = NON_LITERAL_WORDS[token.lower_]
-                            error_messages.add(f'Slovo nie je spisovné.\n\nNávrh: {suggestion}')
-                        elif token._.grammar_error_type == GRAMMAR_ERROR_TOMU_INSTEAD_OF_TO:
-                            error_messages.add('Výraz nie je spisovný.\n\nNávrh: to')
-                        elif token._.grammar_error_type == GRAMMAR_ERROR_S_INSTEAD_OF_Z:
-                            error_messages.add('Chybná predložka.\n\nNávrh: z/zo')
-                        elif token._.grammar_error_type == GRAMMAR_ERROR_Z_INSTEAD_OF_S:
-                            error_messages.add('Chybná predložka.\n\nNávrh: s/so')
-                        elif token._.grammar_error_type == GRAMMAR_ERROR_SVOJ_MOJ_TVOJ_PLUR:
-                            error_messages.add('Privlasťnovacie zámená majú v datíve množného tvar bez dĺžňa.')
-                        elif token._.grammar_error_type == GRAMMAR_ERROR_SVOJ_MOJ_TVOJ_SING:
-                            error_messages.add(
-                                'Privlasťnovacie zámená majú v inštrumentáli jednotného čísla tvar s dĺžňom.'
-                            )
-                        elif token._.grammar_error_type == GRAMMAR_ERROR_TYPE_WRONG_Y_SUFFIX:
-                            error_messages.add(
-                                f'Slovo by malo končiť na í.\n\nNávrhy: {span.root.text[:-1] + "í"}')
-                        elif token._.grammar_error_type == GRAMMAR_ERROR_TYPE_WRONG_I_SUFFIX:
-                            error_messages.add(
-                                f'Slovo by malo končiť na ý.\n\nNávrhy: {span.root.text[:-1] + "ý"}')
-                        elif token._.grammar_error_type == GRAMMAR_ERROR_TYPE_WRONG_YSI_SUFFIX:
-                            error_messages.add(
-                                f'Slovo by malo končiť na ísi.\n\nNávrhy: {span.root.text[:-3] + "ísi"}')
-                        elif token._.grammar_error_type == GRAMMAR_ERROR_TYPE_WRONG_ISI_SUFFIX:
-                            error_messages.add(
-                                f'Slovo by malo končiť na ýsi.\n\nNávrhy: {span.root.text[:-3] + "ýsi"}')
+                        grammar_error_map = {
+                            GRAMMAR_ERROR_TYPE_MISSPELLED_WORD: lambda: f'Možný preklep v slove.\n\n'
+                                                                        f'Návrhy: {", ".join(
+                                                                            self.spellcheck_dictionary.suggest(
+                                                                                span.root.text
+                                                                            )
+                                                                        )}',
+                            GRAMMAR_ERROR_NON_LITERAL_WORD: lambda: f'Slovo nie je spisovné.\n\n'
+                                                                    f'Návrh: {NON_LITERAL_WORDS[token.lower_]}',
+                            GRAMMAR_ERROR_TOMU_INSTEAD_OF_TO: lambda: 'Výraz nie je spisovný.\n\nNávrh: to',
+                            GRAMMAR_ERROR_S_INSTEAD_OF_Z: lambda: 'Chybná predložka.\n\nNávrh: z/zo',
+                            GRAMMAR_ERROR_Z_INSTEAD_OF_S: lambda: 'Chybná predložka.\n\nNávrh: s/so',
+                            GRAMMAR_ERROR_SVOJ_MOJ_TVOJ_PLUR: lambda: 'Privlasťnovacie zámená majú '
+                                                                      'v datíve množného tvar bez dĺžňa.',
+                            GRAMMAR_ERROR_SVOJ_MOJ_TVOJ_SING: lambda: 'Privlasťnovacie zámená majú '
+                                                                      'v inštrumentáli jednotného čísla tvar s dĺžňom.',
+                            GRAMMAR_ERROR_TYPE_WRONG_Y_SUFFIX: lambda: f'Slovo by malo končiť na í.\n\n'
+                                                                       f'Návrhy: {span.root.text[:-1] + "í"}',
+                            GRAMMAR_ERROR_TYPE_WRONG_I_SUFFIX: lambda: f'Slovo by malo končiť na ý.\n\n'
+                                                                       f'Návrhy: {span.root.text[:-1] + "ý"}',
+                            GRAMMAR_ERROR_TYPE_WRONG_YSI_SUFFIX: lambda: f'Slovo by malo končiť na ísi.\n\n'
+                                                                         f'Návrhy: {span.root.text[:-3] + "ísi"}',
+                            GRAMMAR_ERROR_TYPE_WRONG_ISI_SUFFIX: lambda: f'Slovo by malo končiť na ýsi.\n\n'
+                                                                         f'Návrhy: {span.root.text[:-3] + "ýsi"}'
+                        }
+                        if token._.grammar_error_type in grammar_error_map:
+                            error_messages.add(grammar_error_map[token._.grammar_error_type]())
         return error_messages
 
     def editor_on_mouse_leave(self, event):
