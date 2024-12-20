@@ -1,5 +1,4 @@
 import os
-import os
 import re
 import shutil
 import string
@@ -18,6 +17,8 @@ from spacy.tokens import Doc, Token, Span
 from spacy.util import compile_infix_regex
 
 from src.backend.config_service import ConfigService
+from src.backend.export_service import ExportService
+from src.backend.import_service import ImportService
 from src.backend.metadata_service import MetadataService
 from src.backend.morphodita_tagger_morphologizer_lemmatizer import MORPHODITA_COMPONENT_FACTORY_NAME, \
     MORPHODITA_RESET_SENTENCES_COMPONENT
@@ -46,29 +47,6 @@ UPPER_QUOTE_MARK = "“"
 # TODO: Split to multiple services?
 # MAIN BACKEND LOGIC IMPLEMENTATION
 class Service:
-    @staticmethod
-    def download_pandoc():
-        """Download pandoc if not already installed"""
-
-    try:
-        # Check whether it is already installed
-        pypandoc.get_pandoc_version()
-    except OSError:
-        # Pandoc not installed. Let's download it silently.
-        with open(os.devnull, 'w') as devnull:
-            sys.stdout = devnull
-            pypandoc.download_pandoc()
-            sys.stdout = sys.__stdout__
-
-        # Hack to delete the downloaded file from the folder,
-        # otherwise it could get accidently committed to the repo
-        # by other scripts in the repo.
-        pf = sys.platform
-        if pf.startswith('linux'):
-            pf = 'linux'
-        url = pypandoc.pandoc_download._get_pandoc_urls()[0][pf]
-        filename = url.split('/')[-1]
-        os.remove(filename)
 
     # FUNCTION THAT INTIALIZES NLP ENGINE
     @staticmethod
@@ -215,9 +193,15 @@ class Service:
 
     @staticmethod
     def normalize_text(text):
-        clrf = re.compile("\r\n")
-        corrected_text = re.sub(clrf, "\n", text)
-        return corrected_text
+        return ImportService.normalize_text(text)
+
+    @staticmethod
+    def import_document(file_path):
+        return ImportService.import_document(file_path)
+
+    @staticmethod
+    def ensure_pandoc_available():
+        ImportService.ensure_pandoc_available()
 
     # METHOD THAT RUNS PARTIAL NLP BASED ON PARAGRAPHS AROUND CARRET POSITION
     @staticmethod
@@ -445,40 +429,5 @@ class Service:
         return ''.join([c for c in nfkd_form if not unicodedata.combining(c)])
 
     @staticmethod
-    def import_document(file_path):
-        if file_path.endswith(".txt"):
-            with open(file_path, 'r', encoding='utf-8') as file:
-                return file.read()
-        extra_args = (
-            '--wrap=none',
-            f'--lua-filter={Utils.resource_path(os.path.join("data_files", "fix_odt_blockquotes.lua"))}'
-        )
-        text = pypandoc.convert_file(file_path, 'plain', extra_args=extra_args)
-        return Service.normalize_text(os.linesep.join([s for s in text.splitlines() if s]))
-
-    @staticmethod
     def export_sentences(path, doc, blank_line_between_sents):
-        text = ""
-        cur_sent = ""
-        for sent in doc.sents:
-            # STRIP NEWLINES
-            sent_text = sent.text.replace("\r\n", "").replace("\n", "")
-            if len(sent_text) > 1:
-                # ADD CURRENT SENTENCE TO TEXT
-                if len(cur_sent) > 0:
-                    text += f"{cur_sent}\n"
-                    if blank_line_between_sents:
-                        text += '\n'
-                    cur_sent = ""
-                if len(sent_text) > 0:
-                    cur_sent = sent_text
-            elif len(sent_text) > 0:
-                # MERGE TO PREVIOUS SENTENCE
-                cur_sent += sent_text
-        # ADD LAST SENTENCE TO TEXT
-        if len(cur_sent) > 0:
-            text += f"{cur_sent}\n"
-            if blank_line_between_sents:
-                text += '\n'
-        with open(path, 'w', encoding='utf-8') as file:
-            file.write(text)
+        ExportService.export_sentences(path, doc, blank_line_between_sents)

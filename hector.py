@@ -49,7 +49,7 @@ if __name__ == "__main__":
     splash.update_status("sťahujem pandoc...")
     # noinspection PyBroadException
     try:
-        Service.download_pandoc()
+        Service.ensure_pandoc_available()
     except Exception:
         splash.close()
         handle_error("Nepodarilo sa stiahnuť modul pandoc. Overte prosím, že máte internetové pripojenie!")
