@@ -38,8 +38,9 @@ class SpellcheckService:
                         token._.has_grammar_error = True
                         token._.grammar_error_type = GRAMMAR_ERROR_NON_LITERAL_WORD
 
+    # SUPRESSED C901 Method too Complex. SOLVING THIS WOULD MAKE CODE HARDER TO READ
     @staticmethod
-    def check_nominative_plurar_adj(doc):
+    def check_nominative_plurar_adj(doc):  # noqa: C901
         matcher = DependencyMatcher(doc.vocab)
         matcher.add("TYPE_PEKNY_PATTERNS", TYPE_PEKNY_PATTERNS)
         for match_id, (target, modifier) in matcher(doc):
