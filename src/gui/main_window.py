@@ -1053,7 +1053,7 @@ class MainWindow:
 
     # SEARCH IN TEXT EDITOR
     def search_text(self):
-        search_string = Service.remove_accents(self.search_field.get().replace("\n", "").lower())
+        search_string = Utils.remove_accents(self.search_field.get().replace("\n", "").lower())
         if self.last_search == search_string:
             return
         self.last_search = search_string
@@ -1062,7 +1062,7 @@ class MainWindow:
         self.text_editor.tag_remove(CURRENT_SEARCH_RESULT_TAG_NAME, "1.0", tk.END)
         expression = rf"{search_string}"
         self.search_matches = list(
-            re.finditer(expression, Service.remove_accents(self.doc.text.lower()), flags=re.UNICODE))
+            re.finditer(expression, Utils.remove_accents(self.doc.text.lower()), flags=re.UNICODE))
         if len(self.search_matches) == 0:
             return
         editor_counts = self.text_editor.count("1.0", self.text_editor.index(tk.INSERT), "chars")

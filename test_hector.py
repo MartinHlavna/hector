@@ -301,7 +301,7 @@ def test_evaluate_close_words(setup_teardown):
 
 
 def test_remove_accents(setup_teardown):
-    assert Service.remove_accents(TEST_TEXT_6) == TEST_TEXT_6_NON_ACCENTED
+    assert Utils.remove_accents(TEST_TEXT_6) == TEST_TEXT_6_NON_ACCENTED
 
 
 def test_file_imports():

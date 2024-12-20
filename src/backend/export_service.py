@@ -1,12 +1,3 @@
-import os
-import re
-import sys
-
-import pypandoc
-
-from src.utils import Utils
-
-
 class ExportService:
     @staticmethod
     def export_sentences(path, doc, blank_line_between_sents):

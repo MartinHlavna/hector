@@ -4,6 +4,7 @@ import os
 import platform
 import re
 import string
+import unicodedata
 
 import requests
 from semver import VersionInfo
@@ -100,3 +101,9 @@ class Utils:
             print(e)
             print("Unable to retrieve data. Please check your internet connection.")
             return None
+
+    # METHOD THAT REMOVES ACCENTS FROM STRING
+    @staticmethod
+    def remove_accents(text):
+        nfkd_form = unicodedata.normalize('NFD', text)
+        return ''.join([c for c in nfkd_form if not unicodedata.combining(c)])
