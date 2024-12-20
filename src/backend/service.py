@@ -42,6 +42,7 @@ PATTERN_INCORRECT_UPPER_QUOTE_MARKS = r'[“]\S'
 PATTERN_UPPER_QUOTE_MARKS_FROM_DIFFERENT_LANGUAGES = r'[‟]'
 UPPER_QUOTE_MARK = "“"
 
+
 # TODO: Split to multiple services?
 # MAIN BACKEND LOGIC IMPLEMENTATION
 class Service:
@@ -174,52 +175,16 @@ class Service:
     @staticmethod
     def upgrade_dictionaries(github_token: string = None,
                              github_user: string = None):
-        if os.path.isdir(DICTIONARY_DIR):
-            Service.cleanup_old_dictionaries()
-            os.rename(DICTIONARY_DIR, DICTIONARY_DIR_BACKUP)
-        dictionaries = Service.initialize_dictionaries(github_token, github_user)
-        if dictionaries["spellcheck"] is not None and dictionaries["thesaurus"] is not None:
-            if os.path.isdir(DICTIONARY_DIR_BACKUP):
-                shutil.rmtree(DICTIONARY_DIR_BACKUP)
-            return dictionaries
-        else:
-            os.rename(DICTIONARY_DIR_BACKUP, DICTIONARY_DIR)
-            Service.cleanup_old_dictionaries()
-            return None
+        return SpellcheckService.upgrade_dictionaries(github_token, github_user)
 
     @staticmethod
-    def cleanup_old_dictionaries():
-        if os.path.isdir(DICTIONARY_DIR_BACKUP):
-            shutil.rmtree(DICTIONARY_DIR_BACKUP)
+    def remove_dictionaries_backup():
+        SpellcheckService.remove_dictionaries_backup()
 
     # FUNCTION THAT INTIALIZES NLP DICTIONARIES
     @staticmethod
     def initialize_dictionaries(github_token=None, github_user=None):
-        # noinspection PyBroadException
-        try:
-            if not os.path.isdir(DICTIONARY_DIR):
-                os.mkdir(DICTIONARY_DIR)
-            if not os.path.isdir(SK_DICTIONARY_DIR):
-                os.mkdir(SK_DICTIONARY_DIR)
-                fs = fsspec.filesystem("github", org="LibreOffice", repo="dictionaries", token=github_token,
-                                       username=github_user)
-                fs.get(fs.ls("sk_SK"), SK_DICTIONARY_DIR, recursive=True)
-                fs = fsspec.filesystem("github", org="sk-spell", repo="hunspell-sk", token=github_token,
-                                       username=github_user)
-                fs.get(fs.ls("/"), SK_SPELL_DICTIONARY_DIR, recursive=True)
-            return {
-                "spellcheck": Hunspell('sk_SK', hunspell_data_dir=SK_SPELL_DICTIONARY_DIR),
-                "thesaurus": PyThes(os.path.join(SK_DICTIONARY_DIR, "th_sk_SK_v2.dat"))
-            }
-        except Exception as e:
-            print(e)
-            print("Unable to retrieve data. Please check your internet connection.")
-            if os.path.isdir(DICTIONARY_DIR):
-                shutil.rmtree(DICTIONARY_DIR)
-            return {
-                "spellcheck": None,
-                "thesaurus": None
-            }
+        return SpellcheckService.initialize_dictionaries(github_token, github_user)
 
     # FUNCTION THAT LOADS CONFIG FROM FILE
     @staticmethod

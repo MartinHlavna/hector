@@ -1,6 +1,11 @@
 import json
 import os
+import shutil
+import string
 
+import fsspec
+from hunspell import Hunspell
+from pythes import PyThes
 from spacy.matcher import DependencyMatcher
 
 from src.const.grammar_error_types import GRAMMAR_ERROR_TYPE_MISSPELLED_WORD, NON_LITERAL_WORDS, \
@@ -8,6 +13,7 @@ from src.const.grammar_error_types import GRAMMAR_ERROR_TYPE_MISSPELLED_WORD, NO
     GRAMMAR_ERROR_TYPE_WRONG_I_SUFFIX, GRAMMAR_ERROR_TYPE_WRONG_ISI_SUFFIX, GRAMMAR_ERROR_SVOJ_MOJ_TVOJ_PLUR, \
     GRAMMAR_ERROR_SVOJ_MOJ_TVOJ_SING, GRAMMAR_ERROR_Z_INSTEAD_OF_S, GRAMMAR_ERROR_S_INSTEAD_OF_Z, \
     GRAMMAR_ERROR_TOMU_INSTEAD_OF_TO
+from src.const.paths import DICTIONARY_DIR, DICTIONARY_DIR_BACKUP, SK_DICTIONARY_DIR, SK_SPELL_DICTIONARY_DIR
 from src.const.spellcheck_dep_patterns import TYPE_PEKNY_PATTERNS, SVOJ_MOJ_TVOJ_PATTERNS, ZZO_INSTEAD_OF_SSO_PATTERNS, \
     SSO_INSTEAD_OF_ZZO_PATTERNS, CHAPEM_TO_TOMU_PATTERNS
 from src.utils import Utils
@@ -17,6 +23,57 @@ with open(Utils.resource_path(os.path.join('data_files', 'misstagged_words.json'
 
 
 class SpellcheckService:
+    # FUNCTION FOR UPGRADING DICTIONARIES
+    @staticmethod
+    def upgrade_dictionaries(github_token: string = None,
+                             github_user: string = None):
+        if os.path.isdir(DICTIONARY_DIR):
+            SpellcheckService.remove_dictionaries_backup()
+            os.rename(DICTIONARY_DIR, DICTIONARY_DIR_BACKUP)
+        dictionaries = SpellcheckService.initialize_dictionaries(github_token, github_user)
+        if dictionaries["spellcheck"] is not None and dictionaries["thesaurus"] is not None:
+            if os.path.isdir(DICTIONARY_DIR_BACKUP):
+                shutil.rmtree(DICTIONARY_DIR_BACKUP)
+            return dictionaries
+        else:
+            os.rename(DICTIONARY_DIR_BACKUP, DICTIONARY_DIR)
+            SpellcheckService.remove_dictionaries_backup()
+            return None
+
+    # CLEANUP BACKUP DICTIONARY DIR
+    @staticmethod
+    def remove_dictionaries_backup():
+        if os.path.isdir(DICTIONARY_DIR_BACKUP):
+            shutil.rmtree(DICTIONARY_DIR_BACKUP)
+
+    # FUNCTION THAT INTIALIZES NLP DICTIONARIES
+    @staticmethod
+    def initialize_dictionaries(github_token=None, github_user=None):
+        # noinspection PyBroadException
+        try:
+            if not os.path.isdir(DICTIONARY_DIR):
+                os.mkdir(DICTIONARY_DIR)
+            if not os.path.isdir(SK_DICTIONARY_DIR):
+                os.mkdir(SK_DICTIONARY_DIR)
+                fs = fsspec.filesystem("github", org="LibreOffice", repo="dictionaries", token=github_token,
+                                       username=github_user)
+                fs.get(fs.ls("sk_SK"), SK_DICTIONARY_DIR, recursive=True)
+                fs = fsspec.filesystem("github", org="sk-spell", repo="hunspell-sk", token=github_token,
+                                       username=github_user)
+                fs.get(fs.ls("/"), SK_SPELL_DICTIONARY_DIR, recursive=True)
+            return {
+                "spellcheck": Hunspell('sk_SK', hunspell_data_dir=SK_SPELL_DICTIONARY_DIR),
+                "thesaurus": PyThes(os.path.join(SK_DICTIONARY_DIR, "th_sk_SK_v2.dat"))
+            }
+        except Exception as e:
+            print(e)
+            print("Unable to retrieve data. Please check your internet connection.")
+            if os.path.isdir(DICTIONARY_DIR):
+                shutil.rmtree(DICTIONARY_DIR)
+            return {
+                "spellcheck": None,
+                "thesaurus": None
+            }
 
     @staticmethod
     def spellcheck(doc, spellcheck_dictionary):
