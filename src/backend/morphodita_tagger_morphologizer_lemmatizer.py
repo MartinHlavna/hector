@@ -167,13 +167,18 @@ voice_map = {
 }
 
 
+# IMPORTANT: COMPONENT REQUERES TO HAVE SET SENTENES, BUT DEPENDENCY ANALYZER NEEDS MORPHO ATTRIBUTES
+# ALREADY SET. SUGGESTED USAGE IS TO USE RULE BASE SENTER TO ROUGHLY SET SENTENCE BOUNDARIES, PERFORM MORHO ANALYSIS
+# RESET SENTENCES USING MORPHODITA_RESET_SENTENCES_COMPONENT AND THEN LET DEPENDENCY ANALYZER DO HARD WORK
 class MorphoditaTaggerMorphologizerLemmatizer:
     def __init__(self, nlp: Language, tagger_path: str):
+        # INITIALIZE COMPONENT FIELDS
         self.tagger = morphodita.Tagger.load(tagger_path)
         self.nlp = nlp
         self.forms = morphodita.Forms()
         self.lemmas = morphodita.TaggedLemmas()
         self.morpho = self.tagger.getMorpho()
+        # REGISTER CUSTOM EXTENSTIONS
         if not Token.has_extension("full_lemma"):
             Token.set_extension("full_lemma", default='')
         if not Token.has_extension("lemma_comments"):
@@ -225,11 +230,9 @@ class MorphoditaTaggerMorphologizerLemmatizer:
             sentence_tokens = [token for token in sent]
             for token in sent:
                 forms.push_back(token.text)
-
             lemmas = morphodita.TaggedLemmas()
             # TAG SENTENCE
             self.tagger.tag(forms, lemmas)
-
             # PROCESS TOKEN LEMMA PAIRS
             for token, tagged_lemma in zip(sentence_tokens, lemmas):
                 lemma = tagged_lemma.lemma
@@ -256,6 +259,7 @@ def morphodita_tagger_morphologizer_lemmatizer(nlp, name, tagger_path: str):
 
 @Language.component(MORPHODITA_RESET_SENTENCES_COMPONENT)
 def reset_sentences_component(doc):
+    # REMOVE ALL is_sent_start FLAGS
     if len(doc) > 0:
         for token in doc:
             token.is_sent_start = None
