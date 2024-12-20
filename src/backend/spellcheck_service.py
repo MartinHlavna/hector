@@ -15,6 +15,7 @@ from src.utils import Utils
 with open(Utils.resource_path(os.path.join('data_files', 'misstagged_words.json')), 'r', encoding='utf-8') as file:
     EXCEPTIONS = json.load(file)
 
+
 class SpellcheckService:
 
     @staticmethod
@@ -45,23 +46,16 @@ class SpellcheckService:
             target_morph = doc[target].morph.to_dict()
             if not doc[target]._.is_word or not doc[modifier]._.is_word:
                 continue
-            if (doc[target].pos_ == "DET" or doc[target].pos_ == "PRON") and target_morph.get("Case") != "Nom":
+            if doc[target].pos_ in {"DET", "PRON"} and target_morph.get("Case") != "Nom":
                 continue
-            # KNOWN MISTAGS
             if doc[target].lower_ in EXCEPTIONS or doc[modifier].lower_ in EXCEPTIONS:
                 continue
-            if doc[target].pos_ == "NOUN" and (
-                    target_morph.get("Gender") != "Masc" or target_morph.get("Case") != "Nom"):
+            if doc[target].pos_ == "NOUN" and (target_morph.get("Gender") != "Masc" or
+                                               target_morph.get("Case") != "Nom"):
                 continue
             modifiers = [doc[modifier]]
-            # IF MODIFIER CONJUNTS ANY OTHER MODIFIERS WE NEED TO APPLY SAME RULE FOR ALL
-            if doc[modifier].conjuncts is not None:
-                for mod in doc[modifier].conjuncts:
-                    modifiers.append(mod)
-            # IF MODIFIER RELATES TO ANY DET, WE NEED TO APPLY SAME RULE FOR ALL
-            for child in doc[modifier].children:
-                if child.dep_ == "det":
-                    modifiers.append(child)
+            modifiers.extend(doc[modifier].conjuncts or [])
+            modifiers.extend(child for child in doc[modifier].children if child.dep_ == "det")
             for mod in modifiers:
                 modifier_morph = mod.morph.to_dict()
                 if target_morph.get("Number") == "Plur" and mod.lower_.endswith("ý"):

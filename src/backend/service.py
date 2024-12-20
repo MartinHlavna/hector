@@ -15,7 +15,6 @@ import spacy
 from hunspell import Hunspell
 from pythes import PyThes
 from spacy.lang.char_classes import LIST_ELLIPSES, LIST_ICONS, ALPHA_LOWER, ALPHA_UPPER, CONCAT_QUOTES, ALPHA
-from spacy.matcher import DependencyMatcher
 from spacy.tokenizer import Tokenizer
 from spacy.tokens import Doc, Token, Span
 from spacy.util import compile_infix_regex
@@ -23,16 +22,9 @@ from spacy.util import compile_infix_regex
 from src.backend.morphodita_tagger_morphologizer_lemmatizer import MORPHODITA_COMPONENT_FACTORY_NAME, \
     MORPHODITA_RESET_SENTENCES_COMPONENT
 from src.backend.spellcheck_service import SpellcheckService
-from src.const.grammar_error_types import GRAMMAR_ERROR_TYPE_MISSPELLED_WORD, GRAMMAR_ERROR_TYPE_WRONG_Y_SUFFIX, \
-    GRAMMAR_ERROR_TYPE_WRONG_YSI_SUFFIX, GRAMMAR_ERROR_TYPE_WRONG_I_SUFFIX, GRAMMAR_ERROR_TYPE_WRONG_ISI_SUFFIX, \
-    NON_LITERAL_WORDS, GRAMMAR_ERROR_NON_LITERAL_WORD, GRAMMAR_ERROR_TOMU_INSTEAD_OF_TO, \
-    GRAMMAR_ERROR_S_INSTEAD_OF_Z, GRAMMAR_ERROR_Z_INSTEAD_OF_S, GRAMMAR_ERROR_SVOJ_MOJ_TVOJ_PLUR, \
-    GRAMMAR_ERROR_SVOJ_MOJ_TVOJ_SING
 from src.const.paths import DATA_DIRECTORY, SPACY_MODELS_DIR, SK_SPACY_MODEL_DIR, DICTIONARY_DIR, SK_DICTIONARY_DIR, \
     SK_SPELL_DICTIONARY_DIR, CURRENT_SK_SPACY_MODEL_DIR, DICTIONARY_DIR_BACKUP, SK_MORPHODITA_MODEL_DIR, \
     SK_MORPHODITA_TAGGER, MORPHODITA_MODELS_DIR
-from src.const.spellcheck_dep_patterns import TYPE_PEKNY_PATTERNS, CHAPEM_TO_TOMU_PATTERNS, ZZO_INSTEAD_OF_SSO_PATTERNS, \
-    SSO_INSTEAD_OF_ZZO_PATTERNS, SVOJ_MOJ_TVOJ_PATTERNS
 from src.const.values import SPACY_MODEL_NAME_WITH_VERSION, SPACY_MODEL_LINK, SPACY_MODEL_NAME, READABILITY_MAX_VALUE, \
     MORPHODITA_MODEL_NAME, MORPHODITA_MODEL_LINK
 from src.domain.config import Config
