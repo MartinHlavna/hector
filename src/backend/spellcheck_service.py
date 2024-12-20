@@ -29,36 +29,58 @@ class SpellcheckService:
     @staticmethod
     def check_basic_spelling(doc, spellcheck_dictionary):
         for word in doc._.unique_words.items():
+            # CACHE TO OPTIMIZE CALLS TO HUNSPELL
+            # WE NEED TO ITERATE OVER ALL OCOURENCES, BECAUSE THAY CAN BE SPELLED DIFFERENTLY
+            # BUT WHEN WE ENCOUNTER SAME SEPLLING AGAIN, WE CAN REUSE RESULT
+            spell_cache = {}
             for token in word[1].occourences:
-                if token._.is_word:
-                    if not spellcheck_dictionary.spell(token.text):
-                        token._.has_grammar_error = True
-                        token._.grammar_error_type = GRAMMAR_ERROR_TYPE_MISSPELLED_WORD
-                    if token.lower_ in NON_LITERAL_WORDS:
-                        token._.has_grammar_error = True
-                        token._.grammar_error_type = GRAMMAR_ERROR_NON_LITERAL_WORD
+                spell_result = None
+                if token.text in spell_cache:
+                    spell_result = spell_cache[token.text]
+                else:
+                    spell_result = spellcheck_dictionary.spell(token.text)
+                if not spell_result:
+                    # IF WORD IS NOT SPELLED CORRECTLY WE SET GRAMMAR ERROR FLAG AND TYPE OF ERROR
+                    token._.has_grammar_error = True
+                    token._.grammar_error_type = GRAMMAR_ERROR_TYPE_MISSPELLED_WORD
+                if token.lower_ in NON_LITERAL_WORDS:
+                    # SOME WORDS NEEDS SPECIAl HANDLING
+                    token._.has_grammar_error = True
+                    token._.grammar_error_type = GRAMMAR_ERROR_NON_LITERAL_WORD
 
     # SUPRESSED C901 Method too Complex. SOLVING THIS WOULD MAKE CODE HARDER TO READ
     @staticmethod
     def check_nominative_plurar_adj(doc):  # noqa: C901
+        # SOME ADJECTIVES CASED BY TYPE PEKNY CAN HAVE BOTH Y AND I DEPENDING ON NOUN THERE ARE USED WITH
+        # THIS ALSO EXTENDS ON SOME PRONOUNS
+        # WE USE DEPENDENCY MATCHER TO ROUGHLY FIND POSSIBLE ERRORS
         matcher = DependencyMatcher(doc.vocab)
         matcher.add("TYPE_PEKNY_PATTERNS", TYPE_PEKNY_PATTERNS)
         for match_id, (target, modifier) in matcher(doc):
+            target_token = doc[target]
+            modifier_token = doc[modifier]
             target_morph = doc[target].morph.to_dict()
-            if not doc[target]._.is_word or not doc[modifier]._.is_word:
+            # WE USE SOME STOP CONDITIONS, TO PREVENT FALSE POSITIVE
+            if not target_token._.is_word or not modifier_token._.is_word:
+                # IF FOUND TOKENS ARE NOT WORDS, SKIP
                 continue
-            if doc[target].pos_ in {"DET", "PRON"} and target_morph.get("Case") != "Nom":
+            if target_token.pos_ in {"DET", "PRON"} and target_morph.get("Case") != "Nom":
+                # IF TARGET TOKEN IS DETERMINER OR PRONOUN IN NOMINATIVE CASE, SKIP
                 continue
-            if doc[target].lower_ in EXCEPTIONS or doc[modifier].lower_ in EXCEPTIONS:
+            if target_token.lower_ in EXCEPTIONS or modifier_token.lower_ in EXCEPTIONS:
+                # IF TARGET OR MODIFIER ARE IN LIST OF EXCEPTIONS, SKIP
                 continue
-            if doc[target].pos_ == "NOUN" and (target_morph.get("Gender") != "Masc" or
-                                               target_morph.get("Case") != "Nom"):
+            if target_token.pos_ == "NOUN" and (target_morph.get("Gender") != "Masc" or
+                                                target_morph.get("Case") != "Nom"):
+                # IF TARGET IS NOUN IN Masculine GENDER, OR IT IS NOMINATIVE CASE, SKIP
                 continue
-            modifiers = [doc[modifier]]
-            modifiers.extend(doc[modifier].conjuncts or [])
-            modifiers.extend(child for child in doc[modifier].children if child.dep_ == "det")
+            # EXTEND CHECK TO CONJUCTED MODIFIERS
+            modifiers = [modifier_token]
+            modifiers.extend(modifier_token.conjuncts or [])
+            modifiers.extend(child for child in modifier_token.children if child.dep_ == "det")
             for mod in modifiers:
                 modifier_morph = mod.morph.to_dict()
+                # PERFORM CHECKING BASED ON MORPHS
                 if target_morph.get("Number") == "Plur" and mod.lower_.endswith("ý"):
                     mod._.has_grammar_error = True
                     mod._.grammar_error_type = GRAMMAR_ERROR_TYPE_WRONG_Y_SUFFIX
@@ -76,11 +98,14 @@ class SpellcheckService:
 
     @staticmethod
     def check_possesive_pronouns(doc):
+        # CHECK IF POSSESIVE PRONOUNS ARE USED IN CORRECT FORM BASED ON CONTEXT
+        # WE USE DEPENDENCY MATCHER TO FIND POSSIBLE ERRORS AND THEN PERFORM CHECKING
         matcher = DependencyMatcher(doc.vocab)
         matcher.add("SVOJ_MOJ_TVOJ_PATTERNS", SVOJ_MOJ_TVOJ_PATTERNS)
         for match_id, (pronoun, noun) in matcher(doc):
             pronoun_token = doc[pronoun]
             noun_token = doc[noun]
+            # FIND CASE MARKING TOKEN, IF AVAILABLE
             case_marking = None
             for left_token in noun_token.lefts:
                 if left_token != pronoun_token and left_token.dep_ == "case":
@@ -109,6 +134,8 @@ class SpellcheckService:
 
     @staticmethod
     def check_correct_adpositions(doc):
+        # CHECK IF ADPOSIONS S/SO AND Z/ZO ARE NOT INTERCHANGED
+        # WE USE DEPENDENCY MATCHER TO PERFORM CHECK
         matcher = DependencyMatcher(doc.vocab)
         matcher.add("ZZO_INSTEAD_OF_SSO_PATTERNS", ZZO_INSTEAD_OF_SSO_PATTERNS)
         for match_id, (preposition, noun) in matcher(doc):
@@ -126,6 +153,8 @@ class SpellcheckService:
 
     @staticmethod
     def check_chapem_tomu_phrase(doc):
+        # CHECK IF PHRASE "CHAPEM TO" IS NOT IN INCORRECT FORM "CHAPEM TOMU"
+        # WE USE DEPENDENCY MATCHER TO FIND POSSIBLE ERROR AND THEN PERFORM CHEKING
         matcher = DependencyMatcher(doc.vocab)
         matcher.add("CHAPEM_TO_TOMU_PATTERNS", CHAPEM_TO_TOMU_PATTERNS)
         for match_id, (verb, pron) in matcher(doc):
