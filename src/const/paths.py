@@ -18,9 +18,6 @@ else:
     WORKING_DIRECTORY = os.getcwd()
     RUN_DIRECTORY = os.getcwd()
 
-print(WORKING_DIRECTORY)
-print(RUN_DIRECTORY)
-# LOCATION OF CONFIG
 DATA_DIRECTORY = os.path.join(WORKING_DIRECTORY, "data")
 FONTS_DIRECTORY = os.path.join(RUN_DIRECTORY, "fonts")
 FONT_AWESOME_DIRECTORY = os.path.join(FONTS_DIRECTORY, "fontawesome-free-6.6.0-desktop", "otfs")
