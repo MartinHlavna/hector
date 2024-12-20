@@ -42,7 +42,7 @@ PATTERN_INCORRECT_UPPER_QUOTE_MARKS = r'[“]\S'
 PATTERN_UPPER_QUOTE_MARKS_FROM_DIFFERENT_LANGUAGES = r'[‟]'
 UPPER_QUOTE_MARK = "“"
 
-
+# TODO: Split to multiple services?
 # MAIN BACKEND LOGIC IMPLEMENTATION
 class Service:
     @staticmethod
@@ -74,9 +74,9 @@ class Service:
     def initialize_nlp():
         # noinspection PyBroadException
         try:
-            old_model_exists = False
-            # INITIALIZE NLP ENGINE
             spacy.util.set_data_path = Utils.resource_path('lib/site-packages/spacy/data')
+            old_model_exists = False
+            # EBSURE DIRECTORY STRUCTURE EXISTS
             if not os.path.isdir(DATA_DIRECTORY):
                 os.mkdir(DATA_DIRECTORY)
             if not os.path.isdir(SPACY_MODELS_DIR):
@@ -132,19 +132,23 @@ class Service:
                                       infix_finditer=infix_re.finditer,
                                       token_match=nlp.tokenizer.token_match,
                                       rules=nlp.Defaults.tokenizer_exceptions)
+            # ADD SENTENCIZER SO MORPHODITA CAN WORK ON AT LEAST SOME SENTENCES
             nlp.add_pipe('sentencizer', after='trainable_lemmatizer')
+            # ADD CUSTOM COMPONENT FOR MORPHODITA
             nlp.add_pipe(
                 MORPHODITA_COMPONENT_FACTORY_NAME,
                 name='morphodita_tagger_morphologizer_lemmatizer',
                 after='sentencizer',
                 config={"tagger_path": SK_MORPHODITA_TAGGER}
             )
+            # ADD CUSTOM COMPONENT THAT RESETS SENTENCE BOUNDARIES SO DEPENDENCY ANALYZER WILL WORK
             nlp.add_pipe(MORPHODITA_RESET_SENTENCES_COMPONENT, after='morphodita_tagger_morphologizer_lemmatizer')
+            # REMOVE UNUSED PIPES REPLACED BY MORPHODITA
             nlp.remove_pipe('tagger')
             nlp.remove_pipe('morphologizer')
             nlp.remove_pipe('trainable_lemmatizer')
             print(nlp.pipe_names)
-            # SPACY EXTENSIONS
+            # REGISTER SPACY EXTENSIONS
             Token.set_extension("is_word", default=False, force=True)
             Token.set_extension("word_index", default=None, force=True)
             Token.set_extension("grammar_error_type", default=None, force=True)
@@ -265,25 +269,36 @@ class Service:
     # METHOD THAT RUNS PARTIAL NLP BASED ON PARAGRAPHS AROUND CARRET POSITION
     @staticmethod
     def partial_nlp(text, original_doc: Doc, nlp: spacy, config: Config, carret_position):
+        # GET TOKEN ON CARRET POSITION
         span = original_doc.char_span(carret_position, carret_position, alignment_mode='expand')
         if span is not None:
             changed_paragraph = span.root._.paragraph
         else:
+            # IF TOKEN ON CARRENT POSITION IS NOT AVAILABLE, CARRET IS AT END OF DOCUMENT
+            # WE TAKE LAST PARAGRAPH
             changed_paragraph = original_doc[len(original_doc) - 1]._.paragraph
+        # WE FIND FIRST AND LAST TOKEN OF MODIFIED PARAGRAPH
         first_token = changed_paragraph[0]
         last_token = changed_paragraph[len(changed_paragraph) - 1]
         start = changed_paragraph.start_char
         end = changed_paragraph.end_char
+        # IF WE ARE NOT AT START OF DOCUMENT, WE EXPAND SELECTION TO PREVIOUS PARAGRAPH
         if first_token.i > 0:
             nbor = first_token.nbor(-1)
             start = nbor._.paragraph.start_char
             first_token = nbor._.paragraph[0]
+            # IF WE ARE NOT AT END OF DOCUMENT, WE EXPAND SELECTION TO NEXT PARAGRAPH
         if last_token.i < len(original_doc) - 1:
             nbor = last_token.nbor(1)
             end = nbor._.paragraph.end_char
             last_token = nbor._.paragraph[len(nbor._.paragraph) - 1]
+        # RUN NLP ON SELECTED TEXT
         changed_portion_of_text = text[start:(end + len(text) - len(original_doc.text))]
         partial_document = nlp(changed_portion_of_text)
+        # MERGE DOCUMENTS:
+        # 1. FROM START OF DOCUMENT TO START OF SELECTION
+        # 2. SELECTION - WITH FRESH NLP RESULTS
+        # 3. FROM END OF SELECTION TO END OF DOCUMENT
         documents = []
         if first_token.i > 0:
             documents.append(original_doc[:first_token.i].as_doc())
@@ -291,6 +306,7 @@ class Service:
         if last_token.i < len(original_doc) - 1:
             documents.append(original_doc[last_token.i + 1:].as_doc())
         doc = Doc.from_docs(documents, ensure_whitespace=False)
+        # RECOMPUTE CUSTOM DATA ON MERGED DOCUMENT.
         Service.fill_custom_data(doc, config)
         return doc
 
