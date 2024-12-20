@@ -1,4 +1,4 @@
-import json
+import os
 import os
 import re
 import shutil
@@ -9,21 +9,21 @@ import unicodedata
 import urllib
 import zipfile
 
-import fsspec
 import pypandoc
 import spacy
 from hunspell import Hunspell
-from pythes import PyThes
 from spacy.lang.char_classes import LIST_ELLIPSES, LIST_ICONS, ALPHA_LOWER, ALPHA_UPPER, CONCAT_QUOTES, ALPHA
 from spacy.tokenizer import Tokenizer
 from spacy.tokens import Doc, Token, Span
 from spacy.util import compile_infix_regex
 
+from src.backend.config_service import ConfigService
+from src.backend.metadata_service import MetadataService
 from src.backend.morphodita_tagger_morphologizer_lemmatizer import MORPHODITA_COMPONENT_FACTORY_NAME, \
     MORPHODITA_RESET_SENTENCES_COMPONENT
 from src.backend.spellcheck_service import SpellcheckService
-from src.const.paths import DATA_DIRECTORY, SPACY_MODELS_DIR, SK_SPACY_MODEL_DIR, DICTIONARY_DIR, SK_DICTIONARY_DIR, \
-    SK_SPELL_DICTIONARY_DIR, CURRENT_SK_SPACY_MODEL_DIR, DICTIONARY_DIR_BACKUP, SK_MORPHODITA_MODEL_DIR, \
+from src.const.paths import DATA_DIRECTORY, SPACY_MODELS_DIR, SK_SPACY_MODEL_DIR, CURRENT_SK_SPACY_MODEL_DIR, \
+    SK_MORPHODITA_MODEL_DIR, \
     SK_MORPHODITA_TAGGER, MORPHODITA_MODELS_DIR
 from src.const.values import SPACY_MODEL_NAME_WITH_VERSION, SPACY_MODEL_LINK, SPACY_MODEL_NAME, READABILITY_MAX_VALUE, \
     MORPHODITA_MODEL_NAME, MORPHODITA_MODEL_LINK
@@ -189,34 +189,22 @@ class Service:
     # FUNCTION THAT LOADS CONFIG FROM FILE
     @staticmethod
     def load_config(path: string):
-        if os.path.exists(path):
-            with open(path, 'r') as file:
-                c = json.load(file)
-                return Config(c)
-        else:
-            return Config()
+        return ConfigService.load(path)
 
     # FUNCTION THAT LOADS EDITOR METADATA FROM FILE
     @staticmethod
     def load_metadata(path: string):
-        if os.path.exists(path):
-            with open(path, 'r') as file:
-                metadata = json.load(file)
-                return Metadata(metadata)
-        else:
-            return Metadata()
+        return MetadataService.load(path)
 
     # FUNCTION THAT SAVES CONFIG TO FILE
     @staticmethod
     def save_config(c: Config, path: string):
-        with open(path, 'w') as file:
-            json.dump(c.to_dict(), file, indent=4)
+        ConfigService.save(c, path)
 
     # FUNCTION THAT SAVES METADATA TO FILE
     @staticmethod
     def save_metadata(metadata: Metadata, path: string):
-        with open(path, 'w') as file:
-            json.dump(metadata.to_dict(), file, indent=4)
+        MetadataService.save(metadata, path)
 
     # METHOD THAT RUNS FULL NLP
     @staticmethod
