@@ -40,7 +40,7 @@ from src.const.values import READABILITY_MAX_VALUE, DOCUMENTATION_LINK, NLP_BATC
 from src.gui.analysis_settings_modal import AnalysisSettingsModal
 from src.gui.appearance_settings_modal import AppearanceSettingsModal
 from src.gui.gui_utils import GuiUtils
-from src.gui.menu import MenuItem, SimpleMenu
+from src.gui.menu import MenuItem, TopMenu
 from src.gui.splash_window import SplashWindow
 from src.gui.tooltip import Tooltip
 from src.utils import Utils
@@ -224,7 +224,7 @@ class MainWindow:
                 )
             ])
         ]
-        self.menu_bar = SimpleMenu(self.root, menu_items, background="#3B3B3B", foreground="white")
+        self.menu_bar = TopMenu(self.root, menu_items, background="#3B3B3B", foreground="white")
         # MAIN FRAME
         main_frame = tk.Frame(self.root)
         main_frame.pack(expand=1, fill=tk.BOTH, side=tk.LEFT)
@@ -401,7 +401,7 @@ class MainWindow:
         # LINUX SPECIFIC
         self.root.bind("<Button-4>", self.change_text_size)
         self.root.bind("<Button-5>", self.change_text_size)
-        self.menu_bar.bind_events()
+        self.menu_bar._bind_events()
 
     # START MAIN LOOP
     def start_main_loop(self):
