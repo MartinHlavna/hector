@@ -16,7 +16,6 @@ class AppearanceSettingsModal:
         self.toplevel = tk.Toplevel(self.root)
         self.toplevel.title("Nastavenia vzhľadu")
         row = 0
-        # Frequent words settings
         tk.Label(self.toplevel, text="Odsek", font=(HELVETICA_FONT_NAME, 12, BOLD_FONT),
                  anchor='w').grid(
             row=row, column=0, columnspan=1, padx=(10, 80), pady=(10, 2), sticky='w'
