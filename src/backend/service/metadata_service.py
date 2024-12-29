@@ -23,7 +23,8 @@ class MetadataService:
             json.dump(metadata.to_dict(), file, indent=4)
 
     @staticmethod
-    def get_recent_file(metadata: Metadata, file_path: string):
+    def get_recent_file(metadata: Metadata):
+        file_path = None
         while len(metadata.recent_files) > 0 and file_path is None:
             file_path = metadata.recent_files[0]
             if not os.path.isfile(file_path):

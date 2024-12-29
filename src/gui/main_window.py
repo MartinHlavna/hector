@@ -823,7 +823,7 @@ class MainWindow:
     # LOAD TEXT FILE
     def load_file_contents(self, file_path=None):
         if not file_path:
-            file_path = MetadataService.get_recent_file(self.metadata, file_path)
+            file_path = MetadataService.get_recent_file(self.metadata)
         if file_path:
             text = ImportService.import_document(file_path)
             MetadataService.put_recent_file(self.metadata, file_path)
