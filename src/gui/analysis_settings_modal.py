@@ -2,7 +2,7 @@ import platform
 import tkinter as tk
 from tkinter import ttk, messagebox
 
-from src.backend.service import Service
+from src.backend.service.config_service import ConfigService
 from src.const.fonts import HELVETICA_FONT_NAME, BOLD_FONT
 from src.const.paths import CONFIG_FILE_PATH
 from src.domain.config import AnalysisSettings
@@ -246,7 +246,7 @@ class AnalysisSettingsModal:
         self.config.analysis_settings.enable_spellcheck = self.spellcheck_var.get()
         self.config.analysis_settings.enable_partial_nlp = self.partial_nlp_var.get()
         self.config.analysis_settings.enable_quote_corrections = self.quote_corrections_var.get()
-        Service.save_config(self.config, CONFIG_FILE_PATH)
+        ConfigService.save(self.config, CONFIG_FILE_PATH)
         self.on_config_change()
         self.toplevel.destroy()
 
@@ -257,6 +257,6 @@ class AnalysisSettingsModal:
                                            "pokračovať?")
         if should_reset:
             self.config.analysis_settings = AnalysisSettings({})
-            Service.save_config(self.config, CONFIG_FILE_PATH)
+            ConfigService.save(self.config, CONFIG_FILE_PATH)
             self.on_config_change()
             self.toplevel.destroy()

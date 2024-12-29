@@ -1,6 +1,8 @@
 import pytest
 
-from src.backend.service import Service
+from src.backend.service.import_service import ImportService
+from src.backend.service.nlp_service import NlpService
+from src.backend.service.spellcheck_service import SpellcheckService
 from test_utils import TestUtils
 
 
@@ -11,12 +13,12 @@ def setup_teardown(request):
     Yields control back to the test function and performs cleanup after the test function is done.
     """
     # Initialization code, if needed
-    nlp = Service.initialize_nlp()
-    dictionaries = Service.initialize_dictionaries(github_token=request.config.option.github_token,
-                                                   github_user=request.config.option.github_user)
+    nlp = NlpService.initialize()
+    dictionaries = SpellcheckService.initialize(github_token=request.config.option.github_token,
+                                                github_user=request.config.option.github_user)
     spellcheck_dictionary = dictionaries["spellcheck"]
     thesaurus = dictionaries["thesaurus"]
-    Service.ensure_pandoc_available()
+    ImportService.ensure_pandoc_available()
     yield nlp, spellcheck_dictionary, thesaurus, request.config.option.github_token, request.config.option.github_user
     # Cleanup code, if needed
 

@@ -19,7 +19,12 @@ from spacy.tokens import Doc
 from svglib.svglib import svg2rlg
 from tkinter_autoscrollbar import AutoScrollbar
 
-from src.backend.service import Service
+from src.backend.service.config_service import ConfigService
+from src.backend.service.export_service import ExportService
+from src.backend.service.import_service import ImportService
+from src.backend.service.metadata_service import MetadataService
+from src.backend.service.nlp_service import NlpService
+from src.backend.service.spellcheck_service import SpellcheckService
 from src.const.colors import PRIMARY_COLOR, ACCENT_COLOR, ACCENT_2_COLOR, TEXT_EDITOR_FRAME_BG, PANEL_TEXT_COLOR, \
     TEXT_EDITOR_BG, EDITOR_TEXT_COLOR, CLOSE_WORDS_PALLETE, LONG_SENTENCE_HIGHLIGHT_COLOR_MID, \
     LONG_SENTENCE_HIGHLIGHT_COLOR_HIGH, SEARCH_RESULT_HIGHLIGHT_COLOR, CURRENT_SEARCH_RESULT_HIGHLIGHT_COLOR
@@ -113,9 +118,9 @@ class MainWindow:
         # DICTIONARY THAT HOLDS COLOR OF WORD TO PREVENT RECOLORING WHILE TYPING
         self.close_word_colors = {}
         # LOAD CONFIG
-        self.config = Service.load_config(CONFIG_FILE_PATH)
+        self.config = ConfigService.load(CONFIG_FILE_PATH)
         # LOAD METADATA
-        self.metadata = Service.load_metadata(METADATA_FILE_PATH)
+        self.metadata = MetadataService.load(METADATA_FILE_PATH)
         self.has_available_update = has_available_update
         # INIT GUI
         # TOP MENU
@@ -460,7 +465,7 @@ class MainWindow:
     def display_word_frequencies(self, doc: Doc):
         if not self.config.analysis_settings.enable_frequent_words:
             return
-        word_counts = Service.compute_word_frequencies(doc, self.config)
+        word_counts = NlpService.compute_word_frequencies(doc, self.config)
         # NOTE
         # In tk, there is problem with scrolling so we default to using on big text to dispaly frequencies
         # There is way of making canvas with scrollregion but this is more performant
@@ -473,7 +478,6 @@ class MainWindow:
 
             # Insert the text
             self.word_freq_text.insert(tk.END, word_text)
-
             # Add the tag to the inserted text
             start_index = f"1.0 + {start_char} chars"
             end_index = f"1.0 + {start_char + len(word_text)} chars"
@@ -526,7 +530,7 @@ class MainWindow:
     def highlight_multiple_spaces(self, doc: Doc):
         self.text_editor.tag_remove(MULTIPLE_SPACES_TAG_NAME, "1.0", tk.END)
         if self.config.analysis_settings.enable_multiple_spaces:
-            matches = Service.find_multiple_spaces(doc)
+            matches = NlpService.find_multiple_spaces(doc)
             for match in matches:
                 start_index = f"1.0 + {match.start()} chars"
                 end_index = f"1.0 + {match.end()} chars"
@@ -535,7 +539,7 @@ class MainWindow:
     # HIGHLIGHT MULTIPLE PUNCTUATION
     def highlight_multiple_punctuation(self, doc: Doc):
         if self.config.analysis_settings.enable_multiple_punctuation:
-            matches = Service.find_multiple_punctuation(doc)
+            matches = NlpService.find_multiple_punctuation(doc)
             for match in matches:
                 if match.group() not in ["?!"]:
                     start_index = f"1.0 + {match.start()} chars"
@@ -545,7 +549,7 @@ class MainWindow:
     # HIGHLIGHT TRAILING SPACES
     def highlight_trailing_spaces(self, doc: Doc):
         if self.config.analysis_settings.enable_trailing_spaces:
-            matches = Service.find_trailing_spaces(doc)
+            matches = NlpService.find_trailing_spaces(doc)
             for match in matches:
                 start_index = f"1.0 + {match.start()} chars"
                 end_index = f"1.0 + {match.end()} chars"
@@ -554,22 +558,22 @@ class MainWindow:
     # HIGHLIGHT QUOTE_MARK_ERRORS
     def highlight_quote_mark_errors(self, doc: Doc):
         if self.config.analysis_settings.enable_quote_corrections:
-            matches = Service.find_computer_quote_marks(doc)
+            matches = NlpService.find_computer_quote_marks(doc)
             for match in matches:
                 start_index = f"1.0 + {match.start()} chars"
                 end_index = f"1.0 + {match.end()} chars"
                 self.text_editor.tag_add(COMPUTER_QUOTE_MARKS_TAG_NAME, start_index, end_index)
-            matches = Service.find_dangling_quote_marks(doc)
+            matches = NlpService.find_dangling_quote_marks(doc)
             for match in matches:
                 start_index = f"1.0 + {match.start()} chars"
                 end_index = f"1.0 + {match.end()} chars"
                 self.text_editor.tag_add(DANGLING_QUOTE_MARK_TAG_NAME, start_index, end_index)
-            matches = Service.find_incorrect_lower_quote_marks(doc)
+            matches = NlpService.find_incorrect_lower_quote_marks(doc)
             for match in matches:
                 start_index = f"1.0 + {match.start()} chars"
                 end_index = f"1.0 + {match.end()} chars"
                 self.text_editor.tag_add(SHOULD_USE_UPPER_QUOTE_MARK_TAG_NAME, start_index, end_index)
-            matches = Service.find_incorrect_upper_quote_marks(doc)
+            matches = NlpService.find_incorrect_upper_quote_marks(doc)
             for match in matches:
                 start_index = f"1.0 + {match.start()} chars"
                 end_index = f"1.0 + {match.end()} chars"
@@ -579,7 +583,7 @@ class MainWindow:
     def highlight_close_words(self, doc: Doc):
         if self.config.analysis_settings.enable_close_words:
             self.text_editor.tag_remove("close_word", "1.0", tk.END)
-            close_words = Service.evaluate_close_words(doc, self.config)
+            close_words = NlpService.evaluate_close_words(doc, self.config)
             # NOTE
             # In tk, there is problem with scrolling so we default to using on big text to dispaly frequencies
             # There is way of making canvas with scrollregion but this is more performant
@@ -609,7 +613,7 @@ class MainWindow:
                                           on_click=lambda e: self.jump_to_next_word_occourence(
                                               e, self.close_words_text, tag_prefix=CLOSE_WORD_PREFIX)
                                           )
-                word_partitions = Service.partition_close_words(
+                word_partitions = NlpService.partition_close_words(
                     close_words[word],
                     self.config.analysis_settings.close_words_min_distance_between_words
                 )
@@ -815,14 +819,14 @@ class MainWindow:
                     file_path = None
                     self.metadata.recent_files.pop(0)
         if file_path:
-            text = Service.import_document(file_path)
+            text = ImportService.import_document(file_path)
             # AK SA POLOZKA V LISTE UZ NACHADZA, PRESUNIEM JU NA ZACIATOK, INAK NA ZACIATOK VLOZIM NOVU POLOZKU
             if file_path in self.metadata.recent_files:
                 self.metadata.recent_files.remove(file_path)
             self.metadata.recent_files.insert(0, file_path)
             if len(self.metadata.recent_files) > 10:
                 self.metadata.recent_files.pop()
-            Service.save_metadata(self.metadata, METADATA_FILE_PATH)
+            MetadataService.save(self.metadata, METADATA_FILE_PATH)
             self.text_editor.delete(1.0, tk.END)
             self.text_editor.insert(tk.END, text)
             self.analyze_text(True)
@@ -861,8 +865,8 @@ class MainWindow:
         file_path = filedialog.askopenfilename(
             filetypes=[("Nastavenia programu Hector", "*.hector.conf")]
         )
-        self.config = Service.load_config(file_path)
-        Service.save_config(self.config, CONFIG_FILE_PATH)
+        self.config = ConfigService.load(file_path)
+        ConfigService.save(self.config, CONFIG_FILE_PATH)
 
     def undo(self, event=None):
         self.text_editor.edit_undo()
@@ -876,7 +880,7 @@ class MainWindow:
             return 'break'
         file_path = filedialog.asksaveasfilename(defaultextension=".txt", filetypes=[("Textové súbory", "*.txt")])
         if file_path:
-            Service.export_sentences(file_path, self.doc, add_more_blank_lines)
+            ExportService.export_sentences(file_path, self.doc, add_more_blank_lines)
         return 'break'
 
     def redo(self, event=None):
@@ -898,7 +902,7 @@ class MainWindow:
             event.widget.delete("sel.first", "sel.last")
 
         # NORMALIZE TEXT
-        text = Service.normalize_text(clipboard_text)
+        text = ImportService.normalize_text(clipboard_text)
         event.widget.insert(tk.INSERT, text)
         self.analyze_text(force_reload=True, event=event)
         # CANCEL DEFAULT PASTE
@@ -925,16 +929,16 @@ class MainWindow:
             # PARTIAL NLP
             carret_position = self.get_carret_position()
             if carret_position is not None:
-                self.doc = Service.partial_nlp(text, self.doc, self.nlp, self.config, carret_position)
+                self.doc = NlpService.partial_analysis(text, self.doc, self.nlp, self.config, carret_position)
                 self.text_editor.edit_separator()
             else:
                 # FALLBACK TO FULL NLP
-                self.doc = Service.full_nlp(text, self.nlp, NLP_BATCH_SIZE, self.config)
+                self.doc = NlpService.full_analysis(text, self.nlp, NLP_BATCH_SIZE, self.config)
                 self.text_editor.edit_separator()
         else:
             # FULL NLP
             # FALLBACK TO FULL NLP
-            self.doc = Service.full_nlp(text, self.nlp, NLP_BATCH_SIZE, self.config)
+            self.doc = NlpService.full_analysis(text, self.nlp, NLP_BATCH_SIZE, self.config)
         # CLEAR TAGS
         for tag in self.text_editor.tag_names():
             self.text_editor.tag_delete(tag)
@@ -979,7 +983,7 @@ class MainWindow:
                                   lambda e: self.highlight_same_word(e, self.text_editor),
                                   lambda e: self.unhighlight_same_word(e)
                                   )
-        readability = Service.evaluate_readability(self.doc)
+        readability = NlpService.evaluate_readability(self.doc)
         self.readability_value.configure(text=f"{readability: .0f} / {READABILITY_MAX_VALUE}")
         self.introspect(event)
 
@@ -1103,7 +1107,7 @@ class MainWindow:
     # RUN SPELLCHECK
     def run_spellcheck(self, doc: Doc):
         if self.config.analysis_settings.enable_spellcheck:
-            Service.spellcheck(self.spellcheck_dictionary, doc)
+            SpellcheckService.spellcheck(self.spellcheck_dictionary, doc)
             for word in self.doc._.words:
                 if word._.has_grammar_error:
                     start_index = f"1.0 + {word.idx} chars"
@@ -1149,7 +1153,7 @@ class MainWindow:
         splash = SplashWindow(self.root)
         # noinspection PyBroadException
         splash.update_status("aktualizujem a reinicializujem slovníky...")
-        dictionaries = Service.upgrade_dictionaries()
+        dictionaries = SpellcheckService.upgrade_dictionaries()
         splash.close()
         if dictionaries is not None:
             self.spellcheck_dictionary = dictionaries["spellcheck"]

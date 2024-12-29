@@ -30,7 +30,7 @@ class SpellcheckService:
         if os.path.isdir(DICTIONARY_DIR):
             SpellcheckService.remove_dictionaries_backup()
             os.rename(DICTIONARY_DIR, DICTIONARY_DIR_BACKUP)
-        dictionaries = SpellcheckService.initialize_dictionaries(github_token, github_user)
+        dictionaries = SpellcheckService.initialize(github_token, github_user)
         if dictionaries["spellcheck"] is not None and dictionaries["thesaurus"] is not None:
             if os.path.isdir(DICTIONARY_DIR_BACKUP):
                 shutil.rmtree(DICTIONARY_DIR_BACKUP)
@@ -48,7 +48,7 @@ class SpellcheckService:
 
     # FUNCTION THAT INTIALIZES NLP DICTIONARIES
     @staticmethod
-    def initialize_dictionaries(github_token=None, github_user=None):
+    def initialize(github_token=None, github_user=None):
         # noinspection PyBroadException
         try:
             if not os.path.isdir(DICTIONARY_DIR):
@@ -76,15 +76,15 @@ class SpellcheckService:
             }
 
     @staticmethod
-    def spellcheck(doc, spellcheck_dictionary):
-        SpellcheckService.check_basic_spelling(doc, spellcheck_dictionary)
+    def spellcheck(spellcheck_dictionary, doc):
+        SpellcheckService.check_basic_spelling(spellcheck_dictionary, doc)
         SpellcheckService.check_nominative_plurar_adj(doc)
         SpellcheckService.check_chapem_tomu_phrase(doc)
         SpellcheckService.check_correct_adpositions(doc)
         SpellcheckService.check_possesive_pronouns(doc)
 
     @staticmethod
-    def check_basic_spelling(doc, spellcheck_dictionary):
+    def check_basic_spelling(spellcheck_dictionary, doc):
         for word in doc._.unique_words.items():
             # CACHE TO OPTIMIZE CALLS TO HUNSPELL
             # WE NEED TO ITERATE OVER ALL OCOURENCES, BECAUSE THAY CAN BE SPELLED DIFFERENTLY

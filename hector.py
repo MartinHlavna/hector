@@ -7,7 +7,9 @@ from tkinter import messagebox
 
 from ttkthemes import ThemedTk
 
-from src.backend.service import Service
+from src.backend.service.import_service import ImportService
+from src.backend.service.nlp_service import NlpService
+from src.backend.service.spellcheck_service import SpellcheckService
 from src.const.values import VERSION
 from src.gui.main_window import MainWindow
 from src.gui.splash_window import SplashWindow
@@ -35,13 +37,13 @@ if __name__ == "__main__":
     root.wm_iconphoto(True, photo)
     splash = SplashWindow(root)
     splash.update_status("sťahujem a inicializujem jazykový model...")
-    nlp = Service.initialize_nlp()
+    nlp = NlpService.initialize()
     if not nlp:
         splash.close()
         handle_error("Nepodarilo sa stiahnuť jazykový model. Overte prosím, že máte internetové pripojenie!")
         sys.exit(1)
     splash.update_status("sťahujem a inicializujem slovník...")
-    dictionaries = Service.initialize_dictionaries(github_token=args.github_token, github_user=args.github_user)
+    dictionaries = SpellcheckService.initialize(github_token=args.github_token, github_user=args.github_user)
     if not nlp:
         splash.close()
         handle_error("Nepodarilo sa stiahnuť slovníky. Overte prosím, že máte internetové pripojenie!")
@@ -49,7 +51,7 @@ if __name__ == "__main__":
     splash.update_status("sťahujem pandoc...")
     # noinspection PyBroadException
     try:
-        Service.ensure_pandoc_available()
+        ImportService.ensure_pandoc_available()
     except Exception:
         splash.close()
         handle_error("Nepodarilo sa stiahnuť modul pandoc. Overte prosím, že máte internetové pripojenie!")

@@ -2,7 +2,7 @@ import platform
 import tkinter as tk
 from tkinter import ttk, messagebox
 
-from src.backend.service import Service
+from src.backend.service.config_service import ConfigService
 from src.const.fonts import HELVETICA_FONT_NAME, BOLD_FONT
 from src.const.paths import CONFIG_FILE_PATH
 from src.domain.config import AppearanceSettings
@@ -63,7 +63,7 @@ class AppearanceSettingsModal:
     def save_settings(self):
         self.config.appearance_settings.paragraph_lmargin1 = int(self.paragraph_lmargin1_entry.get())
         self.config.appearance_settings.paragraph_spacing3 = int(self.paragraph_spacing3_entry.get())
-        Service.save_config(self.config, CONFIG_FILE_PATH)
+        ConfigService.save(self.config, CONFIG_FILE_PATH)
         self.on_config_change()
         self.toplevel.destroy()
 
@@ -74,6 +74,6 @@ class AppearanceSettingsModal:
                                            "pokračovať?")
         if should_reset:
             self.config.appearance_settings = AppearanceSettings({})
-            Service.save_config(self.config, CONFIG_FILE_PATH)
+            ConfigService.save(self.config, CONFIG_FILE_PATH)
             self.on_config_change()
             self.toplevel.destroy()

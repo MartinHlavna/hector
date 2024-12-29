@@ -8,7 +8,12 @@ from pythes import PyThes
 from spacy.lang.sk import Slovak
 from spacy.tokens import Doc
 
-from src.backend.service import Service
+from src.backend.service.config_service import ConfigService
+from src.backend.service.export_service import ExportService
+from src.backend.service.import_service import ImportService
+from src.backend.service.metadata_service import MetadataService
+from src.backend.service.nlp_service import NlpService
+from src.backend.service.spellcheck_service import SpellcheckService
 from src.const.grammar_error_types import GRAMMAR_ERROR_TYPE_MISSPELLED_WORD, GRAMMAR_ERROR_TYPE_WRONG_Y_SUFFIX, \
     GRAMMAR_ERROR_TYPE_WRONG_I_SUFFIX, NON_LITERAL_WORDS, GRAMMAR_ERROR_NON_LITERAL_WORD, \
     GRAMMAR_ERROR_TOMU_INSTEAD_OF_TO, GRAMMAR_ERROR_Z_INSTEAD_OF_S, GRAMMAR_ERROR_S_INSTEAD_OF_Z, \
@@ -186,7 +191,7 @@ def test_initialization(setup_teardown):
 # TEST IF NLP IS WORKING
 def test_basic_nlp(setup_teardown):
     nlp = setup_teardown[0]
-    doc = Service.full_nlp(TEST_TEXT_1, nlp, NLP_BATCH_SIZE, Config())
+    doc = NlpService.full_analysis(TEST_TEXT_1, nlp, NLP_BATCH_SIZE, Config())
     assert doc is not None
     assert isinstance(doc, Doc)
 
@@ -194,21 +199,21 @@ def test_basic_nlp(setup_teardown):
 # TEST IF PARTIAL NLP IS WORKING
 def test_partial_nlp(setup_teardown):
     nlp = setup_teardown[0]
-    original_doc = Service.full_nlp(TEST_TEXT_4, nlp, NLP_BATCH_SIZE, Config())
+    original_doc = NlpService.full_analysis(TEST_TEXT_4, nlp, NLP_BATCH_SIZE, Config())
     assert original_doc is not None
     assert isinstance(original_doc, Doc)
-    doc1 = Service.partial_nlp(TEST_TEXT_4_CHANGE_AT_START, original_doc, nlp, Config(), 6)
+    doc1 = NlpService.partial_analysis(TEST_TEXT_4_CHANGE_AT_START, original_doc, nlp, Config(), 6)
     assert doc1 is not None
     assert isinstance(doc1, Doc)
     assert doc1._.total_chars == len(TEST_TEXT_4_CHANGE_AT_START.replace('\n', ''))
     assert doc1.text == TEST_TEXT_4_CHANGE_AT_START
-    doc2 = Service.partial_nlp(TEST_TEXT_4_CHANGE_AT_END, original_doc, nlp, Config(),
+    doc2 = NlpService.partial_analysis(TEST_TEXT_4_CHANGE_AT_END, original_doc, nlp, Config(),
                                len(TEST_TEXT_4_CHANGE_AT_END) - 1)
     assert doc2 is not None
     assert isinstance(doc2, Doc)
     assert doc2._.total_chars == len(TEST_TEXT_4_CHANGE_AT_END.replace('\n', ''))
     assert doc2.text == TEST_TEXT_4_CHANGE_AT_END
-    doc3 = Service.partial_nlp(TEST_TEXT_4_CHANGE_IN_MID, original_doc, nlp, Config(),
+    doc3 = NlpService.partial_analysis(TEST_TEXT_4_CHANGE_IN_MID, original_doc, nlp, Config(),
                                897)
     assert doc3 is not None
     assert isinstance(doc3, Doc)
@@ -219,7 +224,7 @@ def test_partial_nlp(setup_teardown):
 # TEST IF CUSTOM_EXTENSION ARE CORRECTLY FILLES
 def test_custom_extenstions(setup_teardown):
     nlp = setup_teardown[0]
-    doc = Service.full_nlp(TEST_TEXT_1, nlp, NLP_BATCH_SIZE, Config())
+    doc = NlpService.full_analysis(TEST_TEXT_1, nlp, NLP_BATCH_SIZE, Config())
     assert doc._.words is not None
     assert len(doc._.words) == 7 and doc._.total_words == 7
     assert len(doc._.unique_words) == 5 and doc._.total_unique_words == 5
@@ -231,47 +236,47 @@ def test_custom_extenstions(setup_teardown):
 
 def test_find_multiple_spaces(setup_teardown):
     nlp = setup_teardown[0]
-    doc = Service.full_nlp(TEST_TEXT_2, nlp, NLP_BATCH_SIZE, Config())
-    assert sum(1 for _ in Service.find_multiple_spaces(doc)) == 2
+    doc = NlpService.full_analysis(TEST_TEXT_2, nlp, NLP_BATCH_SIZE, Config())
+    assert sum(1 for _ in NlpService.find_multiple_spaces(doc)) == 2
 
 
 def test_find_multiple_punctuation(setup_teardown):
     nlp = setup_teardown[0]
-    doc = Service.full_nlp(TEST_TEXT_2, nlp, NLP_BATCH_SIZE, Config())
-    assert sum(1 for _ in Service.find_multiple_punctuation(doc)) == 1
+    doc = NlpService.full_analysis(TEST_TEXT_2, nlp, NLP_BATCH_SIZE, Config())
+    assert sum(1 for _ in NlpService.find_multiple_punctuation(doc)) == 1
 
 
 def test_quote_marks_corrections(setup_teardown):
     nlp = setup_teardown[0]
-    doc = Service.full_nlp(TEST_TEXT_QUOTES_1, nlp, NLP_BATCH_SIZE, Config())
-    assert sum(1 for _ in Service.find_incorrect_lower_quote_marks(doc)) == 1
-    assert sum(1 for _ in Service.find_incorrect_upper_quote_marks(doc)) == 1
+    doc = NlpService.full_analysis(TEST_TEXT_QUOTES_1, nlp, NLP_BATCH_SIZE, Config())
+    assert sum(1 for _ in NlpService.find_incorrect_lower_quote_marks(doc)) == 1
+    assert sum(1 for _ in NlpService.find_incorrect_upper_quote_marks(doc)) == 1
 
 
 def test_find_computer_quote_marks(setup_teardown):
     nlp = setup_teardown[0]
-    doc = Service.full_nlp(TEST_TEXT_QUOTES_2, nlp, NLP_BATCH_SIZE, Config())
-    assert sum(1 for _ in Service.find_computer_quote_marks(doc)) == 2
+    doc = NlpService.full_analysis(TEST_TEXT_QUOTES_2, nlp, NLP_BATCH_SIZE, Config())
+    assert sum(1 for _ in NlpService.find_computer_quote_marks(doc)) == 2
 
 
 def test_find_dangling_quote_marks(setup_teardown):
     nlp = setup_teardown[0]
-    doc = Service.full_nlp(TEST_TEXT_QUOTES_3, nlp, NLP_BATCH_SIZE, Config())
-    assert sum(1 for _ in Service.find_dangling_quote_marks(doc)) == 2
+    doc = NlpService.full_analysis(TEST_TEXT_QUOTES_3, nlp, NLP_BATCH_SIZE, Config())
+    assert sum(1 for _ in NlpService.find_dangling_quote_marks(doc)) == 2
 
 
 def test_readability(setup_teardown):
     nlp = setup_teardown[0]
-    doc = Service.full_nlp(TEST_TEXT_4, nlp, NLP_BATCH_SIZE, Config())
-    assert Service.evaluate_readability(doc) == 8
+    doc = NlpService.full_analysis(TEST_TEXT_4, nlp, NLP_BATCH_SIZE, Config())
+    assert NlpService.evaluate_readability(doc) == 8
 
 
 def test_word_frequencies(setup_teardown):
     nlp = setup_teardown[0]
     c = Config()
     c.analysis_settings.repeated_words_min_word_frequency = 1
-    doc = Service.full_nlp(TEST_TEXT_5, nlp, NLP_BATCH_SIZE, c)
-    word_frequencies = Service.compute_word_frequencies(doc, c)
+    doc = NlpService.full_analysis(TEST_TEXT_5, nlp, NLP_BATCH_SIZE, c)
+    word_frequencies = NlpService.compute_word_frequencies(doc, c)
     assert len(word_frequencies) == 5
     assert word_frequencies[0].text == "päť" and len(word_frequencies[0].occourences) == 10
     assert word_frequencies[1].text == "štyri" and len(word_frequencies[1].occourences) == 8
@@ -284,12 +289,12 @@ def test_evaluate_close_words(setup_teardown):
     nlp = setup_teardown[0]
     c = Config()
     c.analysis_settings.close_words_min_frequency = 1
-    doc = Service.full_nlp(TEST_TEXT_1, nlp, NLP_BATCH_SIZE, c)
-    close_words = Service.evaluate_close_words(doc, c)
+    doc = NlpService.full_analysis(TEST_TEXT_1, nlp, NLP_BATCH_SIZE, c)
+    close_words = NlpService.evaluate_close_words(doc, c)
     # ONE REPEATED WORD
     assert len(close_words) == 1
     assert "toto" in close_words
-    cw_partitions = Service.partition_close_words(
+    cw_partitions = NlpService.partition_close_words(
         close_words["toto"],
         c.analysis_settings.close_words_min_distance_between_words
     )
@@ -305,10 +310,10 @@ def test_remove_accents(setup_teardown):
 
 
 def test_file_imports():
-    txt = Service.import_document("test_files/sample.txt")
-    docx = Service.import_document("test_files/sample.docx")
-    odt = Service.import_document("test_files/sample.odt")
-    rtf = Service.import_document("test_files/sample.rtf")
+    txt = ImportService.import_document("test_files/sample.txt")
+    docx = ImportService.import_document("test_files/sample.docx")
+    odt = ImportService.import_document("test_files/sample.odt")
+    rtf = ImportService.import_document("test_files/sample.rtf")
     assert len(txt) > 0
     assert len(docx) > 0
     assert len(odt) > 0
@@ -321,8 +326,8 @@ def test_spellcheck_identifies_misspelled_words(setup_teardown):
     hunspell = setup_teardown[1]
     # Testovací text s preklepom
     text = "Toto je príkladd textu."
-    doc = Service.full_nlp(text, nlp, NLP_BATCH_SIZE, Config())
-    Service.spellcheck(hunspell, doc)
+    doc = NlpService.full_analysis(text, nlp, NLP_BATCH_SIZE, Config())
+    SpellcheckService.spellcheck(hunspell, doc)
     # Slovo "príkladd" by malo byť označené ako preklep
     assert doc[2].text == "príkladd"
     assert doc[2]._.has_grammar_error
@@ -333,8 +338,8 @@ def test_spellcheck_ignores_correct_words(setup_teardown):
     nlp = setup_teardown[0]
     hunspell = setup_teardown[1]
     text = "Toto je príklad textu."
-    doc = Service.full_nlp(text, nlp, NLP_BATCH_SIZE, Config())
-    Service.spellcheck(hunspell, doc)
+    doc = NlpService.full_analysis(text, nlp, NLP_BATCH_SIZE, Config())
+    SpellcheckService.spellcheck(hunspell, doc)
     # Žiadne slová by nemali byť označené ako chybné
     for token in doc:
         assert not token._.has_grammar_error
@@ -344,8 +349,8 @@ def test_spellcheck_handles_diacritics(setup_teardown):
     nlp = setup_teardown[0]
     hunspell = setup_teardown[1]
     text = "Mám rád slovenské slová s diakritikou."
-    doc = Service.full_nlp(text, nlp, NLP_BATCH_SIZE, Config())
-    Service.spellcheck(hunspell, doc)
+    doc = NlpService.full_analysis(text, nlp, NLP_BATCH_SIZE, Config())
+    SpellcheckService.spellcheck(hunspell, doc)
     # Slová s diakritikou by mali byť správne vyhodnotené
     for token in doc:
         assert not token._.has_grammar_error
@@ -355,8 +360,8 @@ def test_spellcheck_identifies_unknown_words(setup_teardown):
     nlp = setup_teardown[0]
     hunspell = setup_teardown[1]
     text = "Používam program Horekarpat pre vývoj aplikácií."
-    doc = Service.full_nlp(text, nlp, NLP_BATCH_SIZE, Config())
-    Service.spellcheck(hunspell, doc)
+    doc = NlpService.full_analysis(text, nlp, NLP_BATCH_SIZE, Config())
+    SpellcheckService.spellcheck(hunspell, doc)
     # Predpokladáme, že slovo "Horekarpat" nie je v slovníku
     for token in doc:
         if token.text == "Horekarpat":
@@ -370,8 +375,8 @@ def test_spellcheck_correct_usage_of_i_plural_masculine(setup_teardown):
     nlp = setup_teardown[0]
     hunspell = setup_teardown[1]
     text = "Pekní chlapci prišli na návštevu."
-    doc = Service.full_nlp(text, nlp, NLP_BATCH_SIZE, Config())
-    Service.spellcheck(hunspell, doc)
+    doc = NlpService.full_analysis(text, nlp, NLP_BATCH_SIZE, Config())
+    SpellcheckService.spellcheck(hunspell, doc)
     # Slová by nemali byť označené ako chybné
     for token in doc:
         assert not token._.has_grammar_error
@@ -381,8 +386,8 @@ def test_spellcheck_wrong_usage_of_y_plural_masculine(setup_teardown):
     nlp = setup_teardown[0]
     hunspell = setup_teardown[1]
     text = "Pekný chlapci prišli na návštevu."
-    doc = Service.full_nlp(text, nlp, NLP_BATCH_SIZE, Config())
-    Service.spellcheck(hunspell, doc)
+    doc = NlpService.full_analysis(text, nlp, NLP_BATCH_SIZE, Config())
+    SpellcheckService.spellcheck(hunspell, doc)
     # Slovo "Pekný" je nesprávne v tomto kontexte
     assert doc[0].text == "Pekný"
     assert doc[0]._.has_grammar_error
@@ -393,8 +398,8 @@ def test_spellcheck_correct_usage_of_y_singular_masculine(setup_teardown):
     nlp = setup_teardown[0]
     hunspell = setup_teardown[1]
     text = "Pekný chlapec prišiel na návštevu."
-    doc = Service.full_nlp(text, nlp, NLP_BATCH_SIZE, Config())
-    Service.spellcheck(hunspell, doc)
+    doc = NlpService.full_analysis(text, nlp, NLP_BATCH_SIZE, Config())
+    SpellcheckService.spellcheck(hunspell, doc)
     # Slová by nemali byť označené ako chybné
     for token in doc:
         assert not token._.has_grammar_error
@@ -404,8 +409,8 @@ def test_spellcheck_wrong_usage_of_i_singular_masculine(setup_teardown):
     nlp = setup_teardown[0]
     hunspell = setup_teardown[1]
     text = "Milí chlapec prišiel na návštevu."
-    doc = Service.full_nlp(text, nlp, NLP_BATCH_SIZE, Config())
-    Service.spellcheck(hunspell, doc)
+    doc = NlpService.full_analysis(text, nlp, NLP_BATCH_SIZE, Config())
+    SpellcheckService.spellcheck(hunspell, doc)
     # Slovo "Pekní" je nesprávne v tomto kontexte
     assert doc[0].text == "Milí"
     assert doc[0]._.has_grammar_error
@@ -416,8 +421,8 @@ def test_spellcheck_handles_special_characters(setup_teardown):
     nlp = setup_teardown[0]
     hunspell = setup_teardown[1]
     text = "Máme 20 kusov a cena je 15 € za kus."
-    doc = Service.full_nlp(text, nlp, NLP_BATCH_SIZE, Config())
-    Service.spellcheck(hunspell, doc)
+    doc = NlpService.full_analysis(text, nlp, NLP_BATCH_SIZE, Config())
+    SpellcheckService.spellcheck(hunspell, doc)
     # Čísla a symboly by nemali byť označené ako chybné
     for token in doc:
         if not token.is_alpha:
@@ -429,8 +434,8 @@ def test_spellcheck_checks_non_literal_words(setup_teardown):
     nlp = setup_teardown[0]
     hunspell = setup_teardown[1]
     text = " ".join(NON_LITERAL_WORDS.keys())
-    doc = Service.full_nlp(text, nlp, NLP_BATCH_SIZE, Config())
-    Service.spellcheck(hunspell, doc)
+    doc = NlpService.full_analysis(text, nlp, NLP_BATCH_SIZE, Config())
+    SpellcheckService.spellcheck(hunspell, doc)
     for token in doc:
         assert token._.has_grammar_error
         assert token._.grammar_error_type == GRAMMAR_ERROR_NON_LITERAL_WORD
@@ -440,8 +445,8 @@ def test_spellcheck_sso_adpositions(setup_teardown):
     nlp = setup_teardown[0]
     hunspell = setup_teardown[1]
     text = "Prišiel zo susedou. Odišiel z otcom. Prišiel so susedou. Odišiel s otcom."
-    doc = Service.full_nlp(text, nlp, NLP_BATCH_SIZE, Config())
-    Service.spellcheck(hunspell, doc)
+    doc = NlpService.full_analysis(text, nlp, NLP_BATCH_SIZE, Config())
+    SpellcheckService.spellcheck(hunspell, doc)
     assert doc[1]._.has_grammar_error
     assert doc[1]._.grammar_error_type == GRAMMAR_ERROR_Z_INSTEAD_OF_S
     assert doc[5]._.has_grammar_error
@@ -456,8 +461,8 @@ def test_spellcheck_zzo_adpositions(setup_teardown):
     nlp = setup_teardown[0]
     hunspell = setup_teardown[1]
     text = "Odišiel so školy. Prehodil s kopy. Odišiel zo školy. Prehodil z kopy."
-    doc = Service.full_nlp(text, nlp, NLP_BATCH_SIZE, Config())
-    Service.spellcheck(hunspell, doc)
+    doc = NlpService.full_analysis(text, nlp, NLP_BATCH_SIZE, Config())
+    SpellcheckService.spellcheck(hunspell, doc)
     assert doc[1]._.has_grammar_error
     assert doc[1]._.grammar_error_type == GRAMMAR_ERROR_S_INSTEAD_OF_Z
     assert doc[5]._.has_grammar_error
@@ -488,8 +493,8 @@ def test_spellcheck_svoj_moj_tvoj_nas_vas(setup_teardown):
         "Daj to mojím učiteľom."
     ]
     text = " ".join(sentences)
-    doc = Service.full_nlp(text, nlp, NLP_BATCH_SIZE, Config())
-    Service.spellcheck(hunspell, doc)
+    doc = NlpService.full_analysis(text, nlp, NLP_BATCH_SIZE, Config())
+    SpellcheckService.spellcheck(hunspell, doc)
     for token in doc:
         if token.lemma_ in ['môj', 'tvoj', 'svoj']:
             assert token._.has_grammar_error
@@ -516,8 +521,8 @@ def test_spellcheck_correct_svoj_moj_tvoj_nas_vas(setup_teardown):
         "Daj to mojim učiteľom."
     ]
     text = " ".join(sentences)
-    doc = Service.full_nlp(text, nlp, NLP_BATCH_SIZE, Config())
-    Service.spellcheck(hunspell, doc)
+    doc = NlpService.full_analysis(text, nlp, NLP_BATCH_SIZE, Config())
+    SpellcheckService.spellcheck(hunspell, doc)
     for token in doc:
         if token.lemma_ in ['môj', 'tvoj', 'svoj']:
             assert not token._.has_grammar_error
@@ -527,8 +532,8 @@ def test_spellcheck_ignore_literal_words_correct_form(setup_teardown):
     nlp = setup_teardown[0]
     hunspell = setup_teardown[1]
     text = " ".join(NON_LITERAL_WORDS.values())
-    doc = Service.full_nlp(text, nlp, NLP_BATCH_SIZE, Config())
-    Service.spellcheck(hunspell, doc)
+    doc = NlpService.full_analysis(text, nlp, NLP_BATCH_SIZE, Config())
+    SpellcheckService.spellcheck(hunspell, doc)
     for token in doc:
         assert not token._.has_grammar_error
         assert not token._.grammar_error_type == GRAMMAR_ERROR_NON_LITERAL_WORD
@@ -538,8 +543,8 @@ def test_spellcheck_checks_non_literal_phrases(setup_teardown):
     nlp = setup_teardown[0]
     hunspell = setup_teardown[1]
     text = "Chápem tomu. Chápem aj tomu. Nechápem ani tomu. Aj tomu chápem."
-    doc = Service.full_nlp(text, nlp, NLP_BATCH_SIZE, Config())
-    Service.spellcheck(hunspell, doc)
+    doc = NlpService.full_analysis(text, nlp, NLP_BATCH_SIZE, Config())
+    SpellcheckService.spellcheck(hunspell, doc)
     for token in doc:
         if token.lower_ == "tomu":
             assert token._.has_grammar_error
@@ -550,8 +555,8 @@ def test_spellcheck_handles_hyphenated_words(setup_teardown):
     nlp = setup_teardown[0]
     hunspell = setup_teardown[1]
     text = "Červeno-biely dres je veľmi pekný."
-    doc = Service.full_nlp(text, nlp, NLP_BATCH_SIZE, Config())
-    Service.spellcheck(hunspell, doc)
+    doc = NlpService.full_analysis(text, nlp, NLP_BATCH_SIZE, Config())
+    SpellcheckService.spellcheck(hunspell, doc)
     # Skontrolujeme, či sú slová so spojovníkom správne vyhodnotené
     for token in doc:
         if token.text in ["Červeno-biely"]:
@@ -563,8 +568,8 @@ def test_spellcheck_performance_on_large_text(setup_teardown):
     hunspell = setup_teardown[1]
     # Vygenerujeme veľký text
     text = ("Toto je testovací text. " * 1000) + "Nesprávneslovo."
-    doc = Service.full_nlp(text, nlp, NLP_BATCH_SIZE, Config())
-    Service.spellcheck(hunspell, doc)
+    doc = NlpService.full_analysis(text, nlp, NLP_BATCH_SIZE, Config())
+    SpellcheckService.spellcheck(hunspell, doc)
     # Posledné slovo "Nesprávneslovo" by malo byť označené ako preklep
     assert doc[-2].text == "Nesprávneslovo"  # Predpokladáme, že posledný token je bodka
     assert doc[-2]._.has_grammar_error
@@ -575,12 +580,12 @@ def test_spellcheck_optimizes_on_small_changes(setup_teardown):
     nlp = setup_teardown[0]
     hunspell = setup_teardown[1]
     text = ("Toto je text.\n" * 1000)
-    doc = Service.full_nlp(text, nlp, NLP_BATCH_SIZE, Config())
-    Service.spellcheck(hunspell, doc)
+    doc = NlpService.full_analysis(text, nlp, NLP_BATCH_SIZE, Config())
+    SpellcheckService.spellcheck(hunspell, doc)
     # Simulujeme malú zmenu v texte
     text_changed = "Toto je testovacíy text. " + text
-    doc_changed = Service.partial_nlp(text_changed, doc, nlp, Config(), 10)
-    Service.spellcheck(hunspell, doc_changed)
+    doc_changed = NlpService.partial_analysis(text_changed, doc, nlp, Config(), 10)
+    SpellcheckService.spellcheck(hunspell, doc_changed)
     # Skontrolujeme, či je iba zmenený token označený ako chybný
     for token in doc_changed:
         if token.text == "testovacíy":
@@ -594,8 +599,8 @@ def test_spellcheck_handles_empty_document(setup_teardown):
     nlp = setup_teardown[0]
     hunspell = setup_teardown[1]
     text = ""
-    doc = Service.full_nlp(text, nlp, NLP_BATCH_SIZE, Config())
-    Service.spellcheck(hunspell, doc)
+    doc = NlpService.full_analysis(text, nlp, NLP_BATCH_SIZE, Config())
+    SpellcheckService.spellcheck(hunspell, doc)
     # Nemalo by dôjsť k výnimke
     assert len(doc) == 0
 
@@ -614,21 +619,21 @@ def test_config_save_load(setup_teardown):
     c = Config()
     c.analysis_settings.long_sentence_words_high = 999
     c_path = f"{CONFIG_FILE_PATH}.test"
-    Service.save_config(c, c_path)
-    c = Service.load_config(c_path)
+    ConfigService.save(c, c_path)
+    c = ConfigService.load(c_path)
     assert c.analysis_settings.long_sentence_words_high == 999
 
 
 def test_export_sentences(setup_teardown):
     nlp = setup_teardown[0]
-    doc = Service.full_nlp(TEST_TEXT_1, nlp, NLP_BATCH_SIZE, Config())
-    Service.export_sentences(SENTENCES_FILE, doc, False)
+    doc = NlpService.full_analysis(TEST_TEXT_1, nlp, NLP_BATCH_SIZE, Config())
+    ExportService.export_sentences(SENTENCES_FILE, doc, False)
     assert os.path.isfile(SENTENCES_FILE)
     with open(SENTENCES_FILE, 'r', encoding='utf-8') as file:
         sents = file.read()
     assert sents == f'{TEST_TEXT_1}\n'
     os.remove(SENTENCES_FILE)
-    Service.export_sentences(SENTENCES_FILE, doc, True)
+    ExportService.export_sentences(SENTENCES_FILE, doc, True)
     assert os.path.isfile(SENTENCES_FILE)
     with open(SENTENCES_FILE, 'r', encoding='utf-8') as file:
         sents = file.read()
@@ -640,8 +645,8 @@ def test_metadata_save_load(setup_teardown):
     m = Metadata()
     m.recent_files = ["TEST"]
     m_path = f"{METADATA_FILE_PATH}.test"
-    Service.save_metadata(m, m_path)
-    m = Service.load_metadata(m_path)
+    MetadataService.save(m, m_path)
+    m = MetadataService.load(m_path)
     assert m.recent_files[0] == "TEST"
 
 
@@ -659,15 +664,15 @@ def test_offline_updates(setup_teardown, monkeypatch):
 def test_dictionary_upgrades(setup_teardown, monkeypatch):
     github_token = setup_teardown[3]
     github_user = setup_teardown[4]
-    result = Service.upgrade_dictionaries(github_token, github_user)
+    result = SpellcheckService.upgrade_dictionaries(github_token, github_user)
     assert result is not None
     assert result["thesaurus"] is not None
     assert result["spellcheck"] is not None
     TestUtils.disable_socket(monkeypatch)
-    result = Service.upgrade_dictionaries(github_token, github_user)
+    result = SpellcheckService.upgrade_dictionaries(github_token, github_user)
     assert result is None
     TestUtils.enable_socket(monkeypatch)
-    result = Service.upgrade_dictionaries(github_token, github_user)
+    result = SpellcheckService.upgrade_dictionaries(github_token, github_user)
     assert result is not None
     assert result["thesaurus"] is not None
     assert result["spellcheck"] is not None
@@ -677,9 +682,9 @@ def test_dictionary_upgrades(setup_teardown, monkeypatch):
 def test_offline_initialization(request):
     if os.path.isdir(DATA_DIRECTORY):
         shutil.rmtree(DATA_DIRECTORY)
-    nlp = Service.initialize_nlp()
-    dictionaries = Service.initialize_dictionaries(github_token=request.config.option.github_token,
-                                                   github_user=request.config.option.github_user)
+    nlp = NlpService.initialize()
+    dictionaries = SpellcheckService.initialize(github_token=request.config.option.github_token,
+                                                github_user=request.config.option.github_user)
     spellcheck_dictionary = dictionaries["spellcheck"]
     thesaurus = dictionaries["thesaurus"]
     assert not nlp
