@@ -208,13 +208,13 @@ def test_partial_nlp(setup_teardown):
     assert doc1._.total_chars == len(TEST_TEXT_4_CHANGE_AT_START.replace('\n', ''))
     assert doc1.text == TEST_TEXT_4_CHANGE_AT_START
     doc2 = NlpService.partial_analysis(TEST_TEXT_4_CHANGE_AT_END, original_doc, nlp, Config(),
-                               len(TEST_TEXT_4_CHANGE_AT_END) - 1)
+                                       len(TEST_TEXT_4_CHANGE_AT_END) - 1)
     assert doc2 is not None
     assert isinstance(doc2, Doc)
     assert doc2._.total_chars == len(TEST_TEXT_4_CHANGE_AT_END.replace('\n', ''))
     assert doc2.text == TEST_TEXT_4_CHANGE_AT_END
     doc3 = NlpService.partial_analysis(TEST_TEXT_4_CHANGE_IN_MID, original_doc, nlp, Config(),
-                               897)
+                                       897)
     assert doc3 is not None
     assert isinstance(doc3, Doc)
     assert doc3._.total_chars == len(TEST_TEXT_4_CHANGE_AT_END.replace('\n', ''))

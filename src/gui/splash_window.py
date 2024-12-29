@@ -34,7 +34,7 @@ class SplashWindow:
         logo_holder.pack()
         # SHOW VERSION INFORMATION UNDER LOGO
         tk.Label(self.main_frame, text=f"Verzia {Utils.get_version_info()}", background=PRIMARY_COLOR,
-                               font=(HELVETICA_FONT_NAME, 10), foreground="#ffffff").pack()
+                 font=(HELVETICA_FONT_NAME, 10), foreground="#ffffff").pack()
         self.status = tk.Label(self.main_frame, text="inicializujem...", background=PRIMARY_COLOR,
                                font=(HELVETICA_FONT_NAME, 10), foreground="#ffffff")
         self.status.pack()
