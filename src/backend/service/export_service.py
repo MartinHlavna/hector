@@ -25,3 +25,9 @@ class ExportService:
                 text += '\n'
         with open(path, 'w', encoding='utf-8') as file:
             file.write(text)
+
+    @staticmethod
+    def export_text_file(file_path, text):
+        if file_path:
+            with open(file_path, 'w', encoding='utf-8') as file:
+                file.write(text)

@@ -316,7 +316,7 @@ class MainWindow:
         next_search_button.pack(side=tk.RIGHT, padx=2)
         next_search_button.bind("<Button-1>", self.next_search)
         self.search_field = ttk.Entry(search_frame, width=22, background=TEXT_EDITOR_BG)
-        self.search_field.bind('<KeyRelease>', self.search_debounced)
+        self.search_field.bind('<KeyRelease>', self._search_debounced)
         self.search_field.bind('<Return>', self.next_search)
         self.search_field.bind('<Shift-Return>', self.prev_search)
         self.search_field.pack(padx=0)
@@ -390,7 +390,7 @@ class MainWindow:
         self.text_editor.unbind('<Control-Y>')
         self.text_editor.unbind('<Control-Shift-z>')
         self.text_editor.unbind('<Control-Shift-Z>')
-        self.text_editor.bind("<KeyRelease>", self.analyze_text_debounced)
+        self.text_editor.bind("<KeyRelease>", self._analyze_text_debounced)
         self.text_editor.bind("<Button-1>", lambda e: self.root.after(0, self.introspect))
         self.text_editor.bind("<Control-a>", self.select_all)
         self.text_editor.bind("<Control-A>", self.select_all)
@@ -810,22 +810,23 @@ class MainWindow:
         self.tooltip.hide()
         self.last_tags = set()
 
+    def undo(self, event=None):
+        self.text_editor.edit_undo()
+        self.analyze_text()
+        return 'break'
+
+    def redo(self, event=None):
+        self.text_editor.edit_redo()
+        self.analyze_text()
+        return 'break'
+
     # LOAD TEXT FILE
     def load_file_contents(self, file_path=None):
         if not file_path:
-            while len(self.metadata.recent_files) > 0 and file_path is None:
-                file_path = self.metadata.recent_files[0]
-                if not os.path.isfile(file_path):
-                    file_path = None
-                    self.metadata.recent_files.pop(0)
+            file_path = MetadataService.get_recent_file(self.metadata, file_path)
         if file_path:
             text = ImportService.import_document(file_path)
-            # AK SA POLOZKA V LISTE UZ NACHADZA, PRESUNIEM JU NA ZACIATOK, INAK NA ZACIATOK VLOZIM NOVU POLOZKU
-            if file_path in self.metadata.recent_files:
-                self.metadata.recent_files.remove(file_path)
-            self.metadata.recent_files.insert(0, file_path)
-            if len(self.metadata.recent_files) > 10:
-                self.metadata.recent_files.pop()
+            MetadataService.put_recent_file(self.metadata, file_path)
             MetadataService.save(self.metadata, METADATA_FILE_PATH)
             self.text_editor.delete(1.0, tk.END)
             self.text_editor.insert(tk.END, text)
@@ -846,10 +847,8 @@ class MainWindow:
     # SAVE TEXT FILE
     def save_file(self):
         file_path = filedialog.asksaveasfilename(defaultextension=".txt", filetypes=[("Textové súbory", "*.txt")])
-        if file_path:
-            with open(file_path, 'w', encoding='utf-8') as file:
-                text = self.text_editor.get(1.0, tk.END)
-                file.write(text)
+        text = self.text_editor.get(1.0, tk.END)
+        ExportService.export_text_file(file_path, text)
 
     # SAVE SETTINGS TO FILE
     def export_settings(self):
@@ -857,8 +856,7 @@ class MainWindow:
                                                  confirmoverwrite=True,
                                                  filetypes=[("Nastavenia programu Hector", "*.hector.conf")])
         if file_path:
-            with open(file_path, 'w', encoding='utf-8') as file:
-                json.dump(self.config.to_dict(), file, indent=4)
+            ConfigService.save(self.config, file_path)
 
     # IMPORT SETTINGS FROM A FILE
     def import_settings(self):
@@ -867,11 +865,7 @@ class MainWindow:
         )
         self.config = ConfigService.load(file_path)
         ConfigService.save(self.config, CONFIG_FILE_PATH)
-
-    def undo(self, event=None):
-        self.text_editor.edit_undo()
-        self.analyze_text()
-        return 'break'
+        self.analyze_text(True)
 
     def export_sentences(self, event=None):
         add_more_blank_lines = messagebox.askyesnocancel("Zalomenie textu", "Pridať medzi vety prázdny riadok?")
@@ -881,11 +875,6 @@ class MainWindow:
         file_path = filedialog.asksaveasfilename(defaultextension=".txt", filetypes=[("Textové súbory", "*.txt")])
         if file_path:
             ExportService.export_sentences(file_path, self.doc, add_more_blank_lines)
-        return 'break'
-
-    def redo(self, event=None):
-        self.text_editor.edit_redo()
-        self.analyze_text()
         return 'break'
 
     # HANDLE CLIPBOARD PASTE
@@ -988,9 +977,10 @@ class MainWindow:
         self.introspect(event)
 
     # RUN ANALYSIS ONE SECOND AFTER LAST CHANGE
-    def analyze_text_debounced(self, event):
+    def _analyze_text_debounced(self, event):
         if self.analyze_text_debounce_timer is not None:
             self.root.after_cancel(self.analyze_text_debounce_timer)
+        # PREVENT STANDARD ANALYSIS ON CTRL+V
         if event.state & 0x0004 and event.keysym != 'v':
             return
         self.analyze_text_debounce_timer = self.root.after(NLP_DEBOUNCE_LENGTH, self.analyze_text)
@@ -1085,7 +1075,7 @@ class MainWindow:
         self.text_editor.tag_raise(CURRENT_SEARCH_RESULT_TAG_NAME)
 
     # RUN SEARCH ONE SECOND AFTER LAST CHANGE
-    def search_debounced(self, event=None):
+    def _search_debounced(self, event=None):
         if self.search_debounce_timer is not None:
             self.root.after_cancel(self.search_debounce_timer)
         self.search_debounce_timer = self.root.after(1000, self.search_text)
@@ -1155,6 +1145,10 @@ class MainWindow:
         splash.update_status("aktualizujem a reinicializujem slovníky...")
         dictionaries = SpellcheckService.upgrade_dictionaries()
         splash.close()
+        if platform.system() == "Windows" or platform.system() == "Darwin":
+            self.root.state("zoomed")
+        else:
+            self.root.attributes('-zoomed', True)
         if dictionaries is not None:
             self.spellcheck_dictionary = dictionaries["spellcheck"]
             self.thesaurus = dictionaries["thesaurus"]
