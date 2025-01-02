@@ -5,7 +5,6 @@
 ![GitHub License](https://img.shields.io/github/license/MartinHlavna/hector)
 ![Static Badge](https://img.shields.io/badge/python-3.9%20%7C%203.10%20%7C%203.11%20%7C%203.12-blue)
 
-
 # Hector
 
 ![hector logo](https://github.com/MartinHlavna/hector/blob/main/images/hector-logo-white-bg-socials.png?raw=true)
@@ -44,12 +43,11 @@ konzolu z ktorej je možné v prípade chyby odčítať problém.
 
 ### Súbory:
 
-| Súbor | Stiahnuť |
-|------|----------|
-| hector-linux-amd64.bin | [Download](https://github.com/MartinHlavna/hector/releases/download/v.0.11.4-beta/hector-linux-amd64.bin) |
+| Súbor                          | Stiahnuť                                                                                                          |
+|--------------------------------|-------------------------------------------------------------------------------------------------------------------|
+| hector-linux-amd64.bin         | [Download](https://github.com/MartinHlavna/hector/releases/download/v.0.11.4-beta/hector-linux-amd64.bin)         |
 | hector-windows-amd64-debug.exe | [Download](https://github.com/MartinHlavna/hector/releases/download/v.0.11.4-beta/hector-windows-amd64-debug.exe) |
-| hector-windows-amd64.exe | [Download](https://github.com/MartinHlavna/hector/releases/download/v.0.11.4-beta/hector-windows-amd64.exe) |
-
+| hector-windows-amd64.exe       | [Download](https://github.com/MartinHlavna/hector/releases/download/v.0.11.4-beta/hector-windows-amd64.exe)       |
 
 <!-- END DOWNLOAD LINKS -->
 
@@ -60,11 +58,14 @@ konfigurovateľný nástroj, ktorý automaticky analyzuje a vyhodnocuje text. Ci
 problémov, ktoré má autor určite opraviť, ale len zvýrazniť potenciálne problematické časti. Konečné rozhodnutie je vždy
 na autorovi.
 
+### Aktuálny stav projektu
+Aktuálna stable verzia je plnohodnotný nástroj pre finálne editovanie textu.
+
 ### Aktuálny cieľ projektu
 
-Momentálny focus projektu sa sústredí na vytvorenie verzie [1.0.0](https://github.com/MartinHlavna/hector/milestone/2).
-Táto verzia by mala byť plnohodnotným štylistickým korektorom, ktorý poskytuje základné funkcie dobre, je stabilný a má
-praktické využitie. Súčasný stav projektu je tomuto cieľu veľmi bizko.
+V [ďalšej verzii](https://github.com/MartinHlavna/hector/milestone/3) programu sa chystá zavedenie projektov. Projekt
+bude základným pracovným priestorom, v ktorom bude možné mať v jednotnom formáte informácie o svete, rôzne poviedky a
+ich verzie, či dlhšie dielo rozdelené po kapitolách.
 
 ### Dlhodobý cieľ projektu
 
@@ -209,21 +210,26 @@ Odstrániť medzery na konci odstavcov.
 - Kvalita závisí od dostupných slovníkov
 
 #### Kontrola predložiek s/so a z/zo
+
 - Program označí ako chybné použitie predložky **s/so** s iným pádom ako inštrumentálom
 - Program označí ako chybné použitie predložky **z/zo** s iným pádom ako genitívom
 
 #### Kontrola i/í pri použití zvratných zámen svoj, môj, tvoj, náš, váš
+
 - Program označí ako chybný tvar mojim pri použití s inštrumentálom jednotného čísla (napr. S mojim psom)
 - Program označí ako chybný tvar mojím pri použití s datívom množného čísla (napr. Daj mojím psom)
-- Nie všetky tvary je možné skontrolovať. Z testovacej sady kontrola úspešne odhalí 11 zo 14 prípadov. Ďalšie spresňovanie už označuje ako chybné aj niektoré správne tvary viď [#67](https://github.com/MartinHlavna/hector/issues/67)
+- Nie všetky tvary je možné skontrolovať. Z testovacej sady kontrola úspešne odhalí 11 zo 14 prípadov. Ďalšie
+  spresňovanie už označuje ako chybné aj niektoré správne tvary
+  viď [#67](https://github.com/MartinHlavna/hector/issues/67)
+
 #### Kontrola spisovnosti
 
 - Program označí ako chyby nasledovné výrazy:
-  - môžte namiesto spisovného môžete
-  - môžme namiesto spisovného môžeme
-  - tohoto namiesto spisovného tohto
-  - výraz chápať tomu namiesto spisovného chápeť to v rôznych variantoch (napr. chápem tomu, nechápem tomu, chápeš aj tomu, …)
-
+    - môžte namiesto spisovného môžete
+    - môžme namiesto spisovného môžeme
+    - tohoto namiesto spisovného tohto
+    - výraz chápať tomu namiesto spisovného chápeť to v rôznych variantoch (napr. chápem tomu, nechápem tomu, chápeš aj
+      tomu, …)
 
 #### Kontrola í/ý v niektorých prípadoch
 
@@ -401,7 +407,8 @@ data/dictionary/sk-skspell     -- slovenský slovník projektu skspell
 data/dictionary/sk-libreoffice -- slovenský slovník projektu LibreOffice
 ```
 
-Od verzie 0.11.0 Hector pri prvom štarte automaticky sťahuje slovenský model pre [MorphoDiTa](https://ufal.mff.cuni.cz/morphodita).:
+Od verzie 0.11.0 Hector pri prvom štarte automaticky sťahuje slovenský model
+pre [MorphoDiTa](https://ufal.mff.cuni.cz/morphodita).:
 
 ```
 data/morphodita     -- jazykový model pre spracovanie prirodzeného jazyka pomocou morfologického analyzátora MorphoDiTa
@@ -417,7 +424,8 @@ rozširovanie. [Model](https://github.com/MartinHlavna/hector-spacy-model), ktor
 projektu [Slovak Universal Dependencies](https://universaldependencies.org/treebanks/sk_snk/index.html) (Licencia CC
 BY-SA 4.0).
 
-Okrem toho program kombinuje výsledky spacy modelu aj s morfologickým analyzátorom [MorphoDiTa](https://ufal.mff.cuni.cz/morphodita).
+Okrem toho program kombinuje výsledky spacy modelu aj s morfologickým
+analyzátorom [MorphoDiTa](https://ufal.mff.cuni.cz/morphodita).
 
 ### Slovníky
 
