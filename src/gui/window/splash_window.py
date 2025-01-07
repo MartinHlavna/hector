@@ -44,7 +44,6 @@ class SplashWindow:
     # CLOSE SPLASH WINDOW
     def close(self):
         self.splash.destroy()
-        self.root.after(10, self.root.deiconify)
 
     # UPDATE STATUS LINE TO CUSTOM TEXT AND FORCE GUI TO UPDATE
     def update_status(self, text):

@@ -9,6 +9,37 @@ class Metadata:
         if data is None:
             data = {}
         self.recent_files = data.get('recent_files', [])
+        self.recent_projects = []
+        for rp in data.get('recent_projects', []):
+            self.recent_projects.append(RecentProject(rp))
+
+    def to_dict(self):
+        recent_projects_maps = []
+        for recent_project in self.recent_projects:
+            recent_projects_maps.append(recent_project.to_dict())
+        """
+        Exports the current state of the object to a dictionary.
+
+        :return: Dictionary containing the current state of the object.
+        """
+        return {
+            "recent_files": self.recent_files,
+            "recent_projects": recent_projects_maps,
+        }
+
+
+class RecentProject:
+    def __init__(self, data=None):
+        """
+        Constructor accepts a dictionary and sets the class attributes.
+        If a key is not provided in the dictionary, the default value is used.
+
+        :param data: Dictionary containing the data to initialize the object. If not provided, default values are used.
+        """
+        if data is None:
+            data = {}
+        self.name = data.get('name', [])
+        self.path = data.get('path', [])
 
     def to_dict(self):
         """
@@ -17,5 +48,6 @@ class Metadata:
         :return: Dictionary containing the current state of the object.
         """
         return {
-            "recent_files": self.recent_files,
+            "name": self.name,
+            "path": self.path,
         }

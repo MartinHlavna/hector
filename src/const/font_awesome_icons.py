@@ -1,5 +1,6 @@
 class FontAwesomeIcons:
     file = '\uf15b'
+    folder = '\uf07b'
     floppy_disk = '\uf0c7'
     rotate_left = '\uf2ea'
     rotate_right = '\uf2f9'
