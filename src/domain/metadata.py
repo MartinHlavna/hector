@@ -9,6 +9,7 @@ class Metadata:
         if data is None:
             data = {}
         self.recent_files = data.get('recent_files', [])
+        self.recent_projects = data.get('recent_projects', [])
 
     def to_dict(self):
         """
@@ -18,4 +19,5 @@ class Metadata:
         """
         return {
             "recent_files": self.recent_files,
+            "recent_projects": self.recent_projects,
         }
