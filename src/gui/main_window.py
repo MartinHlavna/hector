@@ -70,29 +70,13 @@ class MainWindow:
     def __init__(self, r, _nlp: spacy, spellcheck_dictionary: Hunspell, thesaurus: PyThes, has_available_update: bool):
         self.root = r
         r.overrideredirect(False)
-        style = ttk.Style(self.root)
-        # CUSTOM SCROLLBAR
-        style.configure("Vertical.TScrollbar", gripcount=0, troughcolor=PRIMARY_COLOR, bordercolor=PRIMARY_COLOR,
-                        background=ACCENT_COLOR, lightcolor=ACCENT_COLOR, darkcolor=ACCENT_2_COLOR)
 
-        style.layout('arrowless.Vertical.TScrollbar',
-                     [('Vertical.Scrollbar.trough',
-                       {'children': [('Vertical.Scrollbar.thumb',
-                                      {'expand': '1', 'sticky': 'nswe'})],
-                        'sticky': 'ns'})])
         screen_width = self.root.winfo_screenwidth()
         screen_height = self.root.winfo_screenheight()
         self.root.geometry("800x600")
         x = screen_width / 2 - (800 / 2)
         y = screen_height / 2 - (600 / 2)
         self.root.geometry("+%d+%d" % (x, y))
-        # OPEN WINDOW IN MAXIMIZED STATE
-        # FOR WINDOWS AND MAC OS SET STATE ZOOMED
-        # FOR LINUX SET ATTRIBUTE ZOOMED
-        if platform.system() == "Windows" or platform.system() == "Darwin":
-            self.root.state("zoomed")
-        else:
-            self.root.attributes('-zoomed', True)
         self.nlp = _nlp
         self.spellcheck_dictionary = spellcheck_dictionary
         self.thesaurus = thesaurus
