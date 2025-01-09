@@ -2,6 +2,7 @@ import math
 import os.path
 import platform
 import tkinter as tk
+from functools import partial
 from tkinter import ttk, filedialog, messagebox
 
 from PIL import ImageTk, Image
@@ -29,7 +30,7 @@ class ProjectSelectorWindow:
         self.root = r
         width = 800
         height = 600
-        self.selector_window = tk.Toplevel()
+        self.selector_window = tk.Toplevel(self.root)
         self.selector_window.geometry(f"{width}x{height}")
         screen_width = self.root.winfo_screenwidth()
         screen_height = self.root.winfo_screenheight()
@@ -38,6 +39,7 @@ class ProjectSelectorWindow:
         self.selector_window.geometry("+%d+%d" % (x, y))
         self.root.update()
         self.root.withdraw()
+        self.selector_window.protocol("WM_DELETE_WINDOW", self.on_close)
         # MAIN FRAME
         self.main_frame = tk.Frame(self.selector_window, background=TEXT_EDITOR_FRAME_BG)
         self.main_frame.pack(expand=1, fill=tk.BOTH, side=tk.LEFT)
@@ -92,9 +94,9 @@ class ProjectSelectorWindow:
             project_path = ttk.Label(project_frame, foreground=PANEL_TEXT_COLOR, background=TEXT_EDITOR_FRAME_BG,
                                      text=recent_project.path)
             project_path.pack(fill=tk.X)
-            project_frame.bind("<Button-1>", lambda e: self.open_recent_project(recent_project))
-            project_name.bind("<Button-1>", lambda e: self.open_recent_project(recent_project))
-            project_path.bind("<Button-1>", lambda e: self.open_recent_project(recent_project))
+            project_frame.bind("<Button-1>", partial(self.open_recent_project, recent_project))
+            project_name.bind("<Button-1>", partial(self.open_recent_project, recent_project))
+            project_path.bind("<Button-1>", partial(self.open_recent_project, recent_project))
             ttk.Separator(project_frame, style='Grey.TSeparator').pack(fill=tk.X)
         # NEW PROJECT FORM
         self.new_project_frame = tk.Frame(midlle_frame, background=TEXT_EDITOR_FRAME_BG, borderwidth=0)
@@ -178,7 +180,7 @@ class ProjectSelectorWindow:
         project = ProjectService.load(file_path)
         self.open_project(project, file_path)
 
-    def open_recent_project(self, project: RecentProject):
+    def open_recent_project(self, project: RecentProject, e=None):
         if not os.path.isfile(project.path):
             metadata = MetadataService.load(METADATA_FILE_PATH)
             MetadataService.remove_recent_project(metadata, project.path)
@@ -234,6 +236,10 @@ class ProjectSelectorWindow:
             path_parts = list(os.path.split(folder_selected))
             path_parts[-1] = self.project_name_entry_var.get().replace(' ', '_')
             self.project_location_entry_var.set(os.path.join(*path_parts))
+
+    # PROPAGATE CLOSE TO ENTIE APP IF USER CLOSES THIS WINDOW
+    def on_close(self):
+        self.root.destroy()
 
     # CLOSE SPLASH WINDOW
     def close(self):

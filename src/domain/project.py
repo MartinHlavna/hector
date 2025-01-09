@@ -1,5 +1,7 @@
 from enum import Enum
 
+from src.const.values import CURRENT_PROJECT_VERSION
+
 
 class Project:
     def __init__(self, data=None):
@@ -12,6 +14,7 @@ class Project:
         if data is None:
             data = {}
         self.name = data.get('name', None)
+        self.version = data.get('version', CURRENT_PROJECT_VERSION)
         self.description = data.get('description', None)
         self.items = []
         for i in data.get('items', []):
@@ -24,9 +27,16 @@ class Project:
 
         :return: Dictionary containing the current state of the object.
         """
+        items = []
+        for i in self.items:
+            item = i.to_dict()
+            items.append(item)
         return {
             'name': self.name,
-            'description': self.description
+            'description': self.description,
+            'version': self.version,
+            'items': items
+
         }
 
 

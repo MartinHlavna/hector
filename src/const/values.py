@@ -12,3 +12,4 @@ MORPHODITA_MODEL_LINK = (f"https://lindat.mff.cuni.cz/repository/xmlui/bitstream
 NLP_BATCH_SIZE = 8000
 VERSION = "1.0.0"
 GITHUB_REPO = "MartinHlavna/hector"
+CURRENT_PROJECT_VERSION = 1
