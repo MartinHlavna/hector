@@ -84,11 +84,11 @@ class NlpService:
                     ]
             )
             infix_re = compile_infix_regex(infixes)
-            nlp.tokenizer = Tokenizer(nlp.vocab, prefix_search=nlp.tokenizer.prefix_search,
-                                      suffix_search=nlp.tokenizer.suffix_search,
-                                      infix_finditer=infix_re.finditer,
-                                      token_match=nlp.tokenizer.token_match,
-                                      rules=nlp.Defaults.tokenizer_exceptions)
+            nlp.tokenizer = HectorTokenizer(Tokenizer(nlp.vocab, prefix_search=nlp.tokenizer.prefix_search,
+                                                      suffix_search=nlp.tokenizer.suffix_search,
+                                                      infix_finditer=infix_re.finditer,
+                                                      token_match=nlp.tokenizer.token_match,
+                                                      rules=nlp.Defaults.tokenizer_exceptions))
             # ADD SENTENCIZER SO MORPHODITA CAN WORK ON AT LEAST SOME SENTENCES
             nlp.add_pipe('sentencizer', after='trainable_lemmatizer')
             # ADD CUSTOM COMPONENT FOR MORPHODITA
@@ -115,7 +115,7 @@ class NlpService:
             Doc.set_extension("paragraphs", default=[], force=True)
             Doc.set_extension("unique_words", default=[], force=True)
             Doc.set_extension("lemmas", default=[], force=True)
-            Doc.set_extension("total_chars", default=0, force=True)
+            Doc.set_extension("total_chars", default=0, force=False)
             Doc.set_extension("total_words", default=0, force=True)
             Doc.set_extension("total_unique_words", default=0, force=True)
             Doc.set_extension("total_pages", default=0, force=True)
@@ -130,8 +130,8 @@ class NlpService:
     # METHOD THAT RUNS FULL NLP ANALYSIS
     @staticmethod
     def full_analysis(text, nlp: spacy, batch_size, config: Config):
-        doc = Doc.from_docs(list(nlp.pipe([re.sub(r"\s", " ", text)], batch_size=batch_size)), nlp)
-        NlpService.fill_custom_data(doc, config)
+        doc = Doc.from_docs(list(nlp.pipe([text], batch_size=batch_size)), nlp)
+        NlpService.fill_custom_data(text, doc, config)
         return doc
 
     # METHOD THAT RUNS PARTIAL NLP BASED ON PARAGRAPHS AROUND CARRET POSITION
@@ -162,7 +162,7 @@ class NlpService:
             last_token = nbor._.paragraph[len(nbor._.paragraph) - 1]
         # RUN NLP ON SELECTED TEXT
         changed_portion_of_text = text[start:(end + len(text) - len(original_doc.text))]
-        partial_document = nlp(re.sub(r"\s", " ", changed_portion_of_text))
+        partial_document = nlp(changed_portion_of_text)
         # MERGE DOCUMENTS:
         # 1. FROM START OF DOCUMENT TO START OF SELECTION
         # 2. SELECTION - WITH FRESH NLP RESULTS
@@ -175,12 +175,12 @@ class NlpService:
             documents.append(original_doc[last_token.i + 1:].as_doc())
         doc = Doc.from_docs(documents, ensure_whitespace=False)
         # RECOMPUTE CUSTOM DATA ON MERGED DOCUMENT.
-        NlpService.fill_custom_data(doc, config)
+        NlpService.fill_custom_data(text, doc, config)
         return doc
 
     # METHOD THAT ADDS ALL EXTENSION DATA IN SINGLE PASS OVER ALL TOKENS
     @staticmethod
-    def fill_custom_data(doc: Doc, config: Config):
+    def fill_custom_data(original_text: str, doc: Doc, config: Config):
         word_pattern = re.compile("\\w+")
         words = []
         word_index = 0
@@ -204,7 +204,7 @@ class NlpService:
         doc._.words = words
         doc._.unique_words = unique_words
         doc._.lemmas = unique_lemmas
-        doc._.total_chars = len(doc.text.replace('\n', ''))
+        doc._.total_chars = len(original_text.replace('\n', ''))
         doc._.total_words = len(words)
         doc._.total_unique_words = len(unique_words)
         doc._.total_pages = round(doc._.total_chars / 1800, 2)
@@ -347,3 +347,14 @@ class NlpService:
     @staticmethod
     def find_trailing_spaces(doc: Doc):
         return re.finditer(PATTERN_TRAILING_SPACES, doc.text, re.MULTILINE)
+
+
+class HectorTokenizer:
+    def __init__(self, tokenizer):
+        self.tokenizer = tokenizer
+
+    def __call__(self, string):
+        doc = self.tokenizer(Utils.normalize_spaces(string))
+        return doc
+
+

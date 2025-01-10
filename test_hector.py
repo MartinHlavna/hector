@@ -1,5 +1,6 @@
 import os
 import platform
+import re
 import shutil
 
 import pytest
@@ -206,19 +207,19 @@ def test_partial_nlp(setup_teardown):
     assert doc1 is not None
     assert isinstance(doc1, Doc)
     assert doc1._.total_chars == len(TEST_TEXT_4_CHANGE_AT_START.replace('\n', ''))
-    assert doc1.text == TEST_TEXT_4_CHANGE_AT_START
+    assert doc1.text == Utils.normalize_spaces(TEST_TEXT_4_CHANGE_AT_START)
     doc2 = NlpService.partial_analysis(TEST_TEXT_4_CHANGE_AT_END, original_doc, nlp, Config(),
                                        len(TEST_TEXT_4_CHANGE_AT_END) - 1)
     assert doc2 is not None
     assert isinstance(doc2, Doc)
     assert doc2._.total_chars == len(TEST_TEXT_4_CHANGE_AT_END.replace('\n', ''))
-    assert doc2.text == TEST_TEXT_4_CHANGE_AT_END
+    assert doc2.text == Utils.normalize_spaces(TEST_TEXT_4_CHANGE_AT_END)
     doc3 = NlpService.partial_analysis(TEST_TEXT_4_CHANGE_IN_MID, original_doc, nlp, Config(),
                                        897)
     assert doc3 is not None
     assert isinstance(doc3, Doc)
     assert doc3._.total_chars == len(TEST_TEXT_4_CHANGE_AT_END.replace('\n', ''))
-    assert doc3.text == TEST_TEXT_4_CHANGE_IN_MID
+    assert doc3.text == Utils.normalize_spaces(TEST_TEXT_4_CHANGE_IN_MID)
 
 
 # TEST IF CUSTOM_EXTENSION ARE CORRECTLY FILLES

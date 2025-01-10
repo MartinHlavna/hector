@@ -107,3 +107,8 @@ class Utils:
     def remove_accents(text):
         nfkd_form = unicodedata.normalize('NFD', text)
         return ''.join([c for c in nfkd_form if not unicodedata.combining(c)])
+
+    # METHOD THAT NORMALIZES UNICODE SPACES TO SIMPLE SPACE
+    @staticmethod
+    def normalize_spaces(text):
+        return re.sub(r"[^\S\n]", " ", text, flags=re.UNICODE)
