@@ -10,6 +10,7 @@ import webbrowser
 from tkinter import filedialog, ttk, messagebox
 
 from PIL import ImageTk, Image
+from PIL.ImageOps import expand
 from reportlab.graphics import renderPM
 from spacy import displacy
 from spacy.tokens import Doc
@@ -232,9 +233,23 @@ class MainWindow:
         bottom_panel.pack(fill=tk.BOTH, side=tk.BOTTOM)
         # LEFT PANEL CONTENTS
         left_panel_notebook = ttk.Notebook(left_side_panel, style="panel.TNotebook")
-        left_panel_notebook.pack(fill=tk.BOTH)
+        left_panel_notebook.pack(fill=tk.BOTH, expand=True)
         left_side_panel_project = tk.Frame(left_panel_notebook, width=300, relief=tk.FLAT, borderwidth=1, background=PRIMARY_COLOR)
         left_side_panel_project.pack(fill=tk.BOTH, side=tk.LEFT, expand=0)
+        tk.Label(left_side_panel_project, pady=10, background=PRIMARY_COLOR, foreground=PANEL_TEXT_COLOR,
+                 wraplength=300,
+                 text=f"{self.ctx.project.name}",
+                 font=(HELVETICA_FONT_NAME, TEXT_SIZE_SECTION_HEADER), anchor='n',
+                 padx=10,
+                 justify='left').pack(fill=tk.X)
+        tk.Label(left_side_panel_project, pady=10, background=PRIMARY_COLOR, foreground=PANEL_TEXT_COLOR,
+                 wraplength=300,
+                 text=f"{self.ctx.project.description}",
+                 anchor='n',
+                 padx=10,
+                 justify='left').pack(fill=tk.X)
+        separator = ttk.Separator(left_side_panel_project, orient='horizontal')
+        separator.pack(fill=tk.X, padx=10)
         left_side_panel_tools = tk.Frame(left_panel_notebook, width=300, relief=tk.FLAT, borderwidth=1, background=PRIMARY_COLOR)
         left_side_panel_tools.pack(fill=tk.BOTH, side=tk.LEFT, expand=0)
         left_panel_notebook.add(left_side_panel_project, text="Projekt")
