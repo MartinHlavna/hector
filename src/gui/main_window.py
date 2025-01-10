@@ -9,10 +9,7 @@ import tkinter as tk
 import webbrowser
 from tkinter import filedialog, ttk, messagebox
 
-import spacy
 from PIL import ImageTk, Image
-from hunspell import Hunspell
-from pythes import PyThes
 from reportlab.graphics import renderPM
 from spacy import displacy
 from spacy.tokens import Doc
@@ -26,7 +23,7 @@ from src.backend.service.import_service import ImportService
 from src.backend.service.metadata_service import MetadataService
 from src.backend.service.nlp_service import NlpService
 from src.backend.service.spellcheck_service import SpellcheckService
-from src.const.colors import PRIMARY_COLOR, ACCENT_COLOR, ACCENT_2_COLOR, TEXT_EDITOR_FRAME_BG, PANEL_TEXT_COLOR, \
+from src.const.colors import PRIMARY_COLOR, ACCENT_2_COLOR, TEXT_EDITOR_FRAME_BG, PANEL_TEXT_COLOR, \
     TEXT_EDITOR_BG, EDITOR_TEXT_COLOR, CLOSE_WORDS_PALLETE, LONG_SENTENCE_HIGHLIGHT_COLOR_MID, \
     LONG_SENTENCE_HIGHLIGHT_COLOR_HIGH, SEARCH_RESULT_HIGHLIGHT_COLOR, CURRENT_SEARCH_RESULT_HIGHLIGHT_COLOR
 from src.const.font_awesome_icons import FontAwesomeIcons
