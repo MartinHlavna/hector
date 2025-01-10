@@ -76,6 +76,7 @@ class MainWindow:
         y = screen_height / 2 - (600 / 2)
         self.root.geometry("+%d+%d" % (x, y))
         self.ctx = RunContext()
+        r.title(f"{self.ctx.project.name} | Hector")
         # TIMERS FOR DEBOUNCING CHANGE EVENTS
         self.analyze_text_debounce_timer = None
         self.search_debounce_timer = None
@@ -230,34 +231,42 @@ class MainWindow:
         bottom_panel = tk.Frame(text_editor_frame, background=ACCENT_2_COLOR, height=20)
         bottom_panel.pack(fill=tk.BOTH, side=tk.BOTTOM)
         # LEFT PANEL CONTENTS
-        self.introspection_text = tk.Text(left_side_panel, highlightthickness=0, bd=0, wrap=tk.WORD, state=tk.DISABLED,
+        left_panel_notebook = ttk.Notebook(left_side_panel, style="panel.TNotebook")
+        left_panel_notebook.pack(fill=tk.BOTH)
+        left_side_panel_project = tk.Frame(left_panel_notebook, width=300, relief=tk.FLAT, borderwidth=1, background=PRIMARY_COLOR)
+        left_side_panel_project.pack(fill=tk.BOTH, side=tk.LEFT, expand=0)
+        left_side_panel_tools = tk.Frame(left_panel_notebook, width=300, relief=tk.FLAT, borderwidth=1, background=PRIMARY_COLOR)
+        left_side_panel_tools.pack(fill=tk.BOTH, side=tk.LEFT, expand=0)
+        left_panel_notebook.add(left_side_panel_project, text="Projekt")
+        left_panel_notebook.add(left_side_panel_tools, text="Nástroje")
+        self.introspection_text = tk.Text(left_side_panel_tools, highlightthickness=0, bd=0, wrap=tk.WORD, state=tk.DISABLED,
                                           width=30, background=PRIMARY_COLOR, foreground=PANEL_TEXT_COLOR, height=30,
                                           font=(HELVETICA_FONT_NAME, 9), insertbackground=PANEL_TEXT_COLOR,
                                           )
         if ENABLE_DEBUG_DEP_IMAGE:
-            self.dep_image_holder = ttk.Label(left_side_panel, width=30)
+            self.dep_image_holder = ttk.Label(left_side_panel_tools, width=30)
             self.dep_image_holder.pack(pady=10, padx=10, side=tk.BOTTOM)
             self.dep_image_holder.bind("<Button-1>", self.show_dep_image)
         MainWindow.set_text(self.introspection_text, 'Kliknite na slovo v editore')
         self.introspection_text.pack(fill=tk.X, pady=10, padx=10, side=tk.BOTTOM)
-        separator = ttk.Separator(left_side_panel, orient='horizontal')
+        separator = ttk.Separator(left_side_panel_tools, orient='horizontal')
         separator.pack(fill=tk.X, padx=10, side=tk.BOTTOM)
-        tk.Label(left_side_panel, pady=10, background=PRIMARY_COLOR, foreground=PANEL_TEXT_COLOR,
+        tk.Label(left_side_panel_tools, pady=10, background=PRIMARY_COLOR, foreground=PANEL_TEXT_COLOR,
                  text="Introspekcia",
                  font=(HELVETICA_FONT_NAME, TEXT_SIZE_SECTION_HEADER), anchor='n',
                  justify='left').pack(side=tk.BOTTOM)
-        tk.Label(left_side_panel, pady=10, background=PRIMARY_COLOR, foreground=PANEL_TEXT_COLOR,
+        tk.Label(left_side_panel_tools, pady=10, background=PRIMARY_COLOR, foreground=PANEL_TEXT_COLOR,
                  text="Často sa opakujúce slová",
                  font=(HELVETICA_FONT_NAME, TEXT_SIZE_SECTION_HEADER), anchor='n',
                  justify='left').pack()
-        separator = ttk.Separator(left_side_panel, orient='horizontal')
+        separator = ttk.Separator(left_side_panel_tools, orient='horizontal')
         separator.pack(fill=tk.X, padx=10)
-        left_side_panel_scroll_frame = tk.Frame(left_side_panel, width=10, relief=tk.FLAT, background=PRIMARY_COLOR)
+        left_side_panel_scroll_frame = tk.Frame(left_side_panel_tools, width=10, relief=tk.FLAT, background=PRIMARY_COLOR)
         left_side_panel_scroll_frame.pack(side=tk.RIGHT, fill=tk.Y)
         left_side_frame_scroll = AutoScrollbar(left_side_panel_scroll_frame, orient='vertical',
                                                style='arrowless.Vertical.TScrollbar', takefocus=False)
         left_side_frame_scroll.pack(side=tk.RIGHT, fill=tk.Y)
-        self.close_words_text = tk.Text(left_side_panel, highlightthickness=0, bd=0, wrap=tk.WORD, state=tk.DISABLED,
+        self.close_words_text = tk.Text(left_side_panel_tools, highlightthickness=0, bd=0, wrap=tk.WORD, state=tk.DISABLED,
                                         width=20, background=PRIMARY_COLOR, foreground=PANEL_TEXT_COLOR,
                                         yscrollcommand=left_side_frame_scroll.set, cursor="xterm")
         self.close_words_text.pack(fill=tk.BOTH, expand=1, pady=10, padx=10)

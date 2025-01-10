@@ -11,9 +11,8 @@ from src.backend.run_context import RunContext
 from src.backend.service.import_service import ImportService
 from src.backend.service.nlp_service import NlpService
 from src.backend.service.spellcheck_service import SpellcheckService
-from src.const.colors import ACCENT_COLOR, PRIMARY_COLOR, ACCENT_2_COLOR, GREY
+from src.const.colors import ACCENT_COLOR, PRIMARY_COLOR, ACCENT_2_COLOR, PANEL_TEXT_COLOR
 from src.const.values import VERSION
-from src.gui.main_window import MainWindow
 from src.gui.project_selector_window import ProjectSelectorWindow
 from src.gui.splash_window import SplashWindow
 from src.utils import Utils
@@ -47,6 +46,24 @@ if __name__ == "__main__":
                     'sticky': 'ns'})])
     style.configure("Grey.TSeparator",
                     background=ACCENT_2_COLOR)
+    style.configure("panel.TNotebook",
+                    background=PRIMARY_COLOR,
+                    foreground=PRIMARY_COLOR,
+                    bordercolor=ACCENT_2_COLOR,
+                    darkcolor=PRIMARY_COLOR,
+                    lightcolor=PRIMARY_COLOR
+                    )
+    style.configure("panel.TNotebook.Tab",
+                    background=ACCENT_2_COLOR,
+                    foreground=PANEL_TEXT_COLOR,
+                    bordercolor=ACCENT_2_COLOR,)
+    style.map(
+        "panel.TNotebook.Tab",
+        # "selected" je stav, keď je záložka aktívna
+        background=[("selected", PRIMARY_COLOR)],    # Pozadie aktívnej záložky
+        foreground=[("selected", PANEL_TEXT_COLOR)],    # Text aktívnej záložky
+        bordercolor=[("selected", ACCENT_2_COLOR)],    # Text aktívnej záložky
+    )
     photo = tk.PhotoImage(file=Utils.resource_path('images/hector-icon.png'))
     root.wm_iconphoto(True, photo)
     splash = SplashWindow(root)
