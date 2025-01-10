@@ -130,7 +130,7 @@ class NlpService:
     # METHOD THAT RUNS FULL NLP ANALYSIS
     @staticmethod
     def full_analysis(text, nlp: spacy, batch_size, config: Config):
-        doc = Doc.from_docs(list(nlp.pipe([text], batch_size=batch_size)), nlp)
+        doc = Doc.from_docs(list(nlp.pipe([re.sub(r"\s", " ", text)], batch_size=batch_size)), nlp)
         NlpService.fill_custom_data(doc, config)
         return doc
 
@@ -140,7 +140,7 @@ class NlpService:
         # GET TOKEN ON CARRET POSITION
         span = original_doc.char_span(carret_position, carret_position, alignment_mode='expand')
         if span is not None:
-            changed_paragraph = span.root._.paragraph
+            changed_paragraph = span.sent.root._.paragraph
         else:
             # IF TOKEN ON CARRENT POSITION IS NOT AVAILABLE, CARRET IS AT END OF DOCUMENT
             # WE TAKE LAST PARAGRAPH
@@ -162,7 +162,7 @@ class NlpService:
             last_token = nbor._.paragraph[len(nbor._.paragraph) - 1]
         # RUN NLP ON SELECTED TEXT
         changed_portion_of_text = text[start:(end + len(text) - len(original_doc.text))]
-        partial_document = nlp(changed_portion_of_text)
+        partial_document = nlp(re.sub(r"\s", " ", changed_portion_of_text))
         # MERGE DOCUMENTS:
         # 1. FROM START OF DOCUMENT TO START OF SELECTION
         # 2. SELECTION - WITH FRESH NLP RESULTS

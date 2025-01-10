@@ -991,7 +991,7 @@ class MainWindow:
             MainWindow.set_text(self.introspection_text, 'Kliknite na slovo v editore')
             return
         span = self.doc.char_span(carret_position, carret_position, alignment_mode='expand')
-        if span is not None and self.current_instrospection_token != span.root:
+        if span is not None and len(span.text) > 0 and self.current_instrospection_token != span.root:
             if span.root._.is_word:
                 self.current_instrospection_token = span.root
                 if ENABLE_DEBUG_DEP_IMAGE:
