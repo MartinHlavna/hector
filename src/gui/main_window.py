@@ -19,6 +19,7 @@ from spacy.tokens import Doc
 from svglib.svglib import svg2rlg
 from tkinter_autoscrollbar import AutoScrollbar
 
+from src.backend.run_context import RunContext
 from src.backend.service.config_service import ConfigService
 from src.backend.service.export_service import ExportService
 from src.backend.service.import_service import ImportService
@@ -67,7 +68,7 @@ with open(Utils.resource_path(os.path.join('data_files', 'dep_tag_translations.j
 
 # MAIN GUI WINDOW
 class MainWindow:
-    def __init__(self, r, _nlp: spacy, spellcheck_dictionary: Hunspell, thesaurus: PyThes, has_available_update: bool):
+    def __init__(self, r):
         self.root = r
         r.overrideredirect(False)
 
@@ -77,9 +78,7 @@ class MainWindow:
         x = screen_width / 2 - (800 / 2)
         y = screen_height / 2 - (600 / 2)
         self.root.geometry("+%d+%d" % (x, y))
-        self.nlp = _nlp
-        self.spellcheck_dictionary = spellcheck_dictionary
-        self.thesaurus = thesaurus
+        self.ctx = RunContext()
         # TIMERS FOR DEBOUNCING CHANGE EVENTS
         self.analyze_text_debounce_timer = None
         self.search_debounce_timer = None
@@ -94,7 +93,7 @@ class MainWindow:
         self.last_tags = set()
 
         # DEFAULT NLP DOCUMENT INITIALIZED ON EMPTY TEXT
-        self.doc = self.nlp('')
+        self.doc = self.ctx.nlp('')
         # TOKEN SELECTED IN LEFT BOTTOM INTOSPECTION WINDOW
         self.current_instrospection_token = None
         # EDITOR TEXT SIZE
@@ -105,7 +104,6 @@ class MainWindow:
         self.config = ConfigService.load(CONFIG_FILE_PATH)
         # LOAD METADATA
         self.metadata = MetadataService.load(METADATA_FILE_PATH)
-        self.has_available_update = has_available_update
         # INIT GUI
         # TOP MENU
         # Define menu items
@@ -395,7 +393,7 @@ class MainWindow:
     # START MAIN LOOP
     def start_main_loop(self):
         # START MAIN LOOP TO SHOW ROOT WINDOW
-        if self.has_available_update:
+        if self.ctx.has_available_update:
             self.root.after(1000, self.show_about)
         self.root.mainloop()
 
@@ -788,7 +786,7 @@ class MainWindow:
         return error_messages
 
     def get_hunspell_suggestions(self, token):
-        return ", ".join(self.spellcheck_dictionary.suggest(token.lower_))
+        return ", ".join(self.ctx.spellcheck_dictionary.suggest(token.lower_))
 
     def editor_on_mouse_leave(self, event):
         self.tooltip.hide()
@@ -902,16 +900,16 @@ class MainWindow:
             # PARTIAL NLP
             carret_position = self.get_carret_position()
             if carret_position is not None:
-                self.doc = NlpService.partial_analysis(text, self.doc, self.nlp, self.config, carret_position)
+                self.doc = NlpService.partial_analysis(text, self.doc, self.ctx.nlp, self.config, carret_position)
                 self.text_editor.edit_separator()
             else:
                 # FALLBACK TO FULL NLP
-                self.doc = NlpService.full_analysis(text, self.nlp, NLP_BATCH_SIZE, self.config)
+                self.doc = NlpService.full_analysis(text, self.ctx.nlp, NLP_BATCH_SIZE, self.config)
                 self.text_editor.edit_separator()
         else:
             # FULL NLP
             # FALLBACK TO FULL NLP
-            self.doc = NlpService.full_analysis(text, self.nlp, NLP_BATCH_SIZE, self.config)
+            self.doc = NlpService.full_analysis(text, self.ctx.nlp, NLP_BATCH_SIZE, self.config)
         # CLEAR TAGS
         for tag in self.text_editor.tag_names():
             self.text_editor.tag_delete(tag)
@@ -986,7 +984,7 @@ class MainWindow:
                     dep_view = ImageTk.PhotoImage(dep_image.resize((200, math.ceil(dep_image.height * scaling_ratio))))
                     self.dep_image_holder.config(image=dep_view)
                     self.dep_image_holder.image = dep_view
-                thes_result = self.thesaurus.lookup(self.current_instrospection_token.lemma_)
+                thes_result = self.ctx.thesaurus.lookup(self.current_instrospection_token.lemma_)
                 morph = self.current_instrospection_token.morph.to_dict()
                 formatted_morph = ''.join([f"  {key}:\t{value}\n" for key, value in morph.items()])
 
@@ -1081,7 +1079,7 @@ class MainWindow:
     # RUN SPELLCHECK
     def run_spellcheck(self, doc: Doc):
         if self.config.analysis_settings.enable_spellcheck:
-            SpellcheckService.spellcheck(self.spellcheck_dictionary, doc)
+            SpellcheckService.spellcheck(self.ctx.spellcheck_dictionary, doc)
             for word in self.doc._.words:
                 if word._.has_grammar_error:
                     start_index = f"1.0 + {word.idx} chars"
@@ -1116,7 +1114,7 @@ class MainWindow:
         link = tk.Label(about_window, text="Viac info", fg="blue", cursor="hand2", font=(HELVETICA_FONT_NAME, 10))
         link.pack()
         link.bind("<Button-1>", lambda e: webbrowser.open(DOCUMENTATION_LINK))
-        if self.has_available_update:
+        if self.ctx.has_available_update:
             new_version_button = tk.Label(about_window, text="K dispozícií je nová verzia", fg="blue", cursor="hand2",
                                           font=(HELVETICA_FONT_NAME, 10))
             new_version_button.pack()
@@ -1134,8 +1132,8 @@ class MainWindow:
         else:
             self.root.attributes('-zoomed', True)
         if dictionaries is not None:
-            self.spellcheck_dictionary = dictionaries["spellcheck"]
-            self.thesaurus = dictionaries["thesaurus"]
+            self.ctx.spellcheck_dictionary = dictionaries["spellcheck"]
+            self.ctx.thesaurus = dictionaries["thesaurus"]
         else:
             messagebox.showerror("Chyba!", "Slovníky sa nepodarilo aktualizovať. Skontrolujte internetové pripojenie.")
 

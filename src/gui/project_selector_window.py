@@ -194,8 +194,9 @@ class ProjectSelectorWindow:
         MetadataService.put_recent_project(metadata, project, file_path)
         MetadataService.save(metadata, METADATA_FILE_PATH)
         ctx = RunContext()
+        ctx.project = project
         self.close()
-        main_window = MainWindow(self.root, ctx.nlp, ctx.spellcheck_dictionary, ctx.thesaurus, ctx.has_available_update)
+        main_window = MainWindow(self.root)
         main_window.start_main_loop()
 
     def open_new_project_form(self):
