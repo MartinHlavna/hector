@@ -9,7 +9,7 @@ reportlab~=4.2.5
 pytest~=8.3.4
 pythes @ git+https://github.com/corerd/pythes
 tkinter-autoscrollbar @ git+https://github.com/MartinHlavna/tkinter-autoscrollbar
-pypandoc~=1.14
+pypandoc~=1.15
 requests~=2.32.3
 semver~=3.0.2
 ufal.morphodita~=1.11.2.1
