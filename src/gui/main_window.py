@@ -250,6 +250,10 @@ class MainWindow:
                  justify='left').pack(fill=tk.X)
         separator = ttk.Separator(left_side_panel_project, orient='horizontal')
         separator.pack(fill=tk.X, padx=10)
+        self.project_tree = ttk.Treeview(left_side_panel_project, show="tree", style="panel.Treeview")
+        self.project_tree_root = self.project_tree.insert("", 0, text=self.ctx.project.name, open=True)
+        self.project_tree.pack(fill=tk.BOTH, expand=1, padx=10, pady=10)
+        # FIXME: Build tree from project files
         left_side_panel_tools = tk.Frame(left_panel_notebook, width=300, relief=tk.FLAT, borderwidth=1, background=PRIMARY_COLOR)
         left_side_panel_tools.pack(fill=tk.BOTH, side=tk.LEFT, expand=0)
         left_panel_notebook.add(left_side_panel_project, text="Projekt")
