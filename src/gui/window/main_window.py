@@ -40,10 +40,12 @@ from src.const.tags import CLOSE_WORD_PREFIX, LONG_SENTENCE_TAG_NAME_HIGH, LONG_
     FREQUENT_WORD_PREFIX, FREQUENT_WORD_TAG_NAME, COMPUTER_QUOTE_MARKS_TAG_NAME, DANGLING_QUOTE_MARK_TAG_NAME, \
     SHOULD_USE_LOWER_QUOTE_MARK_TAG_NAME, SHOULD_USE_UPPER_QUOTE_MARK_TAG_NAME, FORMATTING_TAGS, CLOSE_WORD_RANGE_PREFIX
 from src.const.values import READABILITY_MAX_VALUE, DOCUMENTATION_LINK, NLP_BATCH_SIZE
+from src.domain.project import ProjectItemType
 from src.gui.modal.analysis_settings_modal import AnalysisSettingsModal
 from src.gui.modal.appearance_settings_modal import AppearanceSettingsModal
 from src.gui.gui_utils import GuiUtils
 from src.gui.menu import MenuItem, TopMenu, MenuSeparator
+from src.gui.modal.new_file_modal import NewFileModal
 from src.gui.window.splash_window import SplashWindow
 from src.gui.tooltip import Tooltip
 from src.utils import Utils
@@ -114,7 +116,7 @@ class MainWindow:
                                   icon=GuiUtils.fa_image(FA_SOLID, "#3B3B3B", "white", FontAwesomeIcons.file, 16),
                                   highlight_icon=GuiUtils.fa_image(FA_SOLID, "white", "#3B3B3B",
                                                                    FontAwesomeIcons.file, 16),
-                                  shortcut_label="Ctrl+N"),
+                                  shortcut_label="Ctrl+N", shortcut="<Control-n>"),
                          MenuSeparator(),
                          MenuItem(label="Importovať", command=self.import_file, shortcut="<Control-o>",
                                   icon=GuiUtils.fa_image(FA_SOLID, "#3B3B3B", "white", FontAwesomeIcons.file_import, 16),
@@ -261,7 +263,7 @@ class MainWindow:
         self.project_tree = ttk.Treeview(left_side_panel_project, show="tree", style="panel.Treeview")
         self.project_tree_root = self.project_tree.insert("", 0, text=self.ctx.project.name, open=True)
         self.project_tree.pack(fill=tk.BOTH, expand=1, padx=10, pady=10)
-        # FIXME: Build tree from project files
+        self._show_project_files()
         left_side_panel_tools = tk.Frame(left_panel_notebook, width=300, relief=tk.FLAT, borderwidth=1,
                                          background=PRIMARY_COLOR)
         left_side_panel_tools.pack(fill=tk.BOTH, side=tk.LEFT, expand=0)
@@ -853,8 +855,8 @@ class MainWindow:
 
     # LOAD TEXT FILE
     def open_new_file_dialog(self):
-        pass
-        # FIXME: Dialog na vytvorenie nového súboru
+        modal = NewFileModal(self.root, self._show_project_files)
+        self.configure_modal(modal.toplevel, height=100, width=400)
 
     # LOAD TEXT FILE
     def import_file(self):
@@ -1210,3 +1212,12 @@ class MainWindow:
         modal.grab_set()
         modal.focus_set()
         modal.transient(self.root)
+
+    def _show_project_files(self):
+        items = self.project_tree.get_children(self.project_tree_root)
+        if len(items) > 0:
+            for item in items:
+                self.project_tree.delete(item)
+        for item in self.ctx.project.items:
+            if item.type == ProjectItemType.HTEXT:
+                self.project_tree.insert(self.project_tree_root, tk.END, text=item.name)

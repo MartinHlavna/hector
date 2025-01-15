@@ -4,7 +4,7 @@ from src.const.values import CURRENT_PROJECT_VERSION
 
 
 class Project:
-    def __init__(self, data=None):
+    def __init__(self, data=None, path=None):
         """
         Constructor accepts a dictionary and sets the class attributes.
         If a key is not provided in the dictionary, the default value is used.
@@ -16,6 +16,7 @@ class Project:
         self.name = data.get('name', None)
         self.version = data.get('version', CURRENT_PROJECT_VERSION)
         self.description = data.get('description', None)
+        self.path = path
         self.items = []
         for i in data.get('items', []):
             item = ProjectItem(i)
@@ -52,6 +53,7 @@ class ProjectItem:
             data = {}
         self.type = data.get('type', ProjectItemType.UNKNOWN)
         self.path = data.get('path', '')
+        self.name = data.get('name', '')
         self.imported_path = data.get('imported_path', '')
 
     def to_dict(self):
@@ -61,12 +63,13 @@ class ProjectItem:
         :return: Dictionary containing the current state of the object.
         """
         return {
+            'name': self.name,
             'type': self.type,
             'path': self.path,
             'imported_path': self.imported_path,
         }
 
 
-class ProjectItemType(Enum):
-    UNKNOWN = 1
-    HTEXT = 2
+class ProjectItemType(str, Enum):
+    UNKNOWN = "UNKNOWN"
+    HTEXT = "HTEXT"

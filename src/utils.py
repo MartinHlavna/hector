@@ -112,3 +112,7 @@ class Utils:
     @staticmethod
     def normalize_spaces(text):
         return re.sub(r"[^\S\n]", " ", text, flags=re.UNICODE)
+
+    @staticmethod
+    def normalize_file_name(name):
+        return Utils.remove_accents(name).lower().replace(' ', '_')

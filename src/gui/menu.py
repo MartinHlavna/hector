@@ -106,7 +106,7 @@ class TopMenu:
                 self.shortcuts[shortcut] = self.shortcuts[shortcut] = partial(self._execute_command, command)
             if item.submenu is not None:
                 for submenu_item in item.submenu:
-                    if submenu_item is MenuItem and submenu_item.shortcut:
+                    if submenu_item.shortcut:
                         self.shortcuts[submenu_item.shortcut] = partial(self._execute_command, submenu_item.command)
 
             self.menu_buttons.append(button)

@@ -218,7 +218,7 @@ class ProjectSelectorWindow:
         project.description = description
         if not os.path.isdir(folder_selected):
             os.makedirs(folder_selected)
-        project_file_path = os.path.join(folder_selected, f"{name.replace(' ', '_')}.hproj")
+        project_file_path = os.path.join(folder_selected, f"{Utils.normalize_file_name(name)}.hproj")
         ProjectService.save(project, project_file_path)
         self.open_project(project, project_file_path)
 
@@ -229,7 +229,10 @@ class ProjectSelectorWindow:
     def select_new_project_location(self):
         folder_selected = filedialog.askdirectory(mustexist=False)
         if folder_selected is not None:
-            self.project_location_entry_var.set(os.path.join(folder_selected, self.project_name_entry_var.get().replace(' ', '_')))
+            self.project_location_entry_var.set(os.path.join(
+                folder_selected,
+                Utils.normalize_file_name(self.project_name_entry_var.get())
+            ))
 
     def on_project_name_change(self, a, b, c):
         folder_selected = self.project_location_entry_var.get()
