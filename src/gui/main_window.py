@@ -109,12 +109,12 @@ class MainWindow:
         menu_items = [
             MenuItem(label="Súbor",
                      underline_index=0,
-                     submenu=[MenuItem(label="Otvoriť", command=self.load_file, shortcut="<Control-o>",
+                     submenu=[MenuItem(label="Importovať", command=self.import_file, shortcut="<Control-o>",
                                        icon=GuiUtils.fa_image(FA_SOLID, "#3B3B3B", "white", FontAwesomeIcons.file, 16),
                                        highlight_icon=GuiUtils.fa_image(FA_SOLID, "white", "#3B3B3B",
                                                                         FontAwesomeIcons.file, 16),
                                        shortcut_label="Ctrl+O"),
-                              MenuItem(label="Otvoriť posledný súbor", command=self.load_file_contents,
+                              MenuItem(label="Reimportovať", command=self.import_file_contents,
                                        shortcut="<Control-r>",
                                        icon=GuiUtils.fa_image(FA_SOLID, "#3B3B3B", "white", FontAwesomeIcons.rotate,
                                                               16),
@@ -122,15 +122,15 @@ class MainWindow:
                                                                         FontAwesomeIcons.rotate,
                                                                         16),
                                        shortcut_label="Ctrl+R"),
-                              MenuItem(label="Uložiť",
-                                       command=self.save_file,
-                                       shortcut="<Control-s>",
+                              MenuItem(label="Exportovať",
+                                       command=self.export_file,
+                                       shortcut="<Control-e>",
                                        icon=GuiUtils.fa_image(FA_SOLID, "#3B3B3B", "white",
                                                               FontAwesomeIcons.floppy_disk, 16),
                                        highlight_icon=GuiUtils.fa_image(FA_SOLID, "white", "#3B3B3B",
                                                                         FontAwesomeIcons.floppy_disk,
                                                                         16),
-                                       shortcut_label="Ctrl+S"),
+                                       shortcut_label="Ctrl+E"),
                               ]),
             MenuItem(label="Upraviť", underline_index=0, submenu=[
                 MenuItem(
@@ -828,7 +828,7 @@ class MainWindow:
         return 'break'
 
     # LOAD TEXT FILE
-    def load_file_contents(self, file_path=None):
+    def import_file_contents(self, file_path=None):
         if not file_path:
             file_path = MetadataService.get_recent_file(self.metadata)
         if file_path:
@@ -840,7 +840,7 @@ class MainWindow:
             self.analyze_text(True)
 
     # LOAD TEXT FILE
-    def load_file(self):
+    def import_file(self):
         file_path = filedialog.askopenfilename(
             filetypes=[
                 ("Textové súbory", "*.txt"),
@@ -849,10 +849,10 @@ class MainWindow:
                 ("RTF dokumenty", "*.rtf"),
             ]
         )
-        self.load_file_contents(file_path)
+        self.import_file_contents(file_path)
 
     # SAVE TEXT FILE
-    def save_file(self):
+    def export_file(self):
         file_path = filedialog.asksaveasfilename(defaultextension=".txt", filetypes=[("Textové súbory", "*.txt")])
         text = self.text_editor.get(1.0, tk.END)
         ExportService.export_text_file(file_path, text)
