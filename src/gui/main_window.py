@@ -44,7 +44,7 @@ from src.const.values import READABILITY_MAX_VALUE, DOCUMENTATION_LINK, NLP_BATC
 from src.gui.analysis_settings_modal import AnalysisSettingsModal
 from src.gui.appearance_settings_modal import AppearanceSettingsModal
 from src.gui.gui_utils import GuiUtils
-from src.gui.menu import MenuItem, TopMenu
+from src.gui.menu import MenuItem, TopMenu, MenuSeparator
 from src.gui.splash_window import SplashWindow
 from src.gui.tooltip import Tooltip
 from src.utils import Utils
@@ -109,29 +109,37 @@ class MainWindow:
         menu_items = [
             MenuItem(label="Súbor",
                      underline_index=0,
-                     submenu=[MenuItem(label="Importovať", command=self.import_file, shortcut="<Control-o>",
-                                       icon=GuiUtils.fa_image(FA_SOLID, "#3B3B3B", "white", FontAwesomeIcons.file, 16),
-                                       highlight_icon=GuiUtils.fa_image(FA_SOLID, "white", "#3B3B3B",
-                                                                        FontAwesomeIcons.file, 16),
-                                       shortcut_label="Ctrl+O"),
-                              MenuItem(label="Reimportovať", command=self.import_file_contents,
-                                       shortcut="<Control-r>",
-                                       icon=GuiUtils.fa_image(FA_SOLID, "#3B3B3B", "white", FontAwesomeIcons.rotate,
-                                                              16),
-                                       highlight_icon=GuiUtils.fa_image(FA_SOLID, "white", "#3B3B3B",
-                                                                        FontAwesomeIcons.rotate,
-                                                                        16),
-                                       shortcut_label="Ctrl+R"),
-                              MenuItem(label="Exportovať",
-                                       command=self.export_file,
-                                       shortcut="<Control-e>",
-                                       icon=GuiUtils.fa_image(FA_SOLID, "#3B3B3B", "white",
-                                                              FontAwesomeIcons.floppy_disk, 16),
-                                       highlight_icon=GuiUtils.fa_image(FA_SOLID, "white", "#3B3B3B",
-                                                                        FontAwesomeIcons.floppy_disk,
-                                                                        16),
-                                       shortcut_label="Ctrl+E"),
-                              ]),
+                     submenu=[
+                         MenuItem(label="Nový",
+                                  command=self.new_file,
+                                  icon=GuiUtils.fa_image(FA_SOLID, "#3B3B3B", "white", FontAwesomeIcons.file, 16),
+                                  highlight_icon=GuiUtils.fa_image(FA_SOLID, "white", "#3B3B3B",
+                                                                   FontAwesomeIcons.file, 16),
+                                  shortcut_label="Ctrl+N"),
+                         MenuSeparator(),
+                         MenuItem(label="Importovať", command=self.import_file, shortcut="<Control-o>",
+                                  icon=GuiUtils.fa_image(FA_SOLID, "#3B3B3B", "white", FontAwesomeIcons.file_import, 16),
+                                  highlight_icon=GuiUtils.fa_image(FA_SOLID, "white", "#3B3B3B",
+                                                                   FontAwesomeIcons.file_import, 16),
+                                  shortcut_label="Ctrl+O"),
+                         MenuItem(label="Reimportovať", command=self.import_file_contents,
+                                  shortcut="<Control-r>",
+                                  icon=GuiUtils.fa_image(FA_SOLID, "#3B3B3B", "white", FontAwesomeIcons.rotate,
+                                                         16),
+                                  highlight_icon=GuiUtils.fa_image(FA_SOLID, "white", "#3B3B3B",
+                                                                   FontAwesomeIcons.rotate,
+                                                                   16),
+                                  shortcut_label="Ctrl+R"),
+                         MenuItem(label="Exportovať",
+                                  command=self.export_file,
+                                  shortcut="<Control-e>",
+                                  icon=GuiUtils.fa_image(FA_SOLID, "#3B3B3B", "white",
+                                                         FontAwesomeIcons.file_export, 16),
+                                  highlight_icon=GuiUtils.fa_image(FA_SOLID, "white", "#3B3B3B",
+                                                                   FontAwesomeIcons.file_export,
+                                                                   16),
+                                  shortcut_label="Ctrl+E"),
+                     ]),
             MenuItem(label="Upraviť", underline_index=0, submenu=[
                 MenuItem(
                     label="Vrátiť späť",
@@ -234,7 +242,8 @@ class MainWindow:
         # LEFT PANEL CONTENTS
         left_panel_notebook = ttk.Notebook(left_side_panel, style="panel.TNotebook")
         left_panel_notebook.pack(fill=tk.BOTH, expand=True)
-        left_side_panel_project = tk.Frame(left_panel_notebook, width=300, relief=tk.FLAT, borderwidth=1, background=PRIMARY_COLOR)
+        left_side_panel_project = tk.Frame(left_panel_notebook, width=300, relief=tk.FLAT, borderwidth=1,
+                                           background=PRIMARY_COLOR)
         left_side_panel_project.pack(fill=tk.BOTH, side=tk.LEFT, expand=0)
         tk.Label(left_side_panel_project, pady=10, background=PRIMARY_COLOR, foreground=PANEL_TEXT_COLOR,
                  wraplength=300,
@@ -254,11 +263,13 @@ class MainWindow:
         self.project_tree_root = self.project_tree.insert("", 0, text=self.ctx.project.name, open=True)
         self.project_tree.pack(fill=tk.BOTH, expand=1, padx=10, pady=10)
         # FIXME: Build tree from project files
-        left_side_panel_tools = tk.Frame(left_panel_notebook, width=300, relief=tk.FLAT, borderwidth=1, background=PRIMARY_COLOR)
+        left_side_panel_tools = tk.Frame(left_panel_notebook, width=300, relief=tk.FLAT, borderwidth=1,
+                                         background=PRIMARY_COLOR)
         left_side_panel_tools.pack(fill=tk.BOTH, side=tk.LEFT, expand=0)
         left_panel_notebook.add(left_side_panel_project, text="Projekt")
         left_panel_notebook.add(left_side_panel_tools, text="Nástroje")
-        self.introspection_text = tk.Text(left_side_panel_tools, highlightthickness=0, bd=0, wrap=tk.WORD, state=tk.DISABLED,
+        self.introspection_text = tk.Text(left_side_panel_tools, highlightthickness=0, bd=0, wrap=tk.WORD,
+                                          state=tk.DISABLED,
                                           width=30, background=PRIMARY_COLOR, foreground=PANEL_TEXT_COLOR, height=30,
                                           font=(HELVETICA_FONT_NAME, 9), insertbackground=PANEL_TEXT_COLOR,
                                           )
@@ -280,12 +291,14 @@ class MainWindow:
                  justify='left').pack()
         separator = ttk.Separator(left_side_panel_tools, orient='horizontal')
         separator.pack(fill=tk.X, padx=10)
-        left_side_panel_scroll_frame = tk.Frame(left_side_panel_tools, width=10, relief=tk.FLAT, background=PRIMARY_COLOR)
+        left_side_panel_scroll_frame = tk.Frame(left_side_panel_tools, width=10, relief=tk.FLAT,
+                                                background=PRIMARY_COLOR)
         left_side_panel_scroll_frame.pack(side=tk.RIGHT, fill=tk.Y)
         left_side_frame_scroll = AutoScrollbar(left_side_panel_scroll_frame, orient='vertical',
                                                style='arrowless.Vertical.TScrollbar', takefocus=False)
         left_side_frame_scroll.pack(side=tk.RIGHT, fill=tk.Y)
-        self.close_words_text = tk.Text(left_side_panel_tools, highlightthickness=0, bd=0, wrap=tk.WORD, state=tk.DISABLED,
+        self.close_words_text = tk.Text(left_side_panel_tools, highlightthickness=0, bd=0, wrap=tk.WORD,
+                                        state=tk.DISABLED,
                                         width=20, background=PRIMARY_COLOR, foreground=PANEL_TEXT_COLOR,
                                         yscrollcommand=left_side_frame_scroll.set, cursor="xterm")
         self.close_words_text.pack(fill=tk.BOTH, expand=1, pady=10, padx=10)
@@ -838,6 +851,11 @@ class MainWindow:
             self.text_editor.delete(1.0, tk.END)
             self.text_editor.insert(tk.END, text)
             self.analyze_text(True)
+
+    # LOAD TEXT FILE
+    def new_file(self):
+        pass
+        # FIXME: Dialog na vytvorenie nového súboru
 
     # LOAD TEXT FILE
     def import_file(self):
