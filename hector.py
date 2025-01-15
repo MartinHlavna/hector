@@ -5,7 +5,6 @@ import sys
 import tkinter as tk
 from tkinter import messagebox, ttk
 
-from pygments.styles.dracula import foreground
 from ttkthemes import ThemedTk
 
 from src.backend.run_context import RunContext
@@ -14,9 +13,8 @@ from src.backend.service.nlp_service import NlpService
 from src.backend.service.spellcheck_service import SpellcheckService
 from src.const.colors import ACCENT_COLOR, PRIMARY_COLOR, ACCENT_2_COLOR, PANEL_TEXT_COLOR, TEXT_EDITOR_FRAME_BG
 from src.const.values import VERSION
-from src.gui.gui_utils import GuiUtils
-from src.gui.project_selector_window import ProjectSelectorWindow
-from src.gui.splash_window import SplashWindow
+from src.gui.window.project_selector_window import ProjectSelectorWindow
+from src.gui.window.splash_window import SplashWindow
 from src.utils import Utils
 
 

@@ -14,13 +14,13 @@ from src.backend.service.project_service import ProjectService
 from src.const.colors import PRIMARY_COLOR, TEXT_EDITOR_FRAME_BG, PANEL_TEXT_COLOR, GREY, TEXT_EDITOR_BG, \
     EDITOR_TEXT_COLOR
 from src.const.font_awesome_icons import FontAwesomeIcons
-from src.const.fonts import HELVETICA_FONT_NAME, TEXT_SIZE_SECTION_HEADER, BOLD_FONT, FA_SOLID
+from src.const.fonts import HELVETICA_FONT_NAME, TEXT_SIZE_SECTION_HEADER, FA_SOLID
 from src.const.paths import METADATA_FILE_PATH
 from src.const.values import VERSION
 from src.domain.metadata import RecentProject
 from src.domain.project import Project
 from src.gui.gui_utils import GuiUtils
-from src.gui.main_window import MainWindow
+from src.gui.window.main_window import MainWindow
 from src.utils import Utils
 
 

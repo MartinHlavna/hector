@@ -10,7 +10,6 @@ import webbrowser
 from tkinter import filedialog, ttk, messagebox
 
 from PIL import ImageTk, Image
-from PIL.ImageOps import expand
 from reportlab.graphics import renderPM
 from spacy import displacy
 from spacy.tokens import Doc
@@ -41,11 +40,11 @@ from src.const.tags import CLOSE_WORD_PREFIX, LONG_SENTENCE_TAG_NAME_HIGH, LONG_
     FREQUENT_WORD_PREFIX, FREQUENT_WORD_TAG_NAME, COMPUTER_QUOTE_MARKS_TAG_NAME, DANGLING_QUOTE_MARK_TAG_NAME, \
     SHOULD_USE_LOWER_QUOTE_MARK_TAG_NAME, SHOULD_USE_UPPER_QUOTE_MARK_TAG_NAME, FORMATTING_TAGS, CLOSE_WORD_RANGE_PREFIX
 from src.const.values import READABILITY_MAX_VALUE, DOCUMENTATION_LINK, NLP_BATCH_SIZE
-from src.gui.analysis_settings_modal import AnalysisSettingsModal
-from src.gui.appearance_settings_modal import AppearanceSettingsModal
+from src.gui.modal.analysis_settings_modal import AnalysisSettingsModal
+from src.gui.modal.appearance_settings_modal import AppearanceSettingsModal
 from src.gui.gui_utils import GuiUtils
 from src.gui.menu import MenuItem, TopMenu, MenuSeparator
-from src.gui.splash_window import SplashWindow
+from src.gui.window.splash_window import SplashWindow
 from src.gui.tooltip import Tooltip
 from src.utils import Utils
 
@@ -111,7 +110,7 @@ class MainWindow:
                      underline_index=0,
                      submenu=[
                          MenuItem(label="Nový",
-                                  command=self.new_file,
+                                  command=self.open_new_file_dialog,
                                   icon=GuiUtils.fa_image(FA_SOLID, "#3B3B3B", "white", FontAwesomeIcons.file, 16),
                                   highlight_icon=GuiUtils.fa_image(FA_SOLID, "white", "#3B3B3B",
                                                                    FontAwesomeIcons.file, 16),
@@ -853,7 +852,7 @@ class MainWindow:
             self.analyze_text(True)
 
     # LOAD TEXT FILE
-    def new_file(self):
+    def open_new_file_dialog(self):
         pass
         # FIXME: Dialog na vytvorenie nového súboru
 
