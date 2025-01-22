@@ -24,9 +24,11 @@ runs:
         headers: true
         verbose: 1
     - name: Save licence check report
+      env:
+        RESULT: ${{  steps.license_check_report.outputs.report }}
       shell: bash
       if: ${{ !cancelled() }}
-      run: echo '${{ steps.license_check_report.outputs.report }}' > license-report.json
+      run: echo "$RESULT" > license-report.json
     - name: Upload license check report artifact
       if: ${{ !cancelled() }}
       uses: actions/upload-artifact@v4
