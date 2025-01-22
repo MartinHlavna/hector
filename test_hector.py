@@ -690,7 +690,7 @@ def test_project_create_and_load():
     desc = 'desc'
     file_name = Utils.normalize_file_name(name)
     if os.path.exists(file_name):
-        shutil.rmtree(file_name)
+        shutil.rmtree(os.path.dirname(file_name))
     p = ProjectService.create_project(name, desc, file_name)
     assert p.name == name
     assert p.description == desc
@@ -699,7 +699,7 @@ def test_project_create_and_load():
     assert p.name == p2.name
     assert p.description == p2.description
     assert p.path == p2.path
-    shutil.rmtree(p.path)
+    shutil.rmtree(os.path.dirname(p.path))
 
 
 def test_project_items():
