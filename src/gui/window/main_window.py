@@ -75,7 +75,10 @@ class MainWindow:
     def __init__(self, r):
         self.root = r
         r.overrideredirect(False)
-
+        if platform.system() == "Windows" or platform.system() == "Darwin":
+            self.root.state("zoomed")
+        else:
+            self.root.attributes('-zoomed', True)
         screen_width = self.root.winfo_screenwidth()
         screen_height = self.root.winfo_screenheight()
         self.root.geometry("800x600")
