@@ -9,11 +9,13 @@ from pythes import PyThes
 from spacy.lang.sk import Slovak
 from spacy.tokens import Doc
 
+from src.backend.run_context import RunContext
 from src.backend.service.config_service import ConfigService
 from src.backend.service.export_service import ExportService
 from src.backend.service.import_service import ImportService
 from src.backend.service.metadata_service import MetadataService
 from src.backend.service.nlp_service import NlpService
+from src.backend.service.project_service import ProjectService
 from src.backend.service.spellcheck_service import SpellcheckService
 from src.const.grammar_error_types import GRAMMAR_ERROR_TYPE_MISSPELLED_WORD, GRAMMAR_ERROR_TYPE_WRONG_Y_SUFFIX, \
     GRAMMAR_ERROR_TYPE_WRONG_I_SUFFIX, NON_LITERAL_WORDS, GRAMMAR_ERROR_NON_LITERAL_WORD, \
@@ -22,7 +24,9 @@ from src.const.grammar_error_types import GRAMMAR_ERROR_TYPE_MISSPELLED_WORD, GR
 from src.const.paths import DATA_DIRECTORY, CONFIG_FILE_PATH, METADATA_FILE_PATH
 from src.const.values import NLP_BATCH_SIZE
 from src.domain.config import Config
+from src.domain.htext_file import HTextFile
 from src.domain.metadata import Metadata
+from src.domain.project import Project, ProjectItemType
 from src.utils import Utils
 from test_utils import TestUtils
 
@@ -197,6 +201,17 @@ def test_basic_nlp(setup_teardown):
     assert isinstance(doc, Doc)
 
 
+# TEST RUN CONTEXT
+def test_run_context(setup_teardown):
+    nlp = setup_teardown[0]
+    ctx1 = RunContext()
+    ctx1.nlp = nlp
+    ctx2 = RunContext()
+    assert ctx1.nlp == nlp
+    assert ctx2.nlp == nlp
+    assert ctx1 == ctx2
+
+
 # TEST IF PARTIAL NLP IS WORKING
 def test_partial_nlp(setup_teardown):
     nlp = setup_teardown[0]
@@ -269,7 +284,7 @@ def test_find_dangling_quote_marks(setup_teardown):
 def test_readability(setup_teardown):
     nlp = setup_teardown[0]
     doc = NlpService.full_analysis(TEST_TEXT_4, nlp, NLP_BATCH_SIZE, Config())
-    assert NlpService.evaluate_readability(doc) == 8
+    assert NlpService.compute_readability(doc) == 8
 
 
 def test_word_frequencies(setup_teardown):
@@ -652,6 +667,62 @@ def test_metadata_save_load(setup_teardown):
     ExportService.export_text_file("test.txt", "TEST")
     MetadataService.put_recent_file(m, "test.txt")
     assert MetadataService.get_recent_file(m) == "test.txt"
+
+
+def test_metadata_recent_projects():
+    m = Metadata()
+    for i in range(1, 11):
+        p = Project()
+        p.name = f'Test {i}'
+        MetadataService.put_recent_project(m, p, f'test{i}.hproj')
+    assert len(m.recent_projects) == 10
+    p = Project()
+    p.name = 'Test 5'
+    MetadataService.put_recent_project(m, p, 'test5.hproj')
+    assert len(m.recent_projects) == 10
+    assert m.recent_projects[0].name == 'Test 5'
+    MetadataService.remove_recent_project(m, "test5.hproj")
+    assert m.recent_projects[0].name != 'Test 5'
+
+
+def test_project_create_and_load():
+    name = 'testovací projekt'
+    desc = 'desc'
+    file_name = Utils.normalize_file_name(name)
+    if os.path.exists(file_name):
+        shutil.rmtree(file_name)
+    p = ProjectService.create_project(name, desc, file_name)
+    assert p.name == name
+    assert p.description == desc
+    assert p.path is not None
+    p2 = ProjectService.load(p.path)
+    assert p.name == p2.name
+    assert p.description == p2.description
+    assert p.path == p2.path
+    shutil.rmtree(p.path)
+
+
+def test_project_items():
+    name = 'testovací projekt'
+    desc = 'desc'
+    file_name = Utils.normalize_file_name(name)
+    if os.path.exists(file_name):
+        shutil.rmtree(file_name)
+    p = ProjectService.create_project(name, desc, file_name)
+    item = ProjectService.new_item(p, "001", None, ProjectItemType.HTEXT)
+    item.contents = HTextFile(TEST_TEXT_1)
+    ProjectService.save_file_contents(p, item)
+    item.contents = None
+    item2 = ProjectService.load_file_contents(p, item)
+    assert item2.raw_text == TEST_TEXT_1
+    dir_item = ProjectService.new_item(p, "tests", None, ProjectItemType.DIRECTORY)
+    subitem = ProjectService.new_item(p, "002", dir_item, ProjectItemType.HTEXT)
+    assert subitem.path == os.path.join(dir_item.path, "002.htext")
+    assert subitem.path != os.path.join(os.path.dirname(p.path), "data", "002.htext")
+    print(subitem.path)
+    ProjectService.delete_item(p, subitem, dir_item)
+    assert len(dir_item.subitems) == 0
+    shutil.rmtree(os.path.dirname(p.path))
 
 
 def test_offline_updates(setup_teardown, monkeypatch):

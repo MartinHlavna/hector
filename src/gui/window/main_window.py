@@ -50,6 +50,7 @@ from src.gui.modal.appearance_settings_modal import AppearanceSettingsModal
 from src.gui.gui_utils import GuiUtils
 from src.gui.menu import MenuItem, TopMenu, MenuSeparator
 from src.gui.modal.new_project_item_modal import NewProjectItemModal
+from src.gui.navigator import Navigator
 from src.gui.window.splash_window import SplashWindow
 from src.gui.tooltip import Tooltip
 from src.utils import Utils
@@ -114,6 +115,13 @@ class MainWindow:
         # TOP MENU
         # Define menu items
         menu_items = [
+            MenuItem(label="Projekt",
+                     underline_index=0,
+                     submenu=[
+                         MenuItem(label="Zavrieť",
+                                  command=self.close_project,
+                                  )
+                     ]),
             MenuItem(label="Súbor",
                      underline_index=0,
                      submenu=[
@@ -235,16 +243,16 @@ class MainWindow:
         ]
         self.menu_bar = TopMenu(self.root, menu_items, background="#3B3B3B", foreground="white")
         # MAIN FRAME
-        main_frame = tk.Frame(self.root)
-        main_frame.pack(expand=1, fill=tk.BOTH, side=tk.LEFT)
+        self.main_frame = tk.Frame(self.root)
+        self.main_frame.pack(expand=1, fill=tk.BOTH, side=tk.LEFT)
         # LEFT SCROLLABLE SIDE PANEL WITH FREQUENT WORDS
-        left_side_panel = tk.Frame(main_frame, width=300, relief=tk.FLAT, borderwidth=1, background=PRIMARY_COLOR)
+        left_side_panel = tk.Frame(self.main_frame, width=300, relief=tk.FLAT, borderwidth=1, background=PRIMARY_COLOR)
         left_side_panel.pack(fill=tk.BOTH, side=tk.LEFT, expand=0)
         # RIGHT SCROLLABLE SIDE PANEL WITH FREQUENT WORDS
-        right_side_panel = tk.Frame(main_frame, width=200, relief=tk.FLAT, borderwidth=1, background=PRIMARY_COLOR)
+        right_side_panel = tk.Frame(self.main_frame, width=200, relief=tk.FLAT, borderwidth=1, background=PRIMARY_COLOR)
         right_side_panel.pack(fill=tk.BOTH, side=tk.RIGHT)
         # MIDDLE TEXT EDITOR WINDOW
-        text_editor_frame = tk.Frame(main_frame, background=TEXT_EDITOR_FRAME_BG, borderwidth=0)
+        text_editor_frame = tk.Frame(self.main_frame, background=TEXT_EDITOR_FRAME_BG, borderwidth=0)
         text_editor_frame.pack(expand=1, fill=tk.BOTH)
         text_editor_scroll_frame = tk.Frame(text_editor_frame, width=10, relief=tk.FLAT, background=PRIMARY_COLOR)
         text_editor_scroll_frame.pack(side=tk.RIGHT, fill=tk.Y)
@@ -289,7 +297,8 @@ class MainWindow:
         self.project_tree.bind("<Double-1>", self._on_project_tree_double_click)
         self.project_tree.bind("<<TreeviewOpen>>", self._on_project_tree_item_open)
         self.project_tree.bind("<<TreeviewClose>>", self._on_project_tree_item_close)
-        self.project_tree.bind("<FocusIn>", lambda e: self.project_tree.bind("<Delete>", self._on_project_tree_item_delete))
+        self.project_tree.bind("<FocusIn>",
+                               lambda e: self.project_tree.bind("<Delete>", self._on_project_tree_item_delete))
         self.project_tree.bind("<FocusOut>", lambda e: self.project_tree.unbind("<Delete>"))
 
         self._show_project_files()
@@ -463,7 +472,6 @@ class MainWindow:
         # START MAIN LOOP TO SHOW ROOT WINDOW
         if self.ctx.has_available_update:
             self.root.after(1000, self.show_about)
-        self.root.mainloop()
 
     # UTIL METHOD TO SET tk.TEXT WIDGET
     # WE NEED TO ENBLE TEXT, DELETE CONTENT AND INSERT NEW TEXT
@@ -888,6 +896,15 @@ class MainWindow:
             self.analyze_text(True)
 
     # LOAD TEXT FILE
+    def close_project(self):
+        self.ctx.current_file = None
+        self.ctx.project = None
+        self.main_frame.destroy()
+        self.menu_bar.destroy()
+        self.tooltip.destroy()
+        Navigator().navigate(Navigator.PROJECT_SELECTOR_WINDOW)
+
+    # LOAD TEXT FILE
     def open_new_file_dialog(self, type_options=None, callback=lambda x: None):
         parent_item = None
         selection = self.project_tree.selection()
@@ -956,7 +973,6 @@ class MainWindow:
             if should_delete:
                 ProjectService.delete_item(self.ctx.project, item, parent_item)
                 self._show_project_files()
-
 
     def _on_project_tree_item_close(self, e=None):
         item_id = self.project_tree.focus()
@@ -1113,7 +1129,7 @@ class MainWindow:
                                   lambda e: self.highlight_same_word(e, self.text_editor),
                                   lambda e: self.unhighlight_same_word(e)
                                   )
-        readability = NlpService.evaluate_readability(self.doc)
+        readability = NlpService.compute_readability(self.doc)
         self.readability_value.configure(text=f"{readability: .0f} / {READABILITY_MAX_VALUE}")
         self.introspect(event)
 

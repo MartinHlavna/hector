@@ -13,6 +13,8 @@ from src.backend.service.nlp_service import NlpService
 from src.backend.service.spellcheck_service import SpellcheckService
 from src.const.colors import ACCENT_COLOR, PRIMARY_COLOR, ACCENT_2_COLOR, PANEL_TEXT_COLOR, TEXT_EDITOR_FRAME_BG
 from src.const.values import VERSION
+from src.gui.navigator import Navigator
+from src.gui.window.main_window import MainWindow
 from src.gui.window.project_selector_window import ProjectSelectorWindow
 from src.gui.window.splash_window import SplashWindow
 from src.utils import Utils
@@ -105,11 +107,14 @@ if __name__ == "__main__":
                                                    github_token=args.github_token, github_user=args.github_user)
     splash.update_status("inicializujem textový processor...")
     ctx = RunContext()
-    ctx2 = RunContext()
     ctx.nlp = nlp
     ctx.spellcheck_dictionary = dictionaries["spellcheck"]
     ctx.thesaurus = dictionaries["thesaurus"]
     ctx.has_available_update = has_available_update
+    navigator = Navigator()
+    navigator.root = root
+    navigator.windows[Navigator.MAIN_WINDOW] = lambda r: MainWindow(r)
+    navigator.windows[Navigator.PROJECT_SELECTOR_WINDOW] = lambda r: ProjectSelectorWindow(r)
     splash.close()
     # OPEN WINDOW IN MAXIMIZED STATE
     # FOR WINDOWS AND MAC OS SET STATE ZOOMED
@@ -118,5 +123,5 @@ if __name__ == "__main__":
         root.state("zoomed")
     else:
         root.attributes('-zoomed', True)
-    startup_window = ProjectSelectorWindow(root)
-    startup_window.start_main_loop()
+    navigator.navigate(Navigator.PROJECT_SELECTOR_WINDOW)
+    root.mainloop()

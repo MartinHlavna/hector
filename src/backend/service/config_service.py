@@ -6,9 +6,10 @@ from src.domain.config import Config
 
 
 class ConfigService:
-    # FUNCTION THAT LOADS CONFIG FROM FILE
+    """Service for manipulation of global config"""
     @staticmethod
     def load(path: string):
+        """Load config from file"""
         if os.path.exists(path):
             with open(path, 'r') as file:
                 c = json.load(file)
@@ -16,8 +17,8 @@ class ConfigService:
         else:
             return Config()
 
-    # FUNCTION THAT SAVES CONFIG TO FILE
     @staticmethod
     def save(c: Config, path: string):
+        """Save config to file"""
         with open(path, 'w') as file:
             json.dump(c.to_dict(), file, indent=4)

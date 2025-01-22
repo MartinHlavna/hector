@@ -29,6 +29,9 @@ class Metadata:
 
 
 class RecentProject:
+    """Representatin of recept project saved in Metadata.
+    Used to display table of recent projects in project selector window"""
+
     def __init__(self, data=None):
         """
         Constructor accepts a dictionary and sets the class attributes.

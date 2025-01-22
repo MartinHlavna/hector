@@ -22,25 +22,26 @@ class NewProjectItemModal:
             row=row, column=0, padx=10, pady=(10, 2), sticky='w'
         )
         self.name_entry_variable = StringVar()
-        self.name_entry = tk.Entry(self.toplevel, width=30, justify=tk.LEFT,
-                                   insertbackground=EDITOR_TEXT_COLOR,
-                                   textvariable=self.name_entry_variable,
-                                   background=TEXT_EDITOR_BG, foreground=EDITOR_TEXT_COLOR,
-                                   highlightthickness=0, relief=tk.RAISED, borderwidth=0)
-        self.name_entry.grid(row=row, column=1, columnspan=3, padx=10,
-                             pady=(10, 2), sticky='w')
+        name_entry = tk.Entry(self.toplevel, width=30, justify=tk.LEFT,
+                              insertbackground=EDITOR_TEXT_COLOR,
+                              textvariable=self.name_entry_variable,
+                              background=TEXT_EDITOR_BG, foreground=EDITOR_TEXT_COLOR,
+                              highlightthickness=0, relief=tk.RAISED, borderwidth=0)
+        name_entry.grid(row=row, column=1,
+                        columnspan=3, padx=10,
+                        pady=(10, 2), sticky='w')
         row += 1
         self.type_combo_variable = StringVar()
-        self.type_combo = ttk.Combobox(self.toplevel, width=27, state="readonly",
-                                       textvariable=self.type_combo_variable)
+        type_combo = ttk.Combobox(self.toplevel, width=27, state="readonly",
+                                  textvariable=self.type_combo_variable)
         if type_options is not None:
-            self.type_combo['values'] = list(type_options)
+            type_combo['values'] = list(type_options)
         else:
-            self.type_combo['values'] = list(ProjectItemType.get_selectable_values().keys())
-        self.type_combo.current(0)
-        self.type_combo.grid(row=row, column=1, columnspan=3, padx=10,
-                             pady=(10, 2), sticky='w')
-        self.toplevel.after(100, lambda: self.name_entry.focus_set())
+            type_combo['values'] = list(ProjectItemType.get_selectable_values().keys())
+        type_combo.current(0)
+        type_combo.grid(row=row, column=1, columnspan=3, padx=10,
+                        pady=(10, 2), sticky='w')
+        self.toplevel.after(100, lambda: name_entry.focus_set())
 
         # SAVE BUTTON
         row += 1
@@ -67,13 +68,7 @@ class NewProjectItemModal:
         if len(name) == 0:
             messagebox.showerror("Chyba", "Názov je povinný.")
             return
-        if item_type == ProjectItemType.HTEXT:
-            item = ProjectService.new_file(ctx.project, name, self.parent_item)
-        elif item_type == ProjectItemType.DIRECTORY:
-            item = ProjectService.new_directory(ctx.project, name, self.parent_item)
-        else:
-            # SHOULD NOT HAPPEN
-            raise RuntimeError()
+        item = ProjectService.new_item(ctx.project, name, self.parent_item, item_type)
         if self.on_new_file:
             self.on_new_file(item)
         self.close()

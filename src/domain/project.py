@@ -4,6 +4,8 @@ from src.const.values import CURRENT_PROJECT_VERSION
 
 
 class Project:
+    """Main project class. Contains all project information and is used to store all project metadata"""
+
     def __init__(self, data=None, path=None):
         """
         Constructor accepts a dictionary and sets the class attributes.
@@ -42,12 +44,15 @@ class Project:
 
     @staticmethod
     def construct_project_item(data):
+        """Helper function that construct ProjectItem or appropiate subclass"""
         if data.get('type', ProjectItemType.UNKNOWN) == ProjectItemType.DIRECTORY:
             return DirectoryProjectItem(data)
         return ProjectItem(data)
 
 
 class ProjectItem:
+    """Single file or directory in project"""
+
     def __init__(self, data=None):
         """
         Constructor accepts a dictionary and sets the class attributes.
@@ -79,6 +84,8 @@ class ProjectItem:
 
 
 class DirectoryProjectItem(ProjectItem):
+    """Special ProjectItem used for directories. Stores opened state and subitems"""
+
     def __init__(self, data=None):
         """
         Constructor accepts a dictionary and sets the class attributes.
@@ -112,6 +119,7 @@ class DirectoryProjectItem(ProjectItem):
 
 
 class ProjectItemType(str, Enum):
+    """Enum with available ProjectItemTypes"""
     UNKNOWN = "UNKNOWN"
     HTEXT = "HTEXT"
     DIRECTORY = "DIRECTORY"

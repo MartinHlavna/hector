@@ -111,6 +111,9 @@ class TopMenu:
 
             self.menu_buttons.append(button)
 
+    def destroy(self):
+        self.menu_frame.destroy()
+
     # CALLBACK FOR FOCUS LOSS
     def _on_main_menu_focus_loss(self, btn, i, e):
         btn.configure(foreground=self.foreground, background=self.background,

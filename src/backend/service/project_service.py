@@ -3,7 +3,6 @@ import os
 import pathlib
 import shutil
 import string
-from pathlib import Path
 from xml.dom.minidom import parseString
 
 import untangle
@@ -15,9 +14,24 @@ from src.utils import Utils
 
 
 class ProjectService:
-    # FUNCTION THAT LOADS PROJECT FROM FILE
+
+    @staticmethod
+    def create_project(name, description, folder_path):
+        """Crate new project in selected folder"""
+        project = Project()
+        project.name = name
+        project.description = description
+        if not os.path.isdir(folder_path):
+            os.makedirs(folder_path)
+        project_file_path = os.path.join(folder_path, f"{Utils.normalize_file_name(name)}.hproj")
+        project.path = project_file_path
+        ProjectService.save(project, project_file_path)
+        return project
+
+    """Service for project manipulation"""
     @staticmethod
     def load(path: string):
+        """Load project from file"""
         if os.path.exists(path):
             with open(path, 'r') as file:
                 p = json.load(file)
@@ -25,58 +39,48 @@ class ProjectService:
         else:
             return None
 
-    # FUNCTION THAT SAVES CONFIG TO FILE
     @staticmethod
     def save(p: Project, path: string):
+        """Save project to file"""
         with open(path, 'w') as file:
+            p.path = path
             json.dump(p.to_dict(), file, indent=4)
 
     @staticmethod
-    def new_file(p: Project, name, parent_item: DirectoryProjectItem):
+    def new_item(p: Project, name: str, parent_item: DirectoryProjectItem, item_type: ProjectItemType):
+        """Add new project item"""
+        item = None
         data_dir = os.path.join(os.path.dirname(p.path), "data")
         if parent_item is not None:
             dir_path = os.path.join(data_dir, parent_item.path)
         else:
-            dir_path = os.path.join(os.path.dirname(p.path), "data")
-        os.makedirs(dir_path, exist_ok=True)
-        path = os.path.join(dir_path, f"{Utils.normalize_file_name(name)}.htext")
-        if not os.path.exists(path):
-            open(path, 'w')
-            item = ProjectItem()
-            item.name = name
-            item.path = os.path.relpath(path, data_dir)
-            item.type = ProjectItemType.HTEXT
-            if parent_item is not None:
-                parent_item.subitems.append(item)
-            else:
-                p.items.append(item)
-            ProjectService.save(p, p.path)
-            return item
-        return None
-
-    @staticmethod
-    def new_directory(p: Project, name, parent_item: DirectoryProjectItem):
-        data_dir = os.path.join(os.path.dirname(p.path), "data")
-        if parent_item is not None:
-            dir_path = os.path.join(data_dir, parent_item.path, name)
+            dir_path = os.path.join(data_dir, "data")
+        if item_type == ProjectItemType.DIRECTORY:
+            path = os.path.join(dir_path, name)
+            if not os.path.exists(path):
+                os.makedirs(path, exist_ok=True)
+                item = DirectoryProjectItem()
+                item.type = ProjectItemType.DIRECTORY
         else:
-            dir_path = os.path.join(os.path.dirname(p.path), "data", name)
-        if not os.path.exists(dir_path):
             os.makedirs(dir_path, exist_ok=True)
-            item = DirectoryProjectItem()
-            item.name = name
-            item.path = os.path.relpath(dir_path, data_dir)
-            item.type = ProjectItemType.DIRECTORY
-            if parent_item is not None:
-                parent_item.subitems.append(item)
-            else:
-                p.items.append(item)
-            ProjectService.save(p, p.path)
-            return item
-        return None
+            path = os.path.join(dir_path, f"{Utils.normalize_file_name(name)}.htext")
+            if not os.path.exists(path):
+                open(path, 'w').close()
+                item = ProjectItem()
+                item.type = ProjectItemType.HTEXT
+        item.path = os.path.relpath(path, data_dir)
+        item.name = name
+        if parent_item is not None:
+            parent_item.subitems.append(item)
+        else:
+            p.items.append(item)
+
+        ProjectService.save(p, p.path)
+        return item
 
     @staticmethod
     def delete_item(p: Project, item: ProjectItem, parent_item: DirectoryProjectItem):
+        """Delete existing item"""
         data_dir = os.path.join(os.path.dirname(p.path), "data")
         path = os.path.join(data_dir, item.path)
         if os.path.exists(path):
@@ -94,6 +98,7 @@ class ProjectService:
 
     @staticmethod
     def load_file_contents(p: Project, item: ProjectItem):
+        """Save contents of a HTEXT file"""
         path = os.path.join(os.path.dirname(p.path), "data", item.path)
         if os.path.exists(path):
             content = pathlib.Path(path).read_text()
@@ -106,6 +111,7 @@ class ProjectService:
 
     @staticmethod
     def save_file_contents(p: Project, item: ProjectItem):
+        """Save contents of a HTEXT file"""
         path = os.path.join(os.path.dirname(p.path), "data", item.path)
         if os.path.exists(path):
             with open(path, 'w') as file:

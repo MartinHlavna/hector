@@ -21,6 +21,7 @@ from src.domain.metadata import RecentProject
 from src.domain.project import Project
 from src.gui.gui_utils import GuiUtils
 from src.gui.hector_button import HectorButton
+from src.gui.navigator import Navigator
 from src.gui.window.main_window import MainWindow
 from src.utils import Utils
 
@@ -60,12 +61,12 @@ class ProjectSelectorWindow:
         ttk.Label(header_frame, background=PRIMARY_COLOR, foreground=GREY, padding=(20, 10),
                   text=f"{VERSION}").pack(side=tk.RIGHT)
         HectorButton(left_side_panel, text="Nový projekt", command=self.open_new_project_form, width=15, cursor="hand2",
-                  background=PRIMARY_COLOR, foreground=PANEL_TEXT_COLOR, relief=tk.FLAT, borderwidth=0).pack(
+                     background=PRIMARY_COLOR, foreground=PANEL_TEXT_COLOR, relief=tk.FLAT, borderwidth=0).pack(
             pady=5
         )
         HectorButton(left_side_panel, text="Otvoriť projekt", command=self.open_project_from_file, width=15,
-                  cursor="hand2",
-                  background=PRIMARY_COLOR, foreground=PANEL_TEXT_COLOR, relief=tk.FLAT, borderwidth=0).pack(
+                     cursor="hand2",
+                     background=PRIMARY_COLOR, foreground=PANEL_TEXT_COLOR, relief=tk.FLAT, borderwidth=0).pack(
             pady=5
         )
         # MIDDLE PANE
@@ -127,12 +128,13 @@ class ProjectSelectorWindow:
         self.browse_image = GuiUtils.fa_image(FA_SOLID, TEXT_EDITOR_BG, PANEL_TEXT_COLOR, FontAwesomeIcons.folder, 19,
                                               padding=4)
         project_location_browse_btn = HectorButton(project_location_frame, command=self.select_new_project_location,
-                                                width=19,
-                                                cursor="hand2",
-                                                image=self.browse_image,
-                                                highlightthickness=0,
-                                                background=TEXT_EDITOR_BG, foreground=PANEL_TEXT_COLOR, relief=tk.FLAT,
-                                                borderwidth=0)
+                                                   width=19,
+                                                   cursor="hand2",
+                                                   image=self.browse_image,
+                                                   highlightthickness=0,
+                                                   background=TEXT_EDITOR_BG, foreground=PANEL_TEXT_COLOR,
+                                                   relief=tk.FLAT,
+                                                   borderwidth=0)
         project_location_browse_btn.pack(side=tk.RIGHT, padx=(0, 0))
 
         tk.Entry(project_location_frame, width=6, justify=tk.LEFT,
@@ -161,9 +163,9 @@ class ProjectSelectorWindow:
         # SAVE BUTTON
         buttons = [
             HectorButton(button_frame, text="Vytvoriť projekt", command=self.create_project, width=15, cursor="hand2",
-                      background=PRIMARY_COLOR, foreground=PANEL_TEXT_COLOR, relief=tk.FLAT, borderwidth=0),
+                         background=PRIMARY_COLOR, foreground=PANEL_TEXT_COLOR, relief=tk.FLAT, borderwidth=0),
             HectorButton(button_frame, text="Zrušiť", command=self.close_new_project_form, width=15, cursor="hand2",
-                      background=PRIMARY_COLOR, foreground=PANEL_TEXT_COLOR, relief=tk.FLAT, borderwidth=0)
+                         background=PRIMARY_COLOR, foreground=PANEL_TEXT_COLOR, relief=tk.FLAT, borderwidth=0)
         ]
         if platform.system() == 'Windows':
             buttons[0].pack(side=tk.LEFT, padx=(0, 5))
@@ -180,7 +182,7 @@ class ProjectSelectorWindow:
         )
         if file_path:
             project = ProjectService.load(file_path)
-            self.open_project(project, file_path)
+            self.open_project(project)
 
     def open_recent_project(self, project: RecentProject, e=None):
         if not os.path.isfile(project.path):
@@ -189,17 +191,17 @@ class ProjectSelectorWindow:
             MetadataService.save(metadata, METADATA_FILE_PATH)
             messagebox.showerror("Nie je možné otvoriť projekt", "Projekt bol pravdepodobne zmazaný, alebo presnutý.")
             return
-        self.open_project(ProjectService.load(project.path), project.path)
+        self.open_project(ProjectService.load(project.path))
 
-    def open_project(self, project: Project, file_path: str):
+    def open_project(self, project: Project):
         metadata = MetadataService.load(METADATA_FILE_PATH)
-        MetadataService.put_recent_project(metadata, project, file_path)
+        MetadataService.put_recent_project(metadata, project, project.path)
         MetadataService.save(metadata, METADATA_FILE_PATH)
         ctx = RunContext()
         ctx.project = project
+        ctx.current_file = None
         self.close()
-        main_window = MainWindow(self.root)
-        main_window.start_main_loop()
+        Navigator().navigate(Navigator.MAIN_WINDOW)
 
     def open_new_project_form(self):
         self.recent_projects_frame.pack_forget()
@@ -215,14 +217,8 @@ class ProjectSelectorWindow:
             messagebox.showerror("Názov je povinný.")
             return
         description = self.project_description_entry.get(1.0, tk.END)
-        project = Project()
-        project.name = name
-        project.description = description
-        if not os.path.isdir(folder_selected):
-            os.makedirs(folder_selected)
-        project_file_path = os.path.join(folder_selected, f"{Utils.normalize_file_name(name)}.hproj")
-        ProjectService.save(project, project_file_path)
-        self.open_project(project, project_file_path)
+        project = ProjectService.create_project(name, description, folder_selected)
+        self.open_project(project)
 
     def close_new_project_form(self):
         self.recent_projects_frame.pack(expand=1, fill=tk.BOTH)
@@ -251,10 +247,3 @@ class ProjectSelectorWindow:
     def close(self):
         self.selector_window.destroy()
         self.root.after(10, self.root.deiconify)
-
-    # START MAIN LOOP
-    def start_main_loop(self):
-        # START MAIN LOOP TO SHOW ROOT WINDOW
-        # if self.has_available_update:
-        #     self.root.after(1000, self.show_about)
-        self.selector_window.mainloop()
