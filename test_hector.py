@@ -26,7 +26,7 @@ from src.const.values import NLP_BATCH_SIZE
 from src.domain.config import Config
 from src.domain.htext_file import HTextFile
 from src.domain.metadata import Metadata
-from src.domain.project import Project, ProjectItemType
+from src.domain.project import Project, ProjectItemType, ProjectItem
 from src.utils import Utils
 from test_utils import TestUtils
 
@@ -691,6 +691,15 @@ def test_metadata_recent_projects():
     assert len(m.recent_projects) == len(m2.recent_projects) == 9
 
 
+def test_execute_callbacks():
+    with pytest.raises(Exception, match="test exception raised") as e_info:
+        Utils.execute_callbacks([callback_raise_ex])
+
+
+def callback_raise_ex():
+    raise Exception("test exception raised")
+
+
 def test_project_create_and_load():
     name = 'testovací projekt'
     desc = 'desc'
@@ -706,6 +715,7 @@ def test_project_create_and_load():
     assert p.description == p2.description
     assert p.path == p2.path
     shutil.rmtree(os.path.dirname(p.path))
+    assert ProjectService.load(p.path) is None
 
 
 def test_project_items():
@@ -716,8 +726,12 @@ def test_project_items():
         shutil.rmtree(file_name)
     p = ProjectService.create_project(name, desc, file_name)
     item = ProjectService.new_item(p, "001", None, ProjectItemType.HTEXT)
+    assert ProjectService.load_file_contents(p, item).raw_text == ""
     item.contents = HTextFile(TEST_TEXT_1)
     ProjectService.save_file_contents(p, item)
+    fake_item = ProjectItem()
+    fake_item.path = "non_existing.htext"
+    assert not ProjectService.save_file_contents(p, fake_item)
     item.contents = None
     item2 = ProjectService.load_file_contents(p, item)
     assert item2.raw_text == TEST_TEXT_1
@@ -729,6 +743,8 @@ def test_project_items():
     assert len(p2.items) == len(p.items) == 2
     ProjectService.delete_item(p, subitem, dir_item)
     assert len(dir_item.subitems) == 0
+    ProjectService.delete_item(p, dir_item, None)
+    assert len(p.items) == 1
     shutil.rmtree(os.path.dirname(p.path))
 
 
