@@ -101,10 +101,9 @@ class ProjectService:
         """Save contents of a HTEXT file"""
         path = os.path.join(os.path.dirname(p.path), "data", item.path)
         if os.path.exists(path):
-            content = pathlib.Path(path).read_text()
+            content = pathlib.Path(path).read_text(encoding='utf-8')
             if len(content) > 0:
-                print(content) # FIXME: only to debug tests on github
-                doc = untangle.parse(path)
+                doc = untangle.parse(content)
                 return HTextFile(doc.htext.raw_text.cdata)
             else:
                 return HTextFile("")
@@ -115,7 +114,7 @@ class ProjectService:
         """Save contents of a HTEXT file"""
         path = os.path.join(os.path.dirname(p.path), "data", item.path)
         if os.path.exists(path):
-            with open(path, 'w') as file:
+            with open(path, 'w', encoding='utf-8') as file:
                 xml = dicttoxml(vars(item.contents), attr_type=False, custom_root='htext', return_bytes=False)
                 dom = parseString(xml)
                 file.write(dom.toprettyxml(standalone=True))
