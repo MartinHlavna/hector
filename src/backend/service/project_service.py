@@ -103,6 +103,7 @@ class ProjectService:
         if os.path.exists(path):
             content = pathlib.Path(path).read_text()
             if len(content) > 0:
+                print(content) # FIXME: only to debug tests on github
                 doc = untangle.parse(path)
                 return HTextFile(doc.htext.raw_text.cdata)
             else:
