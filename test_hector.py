@@ -671,7 +671,7 @@ def test_metadata_save_load(setup_teardown):
 
 def test_metadata_recent_projects():
     m = Metadata()
-    for i in range(1, 11):
+    for i in range(1, 12):
         p = Project()
         p.name = f'Test {i}'
         MetadataService.put_recent_project(m, p, f'test{i}.hproj')
@@ -679,10 +679,16 @@ def test_metadata_recent_projects():
     p = Project()
     p.name = 'Test 5'
     MetadataService.put_recent_project(m, p, 'test5.hproj')
+    MetadataService.put_recent_project(m, p, 'test5.hproj')
     assert len(m.recent_projects) == 10
     assert m.recent_projects[0].name == 'Test 5'
+    assert m.recent_projects[1].name != 'Test 5'
     MetadataService.remove_recent_project(m, "test5.hproj")
     assert m.recent_projects[0].name != 'Test 5'
+    m_path = f"{METADATA_FILE_PATH}.test"
+    MetadataService.save(m, m_path)
+    m2 = MetadataService.load(m_path)
+    assert len(m.recent_projects) == len(m2.recent_projects) == 9
 
 
 def test_project_create_and_load():
@@ -719,7 +725,8 @@ def test_project_items():
     subitem = ProjectService.new_item(p, "002", dir_item, ProjectItemType.HTEXT)
     assert subitem.path == os.path.join(dir_item.path, "002.htext")
     assert subitem.path != os.path.join(os.path.dirname(p.path), "data", "002.htext")
-    print(subitem.path)
+    p2 = ProjectService.load(p.path)
+    assert len(p2.items) == len(p.items) == 2
     ProjectService.delete_item(p, subitem, dir_item)
     assert len(dir_item.subitems) == 0
     shutil.rmtree(os.path.dirname(p.path))
