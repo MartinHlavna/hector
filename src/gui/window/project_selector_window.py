@@ -61,11 +61,12 @@ class ProjectSelectorWindow:
         ttk.Label(header_frame, background=PRIMARY_COLOR, foreground=GREY, padding=(20, 10),
                   text=f"{VERSION}").pack(side=tk.RIGHT)
         HectorButton(left_side_panel, text="Nový projekt", command=self.open_new_project_form, width=15, cursor="hand2",
+                     padx=10, pady=5,
                      background=PRIMARY_COLOR, foreground=PANEL_TEXT_COLOR, relief=tk.FLAT, borderwidth=0).pack(
             pady=5
         )
         HectorButton(left_side_panel, text="Otvoriť projekt", command=self.open_project_from_file, width=15,
-                     cursor="hand2",
+                     cursor="hand2",  padx=10, pady=5,
                      background=PRIMARY_COLOR, foreground=PANEL_TEXT_COLOR, relief=tk.FLAT, borderwidth=0).pack(
             pady=5
         )
@@ -163,8 +164,10 @@ class ProjectSelectorWindow:
         # SAVE BUTTON
         buttons = [
             HectorButton(button_frame, text="Vytvoriť projekt", command=self.create_project, width=15, cursor="hand2",
+                         padx=10, pady=5,
                          background=PRIMARY_COLOR, foreground=PANEL_TEXT_COLOR, relief=tk.FLAT, borderwidth=0),
             HectorButton(button_frame, text="Zrušiť", command=self.close_new_project_form, width=15, cursor="hand2",
+                         padx=10, pady=5,
                          background=PRIMARY_COLOR, foreground=PANEL_TEXT_COLOR, relief=tk.FLAT, borderwidth=0)
         ]
         if platform.system() == 'Windows':

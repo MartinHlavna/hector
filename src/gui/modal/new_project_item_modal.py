@@ -52,10 +52,13 @@ class NewProjectItemModal:
             save_btn_col = 0
             revert_btn_col = 1
         HectorButton(self.toplevel, text="Uložiť", command=self.create_item, cursor="hand2",
-                     background=PRIMARY_COLOR, foreground=PANEL_TEXT_COLOR, relief=tk.FLAT, borderwidth=0).grid(
+                     background=PRIMARY_COLOR, foreground=PANEL_TEXT_COLOR, relief=tk.FLAT, borderwidth=0,
+                     highlightbackground=PANEL_TEXT_COLOR,
+                     padx=10, pady=5).grid(
             row=row, column=save_btn_col, columnspan=1, padx=10, pady=10, sticky='w'
         )
         HectorButton(self.toplevel, text="Zrušiť", command=self.close, cursor="hand2",
+                     padx=10, pady=5,
                      background=PRIMARY_COLOR, foreground=PANEL_TEXT_COLOR, relief=tk.FLAT, borderwidth=0).grid(
             row=row, column=revert_btn_col, columnspan=1, padx=10, pady=10, sticky='w'
         )
