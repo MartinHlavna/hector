@@ -1,10 +1,11 @@
 name: AI Code Review
 
 on:
-  pull_request:
-    types:
-      - opened
-      - synchronize
+  workflow_dispatch:
+#  pull_request:
+#    types:
+#      - opened
+#      - synchronize
 permissions: write-all
 jobs:
   review:
