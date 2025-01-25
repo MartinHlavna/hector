@@ -171,6 +171,9 @@ voice_map = {
 # ALREADY SET. SUGGESTED USAGE IS TO USE RULE BASE SENTER TO ROUGHLY SET SENTENCE BOUNDARIES, PERFORM MORHO ANALYSIS
 # RESET SENTENCES USING MORPHODITA_RESET_SENTENCES_COMPONENT AND THEN LET DEPENDENCY ANALYZER DO HARD WORK
 class MorphoditaTaggerMorphologizerLemmatizer:
+    """Custom spacy component that acts as bridge between spacy and morphodita.
+    Morphodita works as an Tagger, Morphologizer and lemmatizer"""
+
     def __init__(self, nlp: Language, tagger_path: str):
         # INITIALIZE COMPONENT FIELDS
         self.tagger = morphodita.Tagger.load(tagger_path)

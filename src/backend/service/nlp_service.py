@@ -26,9 +26,10 @@ from src.utils import Utils
 
 
 class NlpService:
-    # FUNCTION THAT INTIALIZES NLP ENGINE
+    """Service for Nlp related tasks"""
     @staticmethod
     def initialize():
+        """Initialize NLP engine"""
         # noinspection PyBroadException
         try:
             spacy.util.set_data_path = Utils.resource_path('lib/site-packages/spacy/data')
@@ -127,16 +128,16 @@ class NlpService:
             print("Unable to retrieve data. Please check your internet connection.")
             return None
 
-    # METHOD THAT RUNS FULL NLP ANALYSIS
     @staticmethod
     def full_analysis(text, nlp: spacy, batch_size, config: Config):
+        """Execute full NLP analysis"""
         doc = Doc.from_docs(list(nlp.pipe([text], batch_size=batch_size)), nlp)
-        NlpService.fill_custom_data(text, doc, config)
+        NlpService._fill_custom_data(text, doc, config)
         return doc
 
-    # METHOD THAT RUNS PARTIAL NLP BASED ON PARAGRAPHS AROUND CARRET POSITION
     @staticmethod
     def partial_analysis(text, original_doc: Doc, nlp: spacy, config: Config, carret_position):
+        """Run NLP analysis on part of text based on paragraph around carret position"""
         # GET TOKEN ON CARRET POSITION
         span = original_doc.char_span(carret_position, carret_position, alignment_mode='expand')
         if span is not None:
@@ -175,12 +176,12 @@ class NlpService:
             documents.append(original_doc[last_token.i + 1:].as_doc())
         doc = Doc.from_docs(documents, ensure_whitespace=False)
         # RECOMPUTE CUSTOM DATA ON MERGED DOCUMENT.
-        NlpService.fill_custom_data(text, doc, config)
+        NlpService._fill_custom_data(text, doc, config)
         return doc
 
-    # METHOD THAT ADDS ALL EXTENSION DATA IN SINGLE PASS OVER ALL TOKENS
     @staticmethod
-    def fill_custom_data(original_text: str, doc: Doc, config: Config):
+    def _fill_custom_data(original_text: str, doc: Doc, config: Config):
+        """Fill custom extensions"""
         word_pattern = re.compile("\\w+")
         words = []
         word_index = 0
@@ -192,14 +193,14 @@ class NlpService:
             if token.is_space and token.text.count('\n') > 0:
                 paragraph = doc[cur_paragraph_start:token.i]
                 cur_paragraph_start = token.i
-                NlpService.append_paragraph(paragraph, paragraphs)
+                NlpService._append_paragraph(paragraph, paragraphs)
             token._.is_word = re.match(word_pattern, token.lower_) is not None
             if token._.is_word:
-                NlpService.append_word(token, word_index, unique_lemmas, unique_words, words)
+                NlpService._append_word(token, word_index, unique_lemmas, unique_words, words)
                 word_index += 1
         if len(doc) > cur_paragraph_start:
             paragraph = doc[cur_paragraph_start:]
-            NlpService.append_paragraph(paragraph, paragraphs)
+            NlpService._append_paragraph(paragraph, paragraphs)
         doc._.paragraphs = paragraphs
         doc._.words = words
         doc._.unique_words = unique_words
@@ -208,12 +209,12 @@ class NlpService:
         doc._.total_words = len(words)
         doc._.total_unique_words = len(unique_words)
         doc._.total_pages = round(doc._.total_chars / 1800, 2)
-        NlpService.evaluate_sentence_length(config, doc)
+        NlpService._evaluate_sentence_length(config, doc)
         return doc
 
-    # METHOD THAT ADDS WORD AND ALL WORD RELATED DATA TO TOKEN AND INPUT COLLECTIONS
     @staticmethod
-    def append_word(token, word_index, unique_lemmas, unique_words, words):
+    def _append_word(token, word_index, unique_lemmas, unique_words, words):
+        """Append word to list of document words"""
         token._.word_index = word_index
         words.append(token)
         lemma = token.lemma_.lower()
@@ -228,15 +229,16 @@ class NlpService:
         unique_word.occourences.append(token)
         unique_lemma.occourences.append(token)
 
-    # METHOD THAT ADDS PARAGRAPH TO COLLECTION AND SETS REFERENCE TO ALL INNER TOKENS TO THAT PARAGRAPH
     @staticmethod
-    def append_paragraph(paragraph, paragraphs):
+    def _append_paragraph(paragraph, paragraphs):
+        """Append paragraph and set backreference to in on all subsequent tokens"""
         paragraphs.append(paragraph)
         for t in paragraph:
             t._.paragraph = paragraph
 
     @staticmethod
-    def evaluate_sentence_length(config, doc):
+    def _evaluate_sentence_length(config, doc):
+        """Evaluate length of sentence and set extension flags"""
         for sentence in doc.sents:
             words = [word for word in sentence if
                      word._.is_word and len(word.text) >= config.analysis_settings.long_sentence_min_word_length]
@@ -247,7 +249,8 @@ class NlpService:
                     sentence._.is_mid_sentence = True
 
     @staticmethod
-    def evaluate_readability(doc: Doc):
+    def compute_readability(doc: Doc):
+        """Compute readability value according to mistrik index"""
         if doc._.total_words <= 1:
             return 0
         # SHORTER THAN 3 CHAR SENTENCES ARE JUST GARBAGE
@@ -261,9 +264,9 @@ class NlpService:
         mistrik_index = READABILITY_MAX_VALUE - ((average_sentence_length * average_word_length) / type_to_token_ratio)
         return READABILITY_MAX_VALUE - max(0.0, round(mistrik_index, 0))
 
-    # METHOD THAT COMPUTES WORD FREQUENCIES
     @staticmethod
     def compute_word_frequencies(doc: Doc, config: Config):
+        """Compute word frequencies according to config"""
         x = doc._.unique_words
         if config.analysis_settings.repeated_words_use_lemma:
             x = doc._.lemmas
@@ -272,9 +275,9 @@ class NlpService:
                      v.occourences) >= config.analysis_settings.repeated_words_min_word_frequency}
         return sorted(words.values(), key=lambda x: len(x.occourences), reverse=True)
 
-    # METHOD THAT EVALUATES CLOSE WORDS
     @staticmethod
     def evaluate_close_words(doc: Doc, config: Config):
+        """Evaluate words, that reapeats itself near each other"""
         close_words = {}
         x = doc._.unique_words
         if config.analysis_settings.close_words_use_lemma:
@@ -302,6 +305,7 @@ class NlpService:
 
     @staticmethod
     def partition_close_words(close_words, max_distance):
+        """Create repetition groups from close words"""
         if close_words is None:
             return []
         repetition_groups = []
@@ -322,34 +326,42 @@ class NlpService:
 
     @staticmethod
     def find_multiple_spaces(doc: Doc):
+        """Find duplicated spaces"""
         return re.finditer(PATTERN_MULTIPLE_SPACES, doc.text)
 
     @staticmethod
     def find_computer_quote_marks(doc: Doc):
+        """Find computer quote marks"""
         return re.finditer(PATTERN_COMPUTER_QUOTE_MARKS, doc.text)
 
     @staticmethod
     def find_dangling_quote_marks(doc: Doc):
+        """Find quote mark with spaces on both sides"""
         return re.finditer(PATTERN_DANGLING_QUOTE_MARKS, doc.text)
 
     @staticmethod
     def find_incorrect_lower_quote_marks(doc: Doc):
+        """Find lower quote marks, that are used instead of upper quote marks"""
         return re.finditer(PATTERN_INCORRECT_LOWER_QUOTE_MARKS, doc.text)
 
     @staticmethod
     def find_incorrect_upper_quote_marks(doc: Doc):
+        """Find upper quote marks, that are used instead of lower quote marks"""
         return re.finditer(PATTERN_INCORRECT_UPPER_QUOTE_MARKS, doc.text)
 
     @staticmethod
     def find_multiple_punctuation(doc: Doc):
+        """Find duplicated punctuation"""
         return re.finditer(PATTERN_MULTIPLE_PUNCTUACTION, doc.text)
 
     @staticmethod
     def find_trailing_spaces(doc: Doc):
+        """Find unneeded trailing spaces"""
         return re.finditer(PATTERN_TRAILING_SPACES, doc.text, re.MULTILINE)
 
 
 class HectorTokenizer:
+    """Custom tokenizer that noprmalizes unicode spaces"""
     def __init__(self, tokenizer):
         self.tokenizer = tokenizer
 

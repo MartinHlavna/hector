@@ -23,12 +23,13 @@ with open(Utils.resource_path(os.path.join('data_files', 'misstagged_words.json'
 
 
 class SpellcheckService:
-    # FUNCTION FOR UPGRADING DICTIONARIES
+    """Service for performing spellcheck operations"""
     @staticmethod
     def upgrade_dictionaries(github_token: string = None,
                              github_user: string = None):
+        """Upgrade dictionaries. Dictionary id backed up and if update fails, method reverts to original dictionaries"""
         if os.path.isdir(DICTIONARY_DIR):
-            SpellcheckService.remove_dictionaries_backup()
+            SpellcheckService._remove_dictionaries_backup()
             os.rename(DICTIONARY_DIR, DICTIONARY_DIR_BACKUP)
         dictionaries = SpellcheckService.initialize(github_token, github_user)
         if dictionaries["spellcheck"] is not None and dictionaries["thesaurus"] is not None:
@@ -37,18 +38,18 @@ class SpellcheckService:
             return dictionaries
         else:
             os.rename(DICTIONARY_DIR_BACKUP, DICTIONARY_DIR)
-            SpellcheckService.remove_dictionaries_backup()
+            SpellcheckService._remove_dictionaries_backup()
             return None
 
-    # CLEANUP BACKUP DICTIONARY DIR
     @staticmethod
-    def remove_dictionaries_backup():
+    def _remove_dictionaries_backup():
+        """Remove backups of dictionaries"""
         if os.path.isdir(DICTIONARY_DIR_BACKUP):
             shutil.rmtree(DICTIONARY_DIR_BACKUP)
 
-    # FUNCTION THAT INTIALIZES NLP DICTIONARIES
     @staticmethod
     def initialize(github_token=None, github_user=None):
+        """Initialize dictionaries. Download ionitial dictinaries, if not present"""
         # noinspection PyBroadException
         try:
             if not os.path.isdir(DICTIONARY_DIR):
@@ -77,14 +78,16 @@ class SpellcheckService:
 
     @staticmethod
     def spellcheck(spellcheck_dictionary, doc):
-        SpellcheckService.check_basic_spelling(spellcheck_dictionary, doc)
-        SpellcheckService.check_nominative_plurar_adj(doc)
-        SpellcheckService.check_chapem_tomu_phrase(doc)
-        SpellcheckService.check_correct_adpositions(doc)
-        SpellcheckService.check_possesive_pronouns(doc)
+        """Perform spelcheck"""
+        SpellcheckService._check_basic_spelling(spellcheck_dictionary, doc)
+        SpellcheckService._check_nominative_plurar_adj(doc)
+        SpellcheckService._check_chapem_tomu_phrase(doc)
+        SpellcheckService._check_correct_adpositions(doc)
+        SpellcheckService._check_possesive_pronouns(doc)
 
     @staticmethod
-    def check_basic_spelling(spellcheck_dictionary, doc):
+    def _check_basic_spelling(spellcheck_dictionary, doc):
+        """Check basic spelling using hunspell"""
         for word in doc._.unique_words.items():
             # CACHE TO OPTIMIZE CALLS TO HUNSPELL
             # WE NEED TO ITERATE OVER ALL OCOURENCES, BECAUSE THAY CAN BE SPELLED DIFFERENTLY
@@ -107,7 +110,7 @@ class SpellcheckService:
 
     # SUPRESSED C901 Method too Complex. SOLVING THIS WOULD MAKE CODE HARDER TO READ
     @staticmethod
-    def check_nominative_plurar_adj(doc):  # noqa: C901
+    def _check_nominative_plurar_adj(doc):  # noqa: C901
         # SOME ADJECTIVES CASED BY TYPE PEKNY CAN HAVE BOTH Y AND I DEPENDING ON NOUN THERE ARE USED WITH
         # THIS ALSO EXTENDS ON SOME PRONOUNS
         # WE USE DEPENDENCY MATCHER TO ROUGHLY FIND POSSIBLE ERRORS
@@ -154,7 +157,7 @@ class SpellcheckService:
                     mod._.grammar_error_type = GRAMMAR_ERROR_TYPE_WRONG_ISI_SUFFIX
 
     @staticmethod
-    def check_possesive_pronouns(doc):
+    def _check_possesive_pronouns(doc):
         # CHECK IF POSSESIVE PRONOUNS ARE USED IN CORRECT FORM BASED ON CONTEXT
         # WE USE DEPENDENCY MATCHER TO FIND POSSIBLE ERRORS AND THEN PERFORM CHECKING
         matcher = DependencyMatcher(doc.vocab)
@@ -190,7 +193,7 @@ class SpellcheckService:
                     pronoun_token._.grammar_error_type = GRAMMAR_ERROR_SVOJ_MOJ_TVOJ_SING
 
     @staticmethod
-    def check_correct_adpositions(doc):
+    def _check_correct_adpositions(doc):
         # CHECK IF ADPOSIONS S/SO AND Z/ZO ARE NOT INTERCHANGED
         # WE USE DEPENDENCY MATCHER TO PERFORM CHECK
         matcher = DependencyMatcher(doc.vocab)
@@ -209,7 +212,7 @@ class SpellcheckService:
         return matcher
 
     @staticmethod
-    def check_chapem_tomu_phrase(doc):
+    def _check_chapem_tomu_phrase(doc):
         # CHECK IF PHRASE "CHAPEM TO" IS NOT IN INCORRECT FORM "CHAPEM TOMU"
         # WE USE DEPENDENCY MATCHER TO FIND POSSIBLE ERROR AND THEN PERFORM CHEKING
         matcher = DependencyMatcher(doc.vocab)

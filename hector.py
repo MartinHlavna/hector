@@ -3,16 +3,20 @@ import ctypes
 import platform
 import sys
 import tkinter as tk
-from tkinter import messagebox
+from tkinter import messagebox, ttk
 
 from ttkthemes import ThemedTk
 
+from src.backend.run_context import RunContext
 from src.backend.service.import_service import ImportService
 from src.backend.service.nlp_service import NlpService
 from src.backend.service.spellcheck_service import SpellcheckService
+from src.const.colors import ACCENT_COLOR, PRIMARY_COLOR, ACCENT_2_COLOR, PANEL_TEXT_COLOR, TEXT_EDITOR_FRAME_BG
 from src.const.values import VERSION
-from src.gui.main_window import MainWindow
-from src.gui.splash_window import SplashWindow
+from src.gui.navigator import Navigator
+from src.gui.window.main_window import MainWindow
+from src.gui.window.project_selector_window import ProjectSelectorWindow
+from src.gui.window.splash_window import SplashWindow
 from src.utils import Utils
 
 
@@ -30,9 +34,40 @@ if __name__ == "__main__":
     parser.add_argument("--github_user", help="Run with this github token for all github calls")
 
     args = parser.parse_args()
-
     root = ThemedTk(theme="clam")
     root.title("Hector")
+    style = ttk.Style(root)
+    # CUSTOM SCROLLBAR
+    style.configure("Vertical.TScrollbar", gripcount=0, troughcolor=PRIMARY_COLOR, bordercolor=PRIMARY_COLOR,
+                    background=ACCENT_COLOR, lightcolor=ACCENT_COLOR, darkcolor=ACCENT_2_COLOR)
+
+    style.layout('arrowless.Vertical.TScrollbar',
+                 [('Vertical.Scrollbar.trough',
+                   {'children': [('Vertical.Scrollbar.thumb',
+                                  {'expand': '1', 'sticky': 'nswe'})],
+                    'sticky': 'ns'})])
+    style.configure("Grey.TSeparator",
+                    background=ACCENT_2_COLOR)
+    style.configure("panel.TNotebook",
+                    background=PRIMARY_COLOR,
+                    foreground=PRIMARY_COLOR,
+                    bordercolor=ACCENT_2_COLOR,
+                    darkcolor=PRIMARY_COLOR,
+                    lightcolor=PRIMARY_COLOR
+                    )
+    style.configure("panel.TNotebook.Tab",
+                    background=ACCENT_2_COLOR,
+                    foreground=PANEL_TEXT_COLOR,
+                    bordercolor=ACCENT_2_COLOR, )
+    style.map(
+        "panel.TNotebook.Tab",
+        # "selected" je stav, keď je záložka aktívna
+        background=[("selected", PRIMARY_COLOR)],  # Pozadie aktívnej záložky
+        foreground=[("selected", PANEL_TEXT_COLOR)],  # Text aktívnej záložky
+        bordercolor=[("selected", ACCENT_2_COLOR)],  # Text aktívnej záložky
+    )
+    style.configure("panel.Treeview", background=TEXT_EDITOR_FRAME_BG, foreground=PANEL_TEXT_COLOR,
+                    fieldbackground=TEXT_EDITOR_FRAME_BG, bordercolor=ACCENT_2_COLOR, lightcolor=ACCENT_2_COLOR)
     photo = tk.PhotoImage(file=Utils.resource_path('images/hector-icon.png'))
     root.wm_iconphoto(True, photo)
     splash = SplashWindow(root)
@@ -71,6 +106,22 @@ if __name__ == "__main__":
         has_available_update = Utils.check_updates(VERSION, False,
                                                    github_token=args.github_token, github_user=args.github_user)
     splash.update_status("inicializujem textový processor...")
+    ctx = RunContext()
+    ctx.nlp = nlp
+    ctx.spellcheck_dictionary = dictionaries["spellcheck"]
+    ctx.thesaurus = dictionaries["thesaurus"]
+    ctx.has_available_update = has_available_update
+    navigator = Navigator()
+    navigator.root = root
+    navigator.windows[Navigator.MAIN_WINDOW] = lambda r: MainWindow(r)
+    navigator.windows[Navigator.PROJECT_SELECTOR_WINDOW] = lambda r: ProjectSelectorWindow(r)
     splash.close()
-    main_window = MainWindow(root, nlp, dictionaries["spellcheck"], dictionaries["thesaurus"], has_available_update)
-    main_window.start_main_loop()
+    # OPEN WINDOW IN MAXIMIZED STATE
+    # FOR WINDOWS AND MAC OS SET STATE ZOOMED
+    # FOR LINUX SET ATTRIBUTE ZOOMED
+    if platform.system() == "Windows" or platform.system() == "Darwin":
+        root.state("zoomed")
+    else:
+        root.attributes('-zoomed', True)
+    navigator.navigate(Navigator.PROJECT_SELECTOR_WINDOW)
+    root.mainloop()

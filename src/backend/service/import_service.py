@@ -8,14 +8,18 @@ from src.utils import Utils
 
 
 class ImportService:
+    """Service form importing external documents to hector"""
+
     @staticmethod
     def normalize_text(text):
-        clrf = re.compile("\r\n")
-        corrected_text = re.sub(clrf, "\n", text)
+        """Perform normalization of text data. At the moment, it only replaces CRLF line ends to LF line ends """
+        crlf = re.compile("\r\n")
+        corrected_text = re.sub(crlf, "\n", text)
         return corrected_text
 
     @staticmethod
     def import_document(file_path):
+        """Import document to hector"""
         if file_path.endswith(".txt"):
             with open(file_path, 'r', encoding='utf-8') as file:
                 return file.read()

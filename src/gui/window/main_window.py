@@ -7,27 +7,28 @@ import random
 import re
 import tkinter as tk
 import webbrowser
+from functools import partial
 from tkinter import filedialog, ttk, messagebox
 
-import spacy
 from PIL import ImageTk, Image
-from hunspell import Hunspell
-from pythes import PyThes
 from reportlab.graphics import renderPM
 from spacy import displacy
 from spacy.tokens import Doc
 from svglib.svglib import svg2rlg
 from tkinter_autoscrollbar import AutoScrollbar
 
+from src.backend.run_context import RunContext
 from src.backend.service.config_service import ConfigService
 from src.backend.service.export_service import ExportService
 from src.backend.service.import_service import ImportService
 from src.backend.service.metadata_service import MetadataService
 from src.backend.service.nlp_service import NlpService
+from src.backend.service.project_service import ProjectService
 from src.backend.service.spellcheck_service import SpellcheckService
-from src.const.colors import PRIMARY_COLOR, ACCENT_COLOR, ACCENT_2_COLOR, TEXT_EDITOR_FRAME_BG, PANEL_TEXT_COLOR, \
+from src.const.colors import PRIMARY_COLOR, ACCENT_2_COLOR, TEXT_EDITOR_FRAME_BG, PANEL_TEXT_COLOR, \
     TEXT_EDITOR_BG, EDITOR_TEXT_COLOR, CLOSE_WORDS_PALLETE, LONG_SENTENCE_HIGHLIGHT_COLOR_MID, \
-    LONG_SENTENCE_HIGHLIGHT_COLOR_HIGH, SEARCH_RESULT_HIGHLIGHT_COLOR, CURRENT_SEARCH_RESULT_HIGHLIGHT_COLOR
+    LONG_SENTENCE_HIGHLIGHT_COLOR_HIGH, SEARCH_RESULT_HIGHLIGHT_COLOR, CURRENT_SEARCH_RESULT_HIGHLIGHT_COLOR, \
+    TRANSPARENT
 from src.const.font_awesome_icons import FontAwesomeIcons
 from src.const.fonts import HELVETICA_FONT_NAME, TEXT_SIZE_SECTION_HEADER, TEXT_SIZE_BOTTOM_BAR, BOLD_FONT, FA_SOLID
 from src.const.grammar_error_types import GRAMMAR_ERROR_TYPE_MISSPELLED_WORD, GRAMMAR_ERROR_TYPE_WRONG_Y_SUFFIX, \
@@ -42,11 +43,15 @@ from src.const.tags import CLOSE_WORD_PREFIX, LONG_SENTENCE_TAG_NAME_HIGH, LONG_
     FREQUENT_WORD_PREFIX, FREQUENT_WORD_TAG_NAME, COMPUTER_QUOTE_MARKS_TAG_NAME, DANGLING_QUOTE_MARK_TAG_NAME, \
     SHOULD_USE_LOWER_QUOTE_MARK_TAG_NAME, SHOULD_USE_UPPER_QUOTE_MARK_TAG_NAME, FORMATTING_TAGS, CLOSE_WORD_RANGE_PREFIX
 from src.const.values import READABILITY_MAX_VALUE, DOCUMENTATION_LINK, NLP_BATCH_SIZE
-from src.gui.analysis_settings_modal import AnalysisSettingsModal
-from src.gui.appearance_settings_modal import AppearanceSettingsModal
+from src.domain.htext_file import HTextFile
+from src.domain.project import ProjectItemType
+from src.gui.modal.analysis_settings_modal import AnalysisSettingsModal
+from src.gui.modal.appearance_settings_modal import AppearanceSettingsModal
 from src.gui.gui_utils import GuiUtils
-from src.gui.menu import MenuItem, TopMenu
-from src.gui.splash_window import SplashWindow
+from src.gui.menu import MenuItem, TopMenu, MenuSeparator
+from src.gui.modal.new_project_item_modal import NewProjectItemModal
+from src.gui.navigator import Navigator
+from src.gui.window.splash_window import SplashWindow
 from src.gui.tooltip import Tooltip
 from src.utils import Utils
 
@@ -67,35 +72,21 @@ with open(Utils.resource_path(os.path.join('data_files', 'dep_tag_translations.j
 
 # MAIN GUI WINDOW
 class MainWindow:
-    def __init__(self, r, _nlp: spacy, spellcheck_dictionary: Hunspell, thesaurus: PyThes, has_available_update: bool):
+    def __init__(self, r):
         self.root = r
         r.overrideredirect(False)
-        style = ttk.Style(self.root)
-        # CUSTOM SCROLLBAR
-        style.configure("Vertical.TScrollbar", gripcount=0, troughcolor=PRIMARY_COLOR, bordercolor=PRIMARY_COLOR,
-                        background=ACCENT_COLOR, lightcolor=ACCENT_COLOR, darkcolor=ACCENT_2_COLOR)
-
-        style.layout('arrowless.Vertical.TScrollbar',
-                     [('Vertical.Scrollbar.trough',
-                       {'children': [('Vertical.Scrollbar.thumb',
-                                      {'expand': '1', 'sticky': 'nswe'})],
-                        'sticky': 'ns'})])
+        if platform.system() == "Windows" or platform.system() == "Darwin":
+            self.root.state("zoomed")
+        else:
+            self.root.attributes('-zoomed', True)
         screen_width = self.root.winfo_screenwidth()
         screen_height = self.root.winfo_screenheight()
         self.root.geometry("800x600")
         x = screen_width / 2 - (800 / 2)
         y = screen_height / 2 - (600 / 2)
         self.root.geometry("+%d+%d" % (x, y))
-        # OPEN WINDOW IN MAXIMIZED STATE
-        # FOR WINDOWS AND MAC OS SET STATE ZOOMED
-        # FOR LINUX SET ATTRIBUTE ZOOMED
-        if platform.system() == "Windows" or platform.system() == "Darwin":
-            self.root.state("zoomed")
-        else:
-            self.root.attributes('-zoomed', True)
-        self.nlp = _nlp
-        self.spellcheck_dictionary = spellcheck_dictionary
-        self.thesaurus = thesaurus
+        self.ctx = RunContext()
+        r.title(f"{self.ctx.project.name} | Hector")
         # TIMERS FOR DEBOUNCING CHANGE EVENTS
         self.analyze_text_debounce_timer = None
         self.search_debounce_timer = None
@@ -110,7 +101,7 @@ class MainWindow:
         self.last_tags = set()
 
         # DEFAULT NLP DOCUMENT INITIALIZED ON EMPTY TEXT
-        self.doc = self.nlp('')
+        self.doc = self.ctx.nlp('')
         # TOKEN SELECTED IN LEFT BOTTOM INTOSPECTION WINDOW
         self.current_instrospection_token = None
         # EDITOR TEXT SIZE
@@ -121,36 +112,60 @@ class MainWindow:
         self.config = ConfigService.load(CONFIG_FILE_PATH)
         # LOAD METADATA
         self.metadata = MetadataService.load(METADATA_FILE_PATH)
-        self.has_available_update = has_available_update
+        # PROJECT TREE ITEMS TO PROJCT ITEM INDEX
+        self.project_tree_item_to_project_item = {}
         # INIT GUI
         # TOP MENU
         # Define menu items
         menu_items = [
+            MenuItem(label="Projekt",
+                     underline_index=0,
+                     submenu=[
+                         MenuItem(label="Zavrieť",
+                                  command=self.close_project,
+                                  )
+                     ]),
             MenuItem(label="Súbor",
                      underline_index=0,
-                     submenu=[MenuItem(label="Otvoriť", command=self.load_file, shortcut="<Control-o>",
-                                       icon=GuiUtils.fa_image(FA_SOLID, "#3B3B3B", "white", FontAwesomeIcons.file, 16),
-                                       highlight_icon=GuiUtils.fa_image(FA_SOLID, "white", "#3B3B3B",
-                                                                        FontAwesomeIcons.file, 16),
-                                       shortcut_label="Ctrl+O"),
-                              MenuItem(label="Otvoriť posledný súbor", command=self.load_file_contents,
-                                       shortcut="<Control-r>",
-                                       icon=GuiUtils.fa_image(FA_SOLID, "#3B3B3B", "white", FontAwesomeIcons.rotate,
-                                                              16),
-                                       highlight_icon=GuiUtils.fa_image(FA_SOLID, "white", "#3B3B3B",
-                                                                        FontAwesomeIcons.rotate,
-                                                                        16),
-                                       shortcut_label="Ctrl+R"),
-                              MenuItem(label="Uložiť",
-                                       command=self.save_file,
-                                       shortcut="<Control-s>",
-                                       icon=GuiUtils.fa_image(FA_SOLID, "#3B3B3B", "white",
-                                                              FontAwesomeIcons.floppy_disk, 16),
-                                       highlight_icon=GuiUtils.fa_image(FA_SOLID, "white", "#3B3B3B",
-                                                                        FontAwesomeIcons.floppy_disk,
-                                                                        16),
-                                       shortcut_label="Ctrl+S"),
-                              ]),
+                     submenu=[
+                         MenuItem(label="Nový",
+                                  command=self.open_new_file_dialog,
+                                  icon=GuiUtils.fa_image(FA_SOLID, "#3B3B3B", "white", FontAwesomeIcons.file, 16),
+                                  highlight_icon=GuiUtils.fa_image(FA_SOLID, "white", "#3B3B3B",
+                                                                   FontAwesomeIcons.file, 16),
+                                  shortcut_label="Ctrl+N", shortcut="<Control-n>"),
+                         MenuItem(label="Uložiť",
+                                  command=self.save_text_file,
+                                  icon=GuiUtils.fa_image(FA_SOLID, "#3B3B3B", "white", FontAwesomeIcons.floppy_disk,
+                                                         16),
+                                  highlight_icon=GuiUtils.fa_image(FA_SOLID, "white", "#3B3B3B",
+                                                                   FontAwesomeIcons.floppy_disk, 16),
+                                  shortcut_label="Ctrl+S", shortcut="<Control-s>"),
+                         MenuSeparator(),
+                         MenuItem(label="Importovať", command=self.import_file, shortcut="<Control-o>",
+                                  icon=GuiUtils.fa_image(FA_SOLID, "#3B3B3B", "white", FontAwesomeIcons.file_import,
+                                                         16),
+                                  highlight_icon=GuiUtils.fa_image(FA_SOLID, "white", "#3B3B3B",
+                                                                   FontAwesomeIcons.file_import, 16),
+                                  shortcut_label="Ctrl+O"),
+                         MenuItem(label="Reimportovať", command=self.import_file_contents,
+                                  shortcut="<Control-r>",
+                                  icon=GuiUtils.fa_image(FA_SOLID, "#3B3B3B", "white", FontAwesomeIcons.rotate,
+                                                         16),
+                                  highlight_icon=GuiUtils.fa_image(FA_SOLID, "white", "#3B3B3B",
+                                                                   FontAwesomeIcons.rotate,
+                                                                   16),
+                                  shortcut_label="Ctrl+R"),
+                         MenuItem(label="Exportovať",
+                                  command=self.export_file,
+                                  shortcut="<Control-e>",
+                                  icon=GuiUtils.fa_image(FA_SOLID, "#3B3B3B", "white",
+                                                         FontAwesomeIcons.file_export, 16),
+                                  highlight_icon=GuiUtils.fa_image(FA_SOLID, "white", "#3B3B3B",
+                                                                   FontAwesomeIcons.file_export,
+                                                                   16),
+                                  shortcut_label="Ctrl+E"),
+                     ]),
             MenuItem(label="Upraviť", underline_index=0, submenu=[
                 MenuItem(
                     label="Vrátiť späť",
@@ -231,16 +246,16 @@ class MainWindow:
         ]
         self.menu_bar = TopMenu(self.root, menu_items, background="#3B3B3B", foreground="white")
         # MAIN FRAME
-        main_frame = tk.Frame(self.root)
-        main_frame.pack(expand=1, fill=tk.BOTH, side=tk.LEFT)
+        self.main_frame = tk.Frame(self.root)
+        self.main_frame.pack(expand=1, fill=tk.BOTH, side=tk.LEFT)
         # LEFT SCROLLABLE SIDE PANEL WITH FREQUENT WORDS
-        left_side_panel = tk.Frame(main_frame, width=300, relief=tk.FLAT, borderwidth=1, background=PRIMARY_COLOR)
+        left_side_panel = tk.Frame(self.main_frame, width=300, relief=tk.FLAT, borderwidth=1, background=PRIMARY_COLOR)
         left_side_panel.pack(fill=tk.BOTH, side=tk.LEFT, expand=0)
         # RIGHT SCROLLABLE SIDE PANEL WITH FREQUENT WORDS
-        right_side_panel = tk.Frame(main_frame, width=200, relief=tk.FLAT, borderwidth=1, background=PRIMARY_COLOR)
+        right_side_panel = tk.Frame(self.main_frame, width=200, relief=tk.FLAT, borderwidth=1, background=PRIMARY_COLOR)
         right_side_panel.pack(fill=tk.BOTH, side=tk.RIGHT)
         # MIDDLE TEXT EDITOR WINDOW
-        text_editor_frame = tk.Frame(main_frame, background=TEXT_EDITOR_FRAME_BG, borderwidth=0)
+        text_editor_frame = tk.Frame(self.main_frame, background=TEXT_EDITOR_FRAME_BG, borderwidth=0)
         text_editor_frame.pack(expand=1, fill=tk.BOTH)
         text_editor_scroll_frame = tk.Frame(text_editor_frame, width=10, relief=tk.FLAT, background=PRIMARY_COLOR)
         text_editor_scroll_frame.pack(side=tk.RIGHT, fill=tk.Y)
@@ -251,34 +266,81 @@ class MainWindow:
         bottom_panel = tk.Frame(text_editor_frame, background=ACCENT_2_COLOR, height=20)
         bottom_panel.pack(fill=tk.BOTH, side=tk.BOTTOM)
         # LEFT PANEL CONTENTS
-        self.introspection_text = tk.Text(left_side_panel, highlightthickness=0, bd=0, wrap=tk.WORD, state=tk.DISABLED,
+        left_panel_notebook = ttk.Notebook(left_side_panel, style="panel.TNotebook")
+        left_panel_notebook.pack(fill=tk.BOTH, expand=True)
+        left_side_panel_project = tk.Frame(left_panel_notebook, width=300, relief=tk.FLAT, borderwidth=1,
+                                           background=PRIMARY_COLOR)
+        left_side_panel_project.pack(fill=tk.BOTH, side=tk.LEFT, expand=0)
+        tk.Label(left_side_panel_project, pady=10, background=PRIMARY_COLOR, foreground=PANEL_TEXT_COLOR,
+                 wraplength=300,
+                 text=f"{self.ctx.project.name}",
+                 font=(HELVETICA_FONT_NAME, TEXT_SIZE_SECTION_HEADER), anchor='n',
+                 padx=10,
+                 justify='left').pack(fill=tk.X)
+        tk.Label(left_side_panel_project, pady=10, background=PRIMARY_COLOR, foreground=PANEL_TEXT_COLOR,
+                 wraplength=300,
+                 text=f"{self.ctx.project.description}",
+                 anchor='n',
+                 padx=10,
+                 justify='left').pack(fill=tk.X)
+        separator = ttk.Separator(left_side_panel_project, orient='horizontal')
+        separator.pack(fill=tk.X, padx=10)
+        self.project_tree = ttk.Treeview(left_side_panel_project, show="tree", style="panel.Treeview")
+        self.project_root_image = GuiUtils.fa_image(FA_SOLID, TRANSPARENT, "white", FontAwesomeIcons.folder, 20,
+                                                    padding=4)
+        self.htext_image = GuiUtils.fa_image(FA_SOLID, TRANSPARENT, "white", FontAwesomeIcons.file, 20, padding=4)
+        self.directory_image = GuiUtils.fa_image(FA_SOLID, TRANSPARENT, "white", FontAwesomeIcons.folder, 20, padding=4)
+        self.project_tree_root = self.project_tree.insert(
+            "", 0,
+            image=self.project_root_image,
+            text=self.ctx.project.name,
+            open=True
+        )
+        self.project_tree.pack(fill=tk.BOTH, expand=1, padx=10, pady=10)
+        self.project_tree.bind("<Double-1>", self._on_project_tree_double_click)
+        self.project_tree.bind("<<TreeviewOpen>>", self._on_project_tree_item_open)
+        self.project_tree.bind("<<TreeviewClose>>", self._on_project_tree_item_close)
+        self.project_tree.bind("<FocusIn>",
+                               lambda e: self.project_tree.bind("<Delete>", self._on_project_tree_item_delete))
+        self.project_tree.bind("<FocusOut>", lambda e: self.project_tree.unbind("<Delete>"))
+
+        self._show_project_files()
+        left_side_panel_tools = tk.Frame(left_panel_notebook, width=300, relief=tk.FLAT, borderwidth=1,
+                                         background=PRIMARY_COLOR)
+        left_side_panel_tools.pack(fill=tk.BOTH, side=tk.LEFT, expand=0)
+        left_panel_notebook.add(left_side_panel_project, text="Projekt")
+        left_panel_notebook.add(left_side_panel_tools, text="Nástroje")
+        self.introspection_text = tk.Text(left_side_panel_tools, highlightthickness=0, bd=0, wrap=tk.WORD,
+                                          state=tk.DISABLED,
                                           width=30, background=PRIMARY_COLOR, foreground=PANEL_TEXT_COLOR, height=30,
                                           font=(HELVETICA_FONT_NAME, 9), insertbackground=PANEL_TEXT_COLOR,
                                           )
         if ENABLE_DEBUG_DEP_IMAGE:
-            self.dep_image_holder = ttk.Label(left_side_panel, width=30)
+            self.dep_image_holder = ttk.Label(left_side_panel_tools, width=30)
             self.dep_image_holder.pack(pady=10, padx=10, side=tk.BOTTOM)
             self.dep_image_holder.bind("<Button-1>", self.show_dep_image)
         MainWindow.set_text(self.introspection_text, 'Kliknite na slovo v editore')
         self.introspection_text.pack(fill=tk.X, pady=10, padx=10, side=tk.BOTTOM)
-        separator = ttk.Separator(left_side_panel, orient='horizontal')
+        separator = ttk.Separator(left_side_panel_tools, orient='horizontal')
         separator.pack(fill=tk.X, padx=10, side=tk.BOTTOM)
-        tk.Label(left_side_panel, pady=10, background=PRIMARY_COLOR, foreground=PANEL_TEXT_COLOR,
+        tk.Label(left_side_panel_tools, pady=10, background=PRIMARY_COLOR, foreground=PANEL_TEXT_COLOR,
                  text="Introspekcia",
                  font=(HELVETICA_FONT_NAME, TEXT_SIZE_SECTION_HEADER), anchor='n',
                  justify='left').pack(side=tk.BOTTOM)
-        tk.Label(left_side_panel, pady=10, background=PRIMARY_COLOR, foreground=PANEL_TEXT_COLOR,
+        tk.Label(left_side_panel_tools, pady=10, background=PRIMARY_COLOR, foreground=PANEL_TEXT_COLOR,
                  text="Často sa opakujúce slová",
                  font=(HELVETICA_FONT_NAME, TEXT_SIZE_SECTION_HEADER), anchor='n',
                  justify='left').pack()
-        separator = ttk.Separator(left_side_panel, orient='horizontal')
+        separator = ttk.Separator(left_side_panel_tools, orient='horizontal')
         separator.pack(fill=tk.X, padx=10)
-        left_side_panel_scroll_frame = tk.Frame(left_side_panel, width=10, relief=tk.FLAT, background=PRIMARY_COLOR)
+        left_side_panel_scroll_frame = tk.Frame(left_side_panel_tools, width=10, relief=tk.FLAT,
+                                                background=PRIMARY_COLOR)
         left_side_panel_scroll_frame.pack(side=tk.RIGHT, fill=tk.Y)
         left_side_frame_scroll = AutoScrollbar(left_side_panel_scroll_frame, orient='vertical',
                                                style='arrowless.Vertical.TScrollbar', takefocus=False)
         left_side_frame_scroll.pack(side=tk.RIGHT, fill=tk.Y)
-        self.close_words_text = tk.Text(left_side_panel, highlightthickness=0, bd=0, wrap=tk.WORD, state=tk.DISABLED,
+        self.close_words_text = tk.Text(left_side_panel_tools, highlightthickness=0, bd=0, wrap=tk.WORD,
+                                        state=tk.DISABLED,
                                         width=20, background=PRIMARY_COLOR, foreground=PANEL_TEXT_COLOR,
                                         yscrollcommand=left_side_frame_scroll.set, cursor="xterm")
         self.close_words_text.pack(fill=tk.BOTH, expand=1, pady=10, padx=10)
@@ -411,18 +473,18 @@ class MainWindow:
     # START MAIN LOOP
     def start_main_loop(self):
         # START MAIN LOOP TO SHOW ROOT WINDOW
-        if self.has_available_update:
+        if self.ctx.has_available_update:
             self.root.after(1000, self.show_about)
-        self.root.mainloop()
 
     # UTIL METHOD TO SET tk.TEXT WIDGET
     # WE NEED TO ENBLE TEXT, DELETE CONTENT AND INSERT NEW TEXT
     @staticmethod
-    def set_text(text: tk.Text, value):
+    def set_text(text: tk.Text, value, editable=False):
         text.config(state=tk.NORMAL)
         text.delete(1.0, tk.END)
         text.insert(tk.END, value)
-        text.config(state=tk.DISABLED)
+        if not editable:
+            text.config(state=tk.DISABLED)
 
     def get_carret_position(self):
         possible_carret = self.text_editor.count("1.0", self.text_editor.index(tk.INSERT), "chars")
@@ -804,7 +866,7 @@ class MainWindow:
         return error_messages
 
     def get_hunspell_suggestions(self, token):
-        return ", ".join(self.spellcheck_dictionary.suggest(token.lower_))
+        return ", ".join(self.ctx.spellcheck_dictionary.suggest(token.lower_))
 
     def editor_on_mouse_leave(self, event):
         self.tooltip.hide()
@@ -812,16 +874,20 @@ class MainWindow:
 
     def undo(self, event=None):
         self.text_editor.edit_undo()
+        if self.ctx.current_file is not None:
+            self.save_text_file()
         self.analyze_text()
         return 'break'
 
     def redo(self, event=None):
         self.text_editor.edit_redo()
+        if self.ctx.current_file is not None:
+            self.save_text_file()
         self.analyze_text()
         return 'break'
 
     # LOAD TEXT FILE
-    def load_file_contents(self, file_path=None):
+    def import_file_contents(self, file_path=None):
         if not file_path:
             file_path = MetadataService.get_recent_file(self.metadata)
         if file_path:
@@ -833,7 +899,99 @@ class MainWindow:
             self.analyze_text(True)
 
     # LOAD TEXT FILE
-    def load_file(self):
+    def close_project(self):
+        self.ctx.current_file = None
+        self.ctx.project = None
+        self.main_frame.destroy()
+        self.menu_bar.destroy()
+        self.tooltip.destroy()
+        Navigator().navigate(Navigator.PROJECT_SELECTOR_WINDOW)
+
+    # LOAD TEXT FILE
+    def open_new_file_dialog(self, type_options=None, callback=lambda x: None):
+        parent_item = None
+        selection = self.project_tree.selection()
+        if len(selection) > 0:
+            item_id = self.project_tree.selection()[0]
+            parent_item = self.project_tree_item_to_project_item.get(item_id, None)
+            if parent_item is not None:
+                if parent_item.type != ProjectItemType.DIRECTORY:
+                    parent_item_id = self.project_tree.parent(item_id)
+                    if parent_item_id:
+                        parent_item = self.project_tree_item_to_project_item.get(parent_item_id, None)
+
+        modal = NewProjectItemModal(
+            self.root,
+            parent_item=parent_item,
+            type_options=type_options,
+            on_new_file=lambda item: Utils.execute_callbacks([self._show_project_files, partial(callback, item)])
+        )
+        self.configure_modal(modal.toplevel, height=120, width=400)
+
+    def save_text_file(self):
+        if self.ctx.current_file:
+            self.ctx.current_file.contents.raw_text = self.text_editor.get(1.0, tk.END)
+            ProjectService.save_file_contents(self.ctx.project, self.ctx.current_file)
+        else:
+            self.open_new_file_dialog(
+                # EXCLUDE DIRECTORY FROM OPTIONS
+                type_options={key: val for key, val in ProjectItemType.get_selectable_values().items() if
+                              val != ProjectItemType.DIRECTORY},
+                callback=lambda item: Utils.execute_callbacks(
+                    [partial(self.open_text_file, item), self.save_text_file]
+                ))
+
+    def _on_project_tree_double_click(self, e=None):
+        item_id = self.project_tree.selection()[0]
+        if item_id:
+            item = self.project_tree_item_to_project_item[item_id]
+            if item.type == ProjectItemType.HTEXT:
+                self.open_text_file(item)
+                MainWindow.set_text(self.text_editor, item.contents.raw_text, editable=True)
+                self.analyze_text(True)
+
+    def _on_project_tree_item_open(self, e=None):
+        item_id = self.project_tree.focus()
+        if item_id:
+            item = self.project_tree_item_to_project_item[item_id]
+            if item.type == ProjectItemType.DIRECTORY:
+                item.opened = True
+                ProjectService.save(self.ctx.project, self.ctx.project.path)
+
+    def _on_project_tree_item_delete(self, e=None):
+        item_id = self.project_tree.focus()
+        if item_id:
+            item = self.project_tree_item_to_project_item.get(item_id, None)
+            if item is None:
+                return
+            parent_item_id = self.project_tree.parent(item_id)
+            parent_item = None
+            if parent_item_id:
+                parent_item = self.project_tree_item_to_project_item.get(parent_item_id, None)
+            item_type_label = ProjectItemType.get_translations()[item.type]
+            should_delete = messagebox.askyesno(
+                f"Vymazať {item_type_label}",
+                f"Naozaj chcete vymazať {item_type_label} '{item.name}'?"
+            )
+            if should_delete:
+                ProjectService.delete_item(self.ctx.project, item, parent_item)
+                self._show_project_files()
+
+    def _on_project_tree_item_close(self, e=None):
+        item_id = self.project_tree.focus()
+        item = self.project_tree_item_to_project_item[item_id]
+        if item.type == ProjectItemType.DIRECTORY:
+            item.opened = False
+            ProjectService.save(self.ctx.project, self.ctx.project.path)
+
+    def open_text_file(self, item):
+        self.ctx.current_file = item
+        self.root.title(f"{item.name} | {self.ctx.project.name} | Hector")
+        if not item.contents:
+            item.contents = ProjectService.load_file_contents(self.ctx.project, item)
+
+    # LOAD TEXT FILE
+    def import_file(self):
         file_path = filedialog.askopenfilename(
             filetypes=[
                 ("Textové súbory", "*.txt"),
@@ -842,10 +1000,10 @@ class MainWindow:
                 ("RTF dokumenty", "*.rtf"),
             ]
         )
-        self.load_file_contents(file_path)
+        self.import_file_contents(file_path)
 
     # SAVE TEXT FILE
-    def save_file(self):
+    def export_file(self):
         file_path = filedialog.asksaveasfilename(defaultextension=".txt", filetypes=[("Textové súbory", "*.txt")])
         text = self.text_editor.get(1.0, tk.END)
         ExportService.export_text_file(file_path, text)
@@ -894,6 +1052,8 @@ class MainWindow:
         text = ImportService.normalize_text(clipboard_text)
         event.widget.insert(tk.INSERT, text)
         self.analyze_text(force_reload=True, event=event)
+        if self.ctx.current_file is not None:
+            self.save_text_file()
         # CANCEL DEFAULT PASTE
         return "break"
 
@@ -918,16 +1078,16 @@ class MainWindow:
             # PARTIAL NLP
             carret_position = self.get_carret_position()
             if carret_position is not None:
-                self.doc = NlpService.partial_analysis(text, self.doc, self.nlp, self.config, carret_position)
+                self.doc = NlpService.partial_analysis(text, self.doc, self.ctx.nlp, self.config, carret_position)
                 self.text_editor.edit_separator()
             else:
                 # FALLBACK TO FULL NLP
-                self.doc = NlpService.full_analysis(text, self.nlp, NLP_BATCH_SIZE, self.config)
+                self.doc = NlpService.full_analysis(text, self.ctx.nlp, NLP_BATCH_SIZE, self.config)
                 self.text_editor.edit_separator()
         else:
             # FULL NLP
             # FALLBACK TO FULL NLP
-            self.doc = NlpService.full_analysis(text, self.nlp, NLP_BATCH_SIZE, self.config)
+            self.doc = NlpService.full_analysis(text, self.ctx.nlp, NLP_BATCH_SIZE, self.config)
         # CLEAR TAGS
         for tag in self.text_editor.tag_names():
             self.text_editor.tag_delete(tag)
@@ -972,7 +1132,7 @@ class MainWindow:
                                   lambda e: self.highlight_same_word(e, self.text_editor),
                                   lambda e: self.unhighlight_same_word(e)
                                   )
-        readability = NlpService.evaluate_readability(self.doc)
+        readability = NlpService.compute_readability(self.doc)
         self.readability_value.configure(text=f"{readability: .0f} / {READABILITY_MAX_VALUE}")
         self.introspect(event)
 
@@ -983,7 +1143,16 @@ class MainWindow:
         # PREVENT STANDARD ANALYSIS ON CTRL+V
         if event.state & 0x0004 and event.keysym != 'v':
             return
-        self.analyze_text_debounce_timer = self.root.after(NLP_DEBOUNCE_LENGTH, self.analyze_text)
+        if self.ctx.current_file is not None:
+            self.analyze_text_debounce_timer = self.root.after(
+                NLP_DEBOUNCE_LENGTH,
+                lambda: Utils.execute_callbacks([self.save_text_file, self.analyze_text])
+            )
+        else:
+            self.analyze_text_debounce_timer = self.root.after(
+                NLP_DEBOUNCE_LENGTH,
+                self.analyze_text
+            )
 
     def introspect(self, event=None):
         carret_position = self.get_carret_position()
@@ -1002,7 +1171,7 @@ class MainWindow:
                     dep_view = ImageTk.PhotoImage(dep_image.resize((200, math.ceil(dep_image.height * scaling_ratio))))
                     self.dep_image_holder.config(image=dep_view)
                     self.dep_image_holder.image = dep_view
-                thes_result = self.thesaurus.lookup(self.current_instrospection_token.lemma_)
+                thes_result = self.ctx.thesaurus.lookup(self.current_instrospection_token.lemma_)
                 morph = self.current_instrospection_token.morph.to_dict()
                 formatted_morph = ''.join([f"  {key}:\t{value}\n" for key, value in morph.items()])
 
@@ -1097,7 +1266,7 @@ class MainWindow:
     # RUN SPELLCHECK
     def run_spellcheck(self, doc: Doc):
         if self.config.analysis_settings.enable_spellcheck:
-            SpellcheckService.spellcheck(self.spellcheck_dictionary, doc)
+            SpellcheckService.spellcheck(self.ctx.spellcheck_dictionary, doc)
             for word in self.doc._.words:
                 if word._.has_grammar_error:
                     start_index = f"1.0 + {word.idx} chars"
@@ -1132,7 +1301,7 @@ class MainWindow:
         link = tk.Label(about_window, text="Viac info", fg="blue", cursor="hand2", font=(HELVETICA_FONT_NAME, 10))
         link.pack()
         link.bind("<Button-1>", lambda e: webbrowser.open(DOCUMENTATION_LINK))
-        if self.has_available_update:
+        if self.ctx.has_available_update:
             new_version_button = tk.Label(about_window, text="K dispozícií je nová verzia", fg="blue", cursor="hand2",
                                           font=(HELVETICA_FONT_NAME, 10))
             new_version_button.pack()
@@ -1150,8 +1319,8 @@ class MainWindow:
         else:
             self.root.attributes('-zoomed', True)
         if dictionaries is not None:
-            self.spellcheck_dictionary = dictionaries["spellcheck"]
-            self.thesaurus = dictionaries["thesaurus"]
+            self.ctx.spellcheck_dictionary = dictionaries["spellcheck"]
+            self.ctx.thesaurus = dictionaries["thesaurus"]
         else:
             messagebox.showerror("Chyba!", "Slovníky sa nepodarilo aktualizovať. Skontrolujte internetové pripojenie.")
 
@@ -1186,3 +1355,25 @@ class MainWindow:
         modal.grab_set()
         modal.focus_set()
         modal.transient(self.root)
+
+    def _show_project_files(self):
+        items = self.project_tree.get_children(self.project_tree_root)
+        self.project_tree_item_to_project_item.clear()
+        if len(items) > 0:
+            for item in items:
+                self.project_tree.delete(item)
+        for item in self.ctx.project.items:
+            self._append_project_file_to_tree(item, self.project_tree_root)
+
+    def _append_project_file_to_tree(self, item, parent_tree_item):
+        if item.type == ProjectItemType.HTEXT:
+            item_id = self.project_tree.insert(parent_tree_item, tk.END, image=self.htext_image,
+                                               text=item.name)
+            self.project_tree_item_to_project_item[item_id] = item
+        elif item.type == ProjectItemType.DIRECTORY:
+            item_id = self.project_tree.insert(parent_tree_item, tk.END, image=self.directory_image,
+                                               text=item.name, open=item.opened)
+            self.project_tree_item_to_project_item[item_id] = item
+            if item.subitems is not None:
+                for subitem in item.subitems:
+                    self._append_project_file_to_tree(subitem, item_id)

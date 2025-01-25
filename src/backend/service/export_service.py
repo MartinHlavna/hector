@@ -1,6 +1,8 @@
 class ExportService:
+    """Service for generating hector exports"""
     @staticmethod
     def export_sentences(path, doc, blank_line_between_sents):
+        """Export sentences as an text file."""
         text = ""
         cur_sent = ""
         for sent in doc.sents:
@@ -28,6 +30,7 @@ class ExportService:
 
     @staticmethod
     def export_text_file(file_path, text):
+        """Export raw text file"""
         if file_path:
             with open(file_path, 'w', encoding='utf-8') as file:
                 file.write(text)

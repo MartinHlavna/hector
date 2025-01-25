@@ -2,6 +2,7 @@ import platform
 import tkinter as tk
 import tkinter.font as tkFont
 from functools import partial
+from tkinter import ttk
 
 from src.utils import Utils
 
@@ -32,6 +33,11 @@ class MenuItem:
         self.shortcut = shortcut
         self.shortcut_label = shortcut_label
         self.underline_index = underline_index
+
+
+class MenuSeparator(MenuItem):
+    def __init__(self):
+        super().__init__("")
 
 
 # POPO OBJECT HOLDING INFORMATION ABOUT SINGLE SUBMENU BUTTON
@@ -104,6 +110,9 @@ class TopMenu:
                         self.shortcuts[submenu_item.shortcut] = partial(self._execute_command, submenu_item.command)
 
             self.menu_buttons.append(button)
+
+    def destroy(self):
+        self.menu_frame.destroy()
 
     # CALLBACK FOR FOCUS LOSS
     def _on_main_menu_focus_loss(self, btn, i, e):
@@ -216,6 +225,10 @@ class TopMenu:
             # BUILD GUI ELEMENTS
             item_frame = tk.Frame(submenu, bg=self.background)
             item_frame.pack(fill=tk.X)
+            if isinstance(item, MenuSeparator):
+                separator = ttk.Separator(item_frame, orient='horizontal', style='Grey.TSeparator')
+                separator.pack(fill=tk.X, padx=10, pady=10)
+                continue
             icon_label = None
             shortcut_label = None
             if has_icon:

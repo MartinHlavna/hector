@@ -17,6 +17,9 @@ class Tooltip:
         self.label.pack()
         self._timer_id = None  # To track scheduled calls
 
+    def destroy(self):
+        self.toplevel.destroy()
+
     # PUBLIC SHOW METHOD. SCHEDULES TOOLTIP TO SHOW AFTER 500ms
     # CANCELS ANY PREVIOUS SCHEDULED SHOWS
     def show(self, text, x, y):
