@@ -212,6 +212,8 @@ class TopMenu:
                 i.shortcut_label) if i.shortcut_label is not None else 0).shortcut_label)
             width += max_shortcut_label_length * 9
             has_shortcut = True
+        else:
+            width += 10
         height = len(submenu_items) * 26
         if platform.system() == "Windows":
             scaling_factor = Utils.get_windows_scaling_factor()
