@@ -665,8 +665,6 @@ def test_metadata_save_load(setup_teardown):
     m = MetadataService.load(m_path)
     assert m.recent_files[0] == "TEST"
     ExportService.export_text_file("test.txt", "TEST")
-    MetadataService.put_recent_file(m, "test.txt")
-    assert MetadataService.get_recent_file(m) == "test.txt"
 
 
 def test_metadata_recent_projects():

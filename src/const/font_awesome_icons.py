@@ -14,3 +14,5 @@ class FontAwesomeIcons:
     magnifying_glass = '\uf002'
     rotate = '\uf2f1'
     download = '\uf019'
+    link = '\uf0c1'
+    link_broken = '\uf127'

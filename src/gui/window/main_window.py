@@ -44,7 +44,8 @@ from src.const.tags import CLOSE_WORD_PREFIX, LONG_SENTENCE_TAG_NAME_HIGH, LONG_
     SHOULD_USE_LOWER_QUOTE_MARK_TAG_NAME, SHOULD_USE_UPPER_QUOTE_MARK_TAG_NAME, FORMATTING_TAGS, CLOSE_WORD_RANGE_PREFIX
 from src.const.values import READABILITY_MAX_VALUE, DOCUMENTATION_LINK, NLP_BATCH_SIZE
 from src.domain.htext_file import HTextFile
-from src.domain.project import ProjectItemType
+from src.domain.metadata import RecentProject
+from src.domain.project import ProjectItemType, Project
 from src.gui.modal.analysis_settings_modal import AnalysisSettingsModal
 from src.gui.modal.appearance_settings_modal import AppearanceSettingsModal
 from src.gui.gui_utils import GuiUtils
@@ -117,14 +118,25 @@ class MainWindow:
         # INIT GUI
         # TOP MENU
         # Define menu items
+        recent_projects = []
+        for recent_project in self.metadata.recent_projects:
+            if recent_project.path != self.ctx.project.path:
+                recent_projects.append(MenuItem(
+                    label=recent_project.name,
+                    command=partial(self.open_recent_project, recent_project)
+                ))
         menu_items = [
             MenuItem(label="Projekt",
                      underline_index=0,
                      submenu=[
                          MenuItem(label="Zavrieť",
                                   command=self.close_project,
+                                  ),
+                         MenuItem(label="Nedávne projekty",
+                                  submenu=recent_projects,
                                   )
                      ]),
+            MenuSeparator(),
             MenuItem(label="Súbor",
                      underline_index=0,
                      submenu=[
@@ -148,7 +160,7 @@ class MainWindow:
                                   highlight_icon=GuiUtils.fa_image(FA_SOLID, "white", "#3B3B3B",
                                                                    FontAwesomeIcons.file_import, 16),
                                   shortcut_label="Ctrl+O"),
-                         MenuItem(label="Reimportovať", command=self.import_file_contents,
+                         MenuItem(label="Reimportovať", command=self.reimport_file,
                                   shortcut="<Control-r>",
                                   icon=GuiUtils.fa_image(FA_SOLID, "#3B3B3B", "white", FontAwesomeIcons.rotate,
                                                          16),
@@ -222,7 +234,7 @@ class MainWindow:
                     command=self.import_settings
                 )
             ]),
-            MenuItem(label="Pomoc", underline_index=0, submenu=[
+            MenuItem(label="Pomoc", underline_index=1, submenu=[
                 MenuItem(label="O programe",
                          icon=GuiUtils.fa_image(FA_SOLID, "#3B3B3B", "white", FontAwesomeIcons.question_circle, 16),
                          highlight_icon=GuiUtils.fa_image(FA_SOLID, "white", "#3B3B3B",
@@ -289,6 +301,16 @@ class MainWindow:
         self.project_root_image = GuiUtils.fa_image(FA_SOLID, TRANSPARENT, "white", FontAwesomeIcons.folder, 20,
                                                     padding=4)
         self.htext_image = GuiUtils.fa_image(FA_SOLID, TRANSPARENT, "white", FontAwesomeIcons.file, 20, padding=4)
+        self.htext_image_with_link = ImageTk.PhotoImage(GuiUtils.merge_icons(
+            GuiUtils.fa_image_raw(FA_SOLID, TRANSPARENT, "white", FontAwesomeIcons.link, 20, padding=4),
+            GuiUtils.fa_image_raw(FA_SOLID, TRANSPARENT, "white", FontAwesomeIcons.file, 20, padding=4),
+            space_between=0
+        ))
+        self.htext_image_with_broken_link = ImageTk.PhotoImage(GuiUtils.merge_icons(
+            GuiUtils.fa_image_raw(FA_SOLID, TRANSPARENT, "white", FontAwesomeIcons.link_broken, 20, padding=4),
+            GuiUtils.fa_image_raw(FA_SOLID, TRANSPARENT, "white", FontAwesomeIcons.file, 20, padding=4),
+            space_between=0
+        ))
         self.directory_image = GuiUtils.fa_image(FA_SOLID, TRANSPARENT, "white", FontAwesomeIcons.folder, 20, padding=4)
         self.project_tree_root = self.project_tree.insert(
             "", 0,
@@ -887,25 +909,32 @@ class MainWindow:
         return 'break'
 
     # LOAD TEXT FILE
-    def import_file_contents(self, file_path=None):
-        if not file_path:
-            file_path = MetadataService.get_recent_file(self.metadata)
-        if file_path:
-            text = ImportService.import_document(file_path)
-            MetadataService.put_recent_file(self.metadata, file_path)
-            MetadataService.save(self.metadata, METADATA_FILE_PATH)
-            self.text_editor.delete(1.0, tk.END)
-            self.text_editor.insert(tk.END, text)
-            self.analyze_text(True)
+    def import_file_contents(self, item, file_path):
+        text = ImportService.import_document(file_path)
+        item.contents = HTextFile(text)
+        item.imported_path = file_path
+        ProjectService.save_file_contents(self.ctx.project, item)
+        ProjectService.save(self.ctx.project, self.ctx.project.path)
+        self._show_project_files()
+        self.open_text_file(item)
 
     # LOAD TEXT FILE
-    def close_project(self):
+    def close_project(self, navigate_to_selector=True):
         self.ctx.current_file = None
         self.ctx.project = None
         self.main_frame.destroy()
         self.menu_bar.destroy()
         self.tooltip.destroy()
-        Navigator().navigate(Navigator.PROJECT_SELECTOR_WINDOW)
+        if navigate_to_selector:
+            Navigator().navigate(Navigator.PROJECT_SELECTOR_WINDOW)
+
+    # noinspection PyMethodMayBeStatic
+    def open_recent_project(self, project: RecentProject, e=None):
+        self.close_project(navigate_to_selector=False)
+        if GuiUtils.open_recent_project(project):
+            Navigator().navigate(Navigator.MAIN_WINDOW)
+        else:
+            Navigator().navigate(Navigator.PROJECT_SELECTOR_WINDOW)
 
     # LOAD TEXT FILE
     def open_new_file_dialog(self, type_options=None, callback=lambda x: None):
@@ -947,8 +976,6 @@ class MainWindow:
             item = self.project_tree_item_to_project_item[item_id]
             if item.type == ProjectItemType.HTEXT:
                 self.open_text_file(item)
-                MainWindow.set_text(self.text_editor, item.contents.raw_text, editable=True)
-                self.analyze_text(True)
 
     def _on_project_tree_item_open(self, e=None):
         item_id = self.project_tree.focus()
@@ -987,8 +1014,9 @@ class MainWindow:
     def open_text_file(self, item):
         self.ctx.current_file = item
         self.root.title(f"{item.name} | {self.ctx.project.name} | Hector")
-        if not item.contents:
-            item.contents = ProjectService.load_file_contents(self.ctx.project, item)
+        item.contents = ProjectService.load_file_contents(self.ctx.project, item)
+        MainWindow.set_text(self.text_editor, item.contents.raw_text, editable=True)
+        self.analyze_text(True)
 
     # LOAD TEXT FILE
     def import_file(self):
@@ -1000,7 +1028,27 @@ class MainWindow:
                 ("RTF dokumenty", "*.rtf"),
             ]
         )
-        self.import_file_contents(file_path)
+        self.open_new_file_dialog(
+            # EXCLUDE DIRECTORY FROM OPTIONS
+            type_options={key: val for key, val in ProjectItemType.get_selectable_values().items() if
+                          val != ProjectItemType.DIRECTORY},
+            callback=lambda item: Utils.execute_callbacks(
+                [partial(self.import_file_contents, item, file_path)]
+            ))
+
+    # RELOAD TEXT FILE
+    def reimport_file(self):
+        if self.ctx.current_file is None:
+            return
+        if self.ctx.current_file.imported_path is None:
+            return
+        if len(self.ctx.current_file.imported_path) < 1:
+            return
+        if not os.path.exists(self.ctx.current_file.imported_path):
+            messagebox.showerror("Chyba", "Previazaný súbor neexistuje.")
+            self._show_project_files()
+            return
+        self.import_file_contents(self.ctx.current_file, self.ctx.current_file.imported_path)
 
     # SAVE TEXT FILE
     def export_file(self):
@@ -1367,7 +1415,13 @@ class MainWindow:
 
     def _append_project_file_to_tree(self, item, parent_tree_item):
         if item.type == ProjectItemType.HTEXT:
-            item_id = self.project_tree.insert(parent_tree_item, tk.END, image=self.htext_image,
+            image = self.htext_image
+            if item.imported_path is not None and len(item.imported_path) > 0:
+                if os.path.exists(item.imported_path):
+                    image = self.htext_image_with_link
+                else:
+                    image = self.htext_image_with_broken_link
+            item_id = self.project_tree.insert(parent_tree_item, tk.END, image=image,
                                                text=item.name)
             self.project_tree_item_to_project_item[item_id] = item
         elif item.type == ProjectItemType.DIRECTORY:
