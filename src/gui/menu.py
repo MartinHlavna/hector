@@ -86,6 +86,7 @@ class TopMenu:
         self.accelerators = {}
         # HELPER VARIABLE HOLDING SHORTCUTS
         self.shortcuts = {}
+        self.keyboard_nav_handles = {}
         self.background = background
         self.foreground = foreground
         self.icon_size = icon_size
@@ -307,6 +308,7 @@ class TopMenu:
                 self._close_submenu()
             self.current_menu_item_index = [-1]
             self.current_menu_level = 0
+            self._unbind_keyboard_navigation()
 
     def _highlight_menu_item(self, button):
         """Change menu item appearance to focused state"""
@@ -353,12 +355,23 @@ class TopMenu:
         self.root.bind("<Button-1>", self._close_all_submenus)
         self.root.bind("<Escape>", self._close_all_submenus)
         self.root.bind("<FocusOut>", self._on_app_focus_loss)
+
+    def _bind_keyboard_navigation(self):
+        """Bind keyboard navigation events"""
         # BIND KEYS FOR NAVIGATION
-        self.root.bind("<Up>", self._keyboard_nav_submenu_up)
-        self.root.bind("<Down>", self._keyboard_nav_submenu_down)
-        self.root.bind("<Left>", self._keyboard_nav_main_menu_left)
-        self.root.bind("<Right>", self._keyboard_nav_main_menu_right)
-        self.root.bind("<Return>", self._keyboard_nav_execute_command)
+        if len(self.keyboard_nav_handles) == 0:
+            self.keyboard_nav_handles["<Up>"] = self.root.bind("<Up>", self._keyboard_nav_submenu_up, '+')
+            self.keyboard_nav_handles["<Down>"] = self.root.bind("<Down>", self._keyboard_nav_submenu_down, '+')
+            self.keyboard_nav_handles["<Left>"] = self.root.bind("<Left>", self._keyboard_nav_main_menu_left, '+')
+            self.keyboard_nav_handles["<Right>"] = self.root.bind("<Right>", self._keyboard_nav_main_menu_right, '+')
+            self.keyboard_nav_handles["<Return>"] = self.root.bind("<Return>", self._keyboard_nav_execute_command, '+')
+
+    def _unbind_keyboard_navigation(self):
+        """Unbind keyboard navigation events"""
+        for key in self.keyboard_nav_handles:
+            print(key)
+            self.root.unbind(key, self.keyboard_nav_handles[key])
+        self.keyboard_nav_handles.clear()
 
     def _on_app_focus_loss(self, event):
         """Callback: Application lost focus"""
@@ -376,6 +389,7 @@ class TopMenu:
 
     def _on_menu_item_event(self, button, e):
         """Callback: Menu item event"""
+        self._bind_keyboard_navigation()
         if button.item.command:
             self._execute_command(button.item.command, e)
         if button.item.submenu is not None and len(button.item.submenu) > 0:
