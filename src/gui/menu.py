@@ -369,7 +369,6 @@ class TopMenu:
     def _unbind_keyboard_navigation(self):
         """Unbind keyboard navigation events"""
         for key in self.keyboard_nav_handles:
-            print(key)
             self.root.unbind(key, self.keyboard_nav_handles[key])
         self.keyboard_nav_handles.clear()
 
