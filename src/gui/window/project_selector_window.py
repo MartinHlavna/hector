@@ -188,23 +188,14 @@ class ProjectSelectorWindow:
             self.open_project(project)
 
     def open_recent_project(self, project: RecentProject, e=None):
-        if not os.path.isfile(project.path):
-            metadata = MetadataService.load(METADATA_FILE_PATH)
-            MetadataService.remove_recent_project(metadata, project.path)
-            MetadataService.save(metadata, METADATA_FILE_PATH)
-            messagebox.showerror("Nie je možné otvoriť projekt", "Projekt bol pravdepodobne zmazaný, alebo presnutý.")
-            return
-        self.open_project(ProjectService.load(project.path))
+        if GuiUtils.open_recent_project(project):
+            self.close()
+            Navigator().navigate(Navigator.MAIN_WINDOW)
 
     def open_project(self, project: Project):
-        metadata = MetadataService.load(METADATA_FILE_PATH)
-        MetadataService.put_recent_project(metadata, project, project.path)
-        MetadataService.save(metadata, METADATA_FILE_PATH)
-        ctx = RunContext()
-        ctx.project = project
-        ctx.current_file = None
-        self.close()
-        Navigator().navigate(Navigator.MAIN_WINDOW)
+        if GuiUtils.open_project(project):
+            self.close()
+            Navigator().navigate(Navigator.MAIN_WINDOW)
 
     def open_new_project_form(self):
         self.recent_projects_frame.pack_forget()

@@ -657,19 +657,7 @@ def test_export_sentences(setup_teardown):
     assert sents == f'{with_spaces}\n\n'
 
 
-def test_metadata_save_load(setup_teardown):
-    m = Metadata()
-    m.recent_files = ["TEST"]
-    m_path = f"{METADATA_FILE_PATH}.test"
-    MetadataService.save(m, m_path)
-    m = MetadataService.load(m_path)
-    assert m.recent_files[0] == "TEST"
-    ExportService.export_text_file("test.txt", "TEST")
-    MetadataService.put_recent_file(m, "test.txt")
-    assert MetadataService.get_recent_file(m) == "test.txt"
-
-
-def test_metadata_recent_projects():
+def test_metadata_save_load():
     m = Metadata()
     for i in range(1, 12):
         p = Project()

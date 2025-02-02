@@ -8,7 +8,6 @@ class Metadata:
         """
         if data is None:
             data = {}
-        self.recent_files = data.get('recent_files', [])
         self.recent_projects = []
         for rp in data.get('recent_projects', []):
             self.recent_projects.append(RecentProject(rp))
@@ -23,13 +22,12 @@ class Metadata:
         :return: Dictionary containing the current state of the object.
         """
         return {
-            "recent_files": self.recent_files,
             "recent_projects": recent_projects_maps,
         }
 
 
 class RecentProject:
-    """Representatin of recept project saved in Metadata.
+    """Representation of recept project saved in Metadata.
     Used to display table of recent projects in project selector window"""
 
     def __init__(self, data=None):
