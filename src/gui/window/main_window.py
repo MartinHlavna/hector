@@ -1362,6 +1362,7 @@ class MainWindow:
         splash.update_status("aktualizujem a reinicializujem slovníky...")
         dictionaries = SpellcheckService.upgrade_dictionaries()
         splash.close()
+        self.root.deiconify()
         if platform.system() == "Windows" or platform.system() == "Darwin":
             self.root.state("zoomed")
         else:
