@@ -25,17 +25,18 @@ Ak má súbor v názve ```debug``` ide o ladiacu verziu. Momentálne sa to použ
 konzolu z ktorej je možné v prípade chyby odčítať problém.
 
 <!-- BEGIN DOWNLOAD LINKS -->
+
 ## Stable
 
 **Najnovšia verzia:** [v.1.0.0-stable](https://github.com/MartinHlavna/hector/releases/tag/v.1.0.0-stable)
 
 ### Súbory:
 
-| Súbor | Stiahnuť |
-|------|----------|
-| hector-linux-amd64.bin | [Stiahnuť](https://github.com/MartinHlavna/hector/releases/download/v.1.0.0-stable/hector-linux-amd64.bin) |
+| Súbor                          | Stiahnuť                                                                                                           |
+|--------------------------------|--------------------------------------------------------------------------------------------------------------------|
+| hector-linux-amd64.bin         | [Stiahnuť](https://github.com/MartinHlavna/hector/releases/download/v.1.0.0-stable/hector-linux-amd64.bin)         |
 | hector-windows-amd64-debug.exe | [Stiahnuť](https://github.com/MartinHlavna/hector/releases/download/v.1.0.0-stable/hector-windows-amd64-debug.exe) |
-| hector-windows-amd64.exe | [Stiahnuť](https://github.com/MartinHlavna/hector/releases/download/v.1.0.0-stable/hector-windows-amd64.exe) |
+| hector-windows-amd64.exe       | [Stiahnuť](https://github.com/MartinHlavna/hector/releases/download/v.1.0.0-stable/hector-windows-amd64.exe)       |
 
 ## Beta
 
@@ -59,6 +60,7 @@ problémov, ktoré má autor určite opraviť, ale len zvýrazniť potenciálne 
 na autorovi.
 
 ### Aktuálny stav projektu
+
 Aktuálna stable verzia je plnohodnotný nástroj pre finálne editovanie textu.
 
 ### Aktuálny cieľ projektu
@@ -73,6 +75,38 @@ Z dlhodobého hľadiska je cieľom vytvoriť komplexný nástroj určený na pí
 tomuto mǐľniku však vedie ešte dlhá cesta plná výziev.
 
 ## Funkcie programu
+
+### [BETA] Projekt
+
+Program umožnuje organizovať si prácu prostredníctvom projektov. Projekt umožnuje vytvoriť si jednotný pracovný priestor
+pre dielo a umožnuje vytváranie viacerých textových súborov. Vďaka tomu je možné rozdeliť text po kapitolách, či
+uchovávať informácie o postavcách a svete, ako separátne súbory.
+
+Po štarte programu sa otvorí okno s výberom projektu. Je moźné zvoliť z posledných desiatich projektov,
+načítať projekt zo súboru, alebo vytvoriť nový. Po spustení programu je možné projekt prepnúť sa do iného nedávneho
+projektu, alebo otvorený projekt zavrieť, čím sa vrátite na obrazovku s výberom.
+
+Funkcionalita je zatiať iba súčasťou testovej verzie.
+
+### [BETA] Autosave
+
+Textový súbor sa pri editovaní automaticky ukladá.
+
+Funkcionalita je zatiať iba súčasťou testovej verzie.
+
+### Import súboru
+
+Do Hectora je možné text načítať aj z ```.txt```, ```.docx```, ```.odt```, alebo ```.rtf``` súborov.
+
+[BETA] V testovacej verzii sa načítaný text automaticky stáva súčasťou projektu. Je previazaný aj s pôvodným dokumentom,
+z ktorého je možné pomocou menu, alebo stlačením ```CTRL + R``` načítať vźdy najnovší obsah.
+
+### [BETA] Export súboru
+
+Z hectora je možné exportovať ```.txt``` súbor.
+
+Funkcionalita je zatiať iba súčasťou testovej verzie (technicky je táto možnosť aj súčasť stable verzie, ale je
+označená, ako uloženie súboru).
 
 ### Zvýraznenie dlhých viet
 
