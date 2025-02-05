@@ -13,6 +13,15 @@ from src.domain.project import Project
 
 
 class GuiUtils:
+
+    # BIND MOUSE ENTER AND MOUSE LEAVE EVENTS
+    @staticmethod
+    def bind_tag_mouse_event(tag_name, text, on_enter, on_leave, on_click=None):
+        text.tag_bind(tag_name, "<Enter>", on_enter)
+        text.tag_bind(tag_name, "<Leave>", on_leave)
+        if on_click is not None:
+            text.tag_bind(tag_name, "<Button-1>", on_click)
+
     @staticmethod
     def is_child_of(parent, widget):
         """ Recursively check if widget is child of parent """
@@ -21,6 +30,12 @@ class GuiUtils:
                 return True
             widget = widget.master
         return False
+
+    @staticmethod
+    def unbind_events(widget, handles):
+        for key in handles:
+            widget.unbind(key, handles[key])
+        handles.clear()
 
     @staticmethod
     def fa_image(font, background, foreground, char, size, padding=2):
@@ -74,13 +89,13 @@ class GuiUtils:
             layout = str(style.layout(stylename))
             print('Stylename = {}'.format(stylename))
             print('Layout    = {}'.format(layout))
-            elements=[]
+            elements = []
             for n, x in enumerate(layout):
-                if x=='(':
-                    element=""
-                    for y in layout[n+2:]:
+                if x == '(':
+                    element = ""
+                    for y in layout[n + 2:]:
                         if y != ',':
-                            element=element+str(y)
+                            element = element + str(y)
                         else:
                             elements.append(element[:-1])
                             break

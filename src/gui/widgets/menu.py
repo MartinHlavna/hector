@@ -1,6 +1,7 @@
 import platform
 import tkinter as tk
 import tkinter.font as tkFont
+from enum import Enum
 from functools import partial
 from tkinter import ttk
 
@@ -8,6 +9,12 @@ from src.const.colors import GREY
 from src.const.fonts import HELVETICA_FONT_NAME, TEXT_SIZE_MENU
 from src.gui.gui_utils import GuiUtils
 from src.utils import Utils
+
+
+class MenuOrientation(str, Enum):
+    """Enum with available RootMenuOrientations"""
+    VERTICAL = "VERTICAL"
+    HORIZONTAL = "HORIZONTAL"
 
 
 # DEFINITION OF SINGLE MENU ITEM.
@@ -76,9 +83,18 @@ class _MenuButton:
         self.index = index
 
 
-class TopMenu:
+class HectorMenu:
     """Tkinter like widget that implements top menu"""
-    def __init__(self, root, menu_items, background, foreground, icon_size=(16, 16)):
+
+    def __init__(
+            self,
+            root,
+            menu_items,
+            background,
+            foreground,
+            icon_size=(16, 16),
+            root_menu_orientation=MenuOrientation.HORIZONTAL
+    ):
         self.root = root
         self.menu_frame = tk.Frame(root, bg=background)
         self.menu_frame.pack(side=tk.TOP, fill=tk.X)
@@ -87,10 +103,12 @@ class TopMenu:
         # HELPER VARIABLE HOLDING SHORTCUTS
         self.shortcuts = {}
         self.keyboard_nav_handles = {}
+        self.global_handles = {}
         self.background = background
         self.foreground = foreground
         self.icon_size = icon_size
         self.menu_items = menu_items
+        self.root_menu_orientation = root_menu_orientation
         # INTERNAL COLLECTION OF ALL OPENED SUBMENUS
         self.opened_submenus = []
         # INTERNAL COLLECTION OF ALL MENU BUTTONS IN ROOT AND SUBMENUS
@@ -101,67 +119,22 @@ class TopMenu:
         # CURRENT FOCUSED MENU LEVEL
         self.current_menu_level = 0
         # GENERATE TOP MENU BASED ON SUPPLIED ITEMS
-        i = -1
+        i = 0
         for item in menu_items:
-            # FRAME FOR MENU ITEM
-            item_frame = tk.Frame(self.menu_frame, bg=self.background)
-            item_frame.pack(side=tk.LEFT, padx=5)
-            # SPECIAL HANDLING FOR SEPARATOR
-            if isinstance(item, MenuSeparator):
-                separator = tk.Label(item_frame, text="|", background=self.background, foreground=GREY)
-                separator.pack(side=tk.LEFT, padx=0)
+            button = self._build_menu_item(
+                i,
+                item,
+                self.menu_frame,
+                self.menu_frame if root_menu_orientation == MenuOrientation.VERTICAL else None,
+                item.icon is not None or root_menu_orientation == MenuOrientation.VERTICAL,
+                root_menu_orientation == MenuOrientation.VERTICAL,
+                root_menu_orientation
+            )
+            if button is None:
                 continue
             i += 1
-            # APPEND ICON, IF APPLICABLE
-            icon_label = None
-            if item.icon:
-                icon_label = tk.Label(item_frame,
-                                      image=item.icon,
-                                      text="",
-                                      compound=tk.LEFT,
-                                      font=(HELVETICA_FONT_NAME, TEXT_SIZE_MENU),
-                                      bg=self.background,
-                                      width=18
-                                      )
-                icon_label.pack(side=tk.LEFT, padx=(2, 0))
-            # APPEND LABEL
-            text_label = tk.Label(item_frame,
-                                  text=item.label,
-                                  bg=self.background,
-                                  fg=self.foreground,
-                                  font=(HELVETICA_FONT_NAME, TEXT_SIZE_MENU),
-                                  underline=item.underline_index,
-                                  anchor="w",
-                                  )
-            text_label.pack(side=tk.LEFT, expand=True, fill=tk.X, pady=(4, 0))
 
-            button = _MenuButton(item,
-                                 item_frame,
-                                 icon_label,
-                                 text_label,
-                                 None,
-                                 None,
-                                 0,
-                                 i
-                                 )
-            # BIND FOCUS AND LEAVE EVENTS
-            item_frame.bind(
-                "<Enter>",
-                partial(
-                    self._on_menu_item_focus,
-                    button
-                )
-            )
-            item_frame.bind(
-                "<Leave>",
-                partial(self._on_menu_item_focus_loss, button)
-            )
-            # BIND BUTTON_1 EVENTS
-            for bindable_element in [item_frame, icon_label, text_label]:
-                if bindable_element is not None:
-                    bindable_element.bind("<Button-1>", partial(self._on_menu_item_event, button))
-
-            # PREPARE ACCELERATOR, IF APPLICABLE
+            # # PREPARE ACCELERATOR, IF APPLICABLE
             if item.underline_index != -1:
                 key = item.label[item.underline_index].lower()
                 self.accelerators[key] = button
@@ -174,11 +147,10 @@ class TopMenu:
                     if submenu_item.shortcut:
                         self.shortcuts[submenu_item.shortcut] = partial(self._execute_command, submenu_item.command)
 
-            self.buttons[0].append(button)
-
     def destroy(self):
         """Close menu frame"""
         self.menu_frame.destroy()
+        self.unbind_events()
 
     def _open_submenu(self, submenu_items, button: _MenuButton, event=None):
         """Show submenu"""
@@ -228,68 +200,89 @@ class TopMenu:
         # SET DIMENSTION AND BACKGROUND
         submenu.wm_geometry(f"{width}x{height}+{button_x}+{button_y}")
         submenu.config(bg=self.background, bd=1, relief=tk.SOLID)
-        i = -1
+        i = 0
         for index, item in enumerate(submenu_items):
-            # BUILD GUI ELEMENTS
-            item_frame = tk.Frame(submenu, bg=self.background)
-            item_frame.pack(fill=tk.X)
-            if isinstance(item, MenuSeparator):
-                separator = ttk.Separator(item_frame, orient='horizontal', style='Grey.TSeparator')
-                separator.pack(fill=tk.X, padx=10, pady=10)
-                continue
-            i += 1
-            icon_label = None
-            shortcut_label = None
-            if has_icon:
-                if item.icon:
-                    icon_label = tk.Label(item_frame, image=item.icon, text="", compound=tk.LEFT, bg=self.background,
-                                          width=18)
-                else:
-                    icon_label = tk.Label(item_frame, bg=self.background, width=2)
-                icon_label.pack(side=tk.LEFT, padx=(2, 0))
-            text_label = tk.Label(item_frame, text=item.label, bg=self.background, fg=self.foreground, anchor="w",
-                                  padx=(10 if not has_icon else (5)), font=tkFont.Font(family="Courier New", size=9))
-            text_label.pack(side=tk.LEFT, expand=True, fill=tk.X, pady=(4, 0))
-            if has_right_suffix:
-                right_suffix = item.shortcut_label
-                # MENU ITEM WITH SUBMENU SHOULD NOT HAVE SHORTCUT
-                # WE WILL USE SPACE FOR ARROW CHAR INSTEAD
-                if len(item.submenu) > 0:
-                    right_suffix = ">"
-                shortcut_label = tk.Label(item_frame, text=right_suffix if right_suffix else "",
-                                          bg=self.background,
-                                          fg=self.foreground, anchor="e", padx=10,
-                                          font=tkFont.Font(family="Courier New", size=9))
-                shortcut_label.pack(side=tk.RIGHT, pady=(4, 0))
-            b = _MenuButton(
-                item,
-                item_frame,
-                icon_label,
-                text_label,
-                shortcut_label,
-                submenu,
-                self.current_menu_level,
-                i
-            )
-            # BIND FOCUS AND LEAVE EVENTS
-            item_frame.bind(
-                "<Enter>",
-                partial(
-                    self._on_menu_item_focus,
-                    b
-                )
-            )
-            item_frame.bind(
-                "<Leave>",
-                partial(self._on_menu_item_focus_loss, b)
-            )
-            # BIND BUTTON_1 EVENTS
-            for bindable_element in [item_frame, icon_label, text_label, shortcut_label]:
-                if bindable_element is not None:
-                    bindable_element.bind("<Button-1>", partial(self._on_menu_item_event, b))
-            self.buttons[self.current_menu_level].append(b)
+            if self._build_menu_item(i, item, submenu, submenu, True, has_right_suffix) is not None:
+                i += 1
         # APPEND SUBMENU TO COLLECTION
         self.opened_submenus.append(submenu)
+
+    def _build_menu_item(self, index, item, container, parent_menu, has_icon, has_right_suffix,
+                         orientation=MenuOrientation.VERTICAL):
+        if isinstance(item, MenuSeparator):
+            if orientation == MenuOrientation.HORIZONTAL:
+                separator = tk.Label(container, text="|", background=self.background, foreground=GREY)
+                separator.pack(side=tk.LEFT, padx=0)
+            else:
+                separator = ttk.Separator(container, orient='horizontal', style='Grey.TSeparator')
+                separator.pack(fill=tk.X, padx=10, pady=10)
+            return None
+        # BUILD GUI ELEMENTS
+        item_frame = tk.Frame(container, bg=self.background)
+        item_frame.pack(fill=tk.X)
+        if orientation == MenuOrientation.HORIZONTAL:
+            item_frame.pack(side=tk.LEFT, padx=5)
+        else:
+            item_frame.pack(fill=tk.X)
+        icon_label = None
+        shortcut_label = None
+        if has_icon:
+            if item.icon:
+                icon_label = tk.Label(item_frame, image=item.icon, text="", compound=tk.LEFT, bg=self.background,
+                                      width=18)
+            else:
+                icon_label = tk.Label(item_frame, bg=self.background, width=2)
+            icon_label.pack(side=tk.LEFT, padx=(2, 0))
+        text_label = tk.Label(
+            item_frame,
+            text=item.label,
+            bg=self.background,
+            fg=self.foreground,
+            font=(HELVETICA_FONT_NAME, TEXT_SIZE_MENU),
+            underline=item.underline_index,
+            anchor="w",
+        )
+
+        text_label.pack(side=tk.LEFT, expand=True, fill=tk.X, pady=(4, 0))
+        if has_right_suffix:
+            right_suffix = item.shortcut_label
+            # MENU ITEM WITH SUBMENU SHOULD NOT HAVE SHORTCUT
+            # WE WILL USE SPACE FOR ARROW CHAR INSTEAD
+            if len(item.submenu) > 0 and orientation == MenuOrientation.VERTICAL:
+                right_suffix = ">"
+            shortcut_label = tk.Label(item_frame, text=right_suffix if right_suffix else "",
+                                      bg=self.background,
+                                      fg=self.foreground, anchor="e", padx=10,
+                                      font=tkFont.Font(family="Courier New", size=9))
+            shortcut_label.pack(side=tk.RIGHT, pady=(4, 0))
+        b = _MenuButton(
+            item,
+            item_frame,
+            icon_label,
+            text_label,
+            shortcut_label,
+            parent_menu,
+            self.current_menu_level,
+            index
+        )
+        # BIND FOCUS AND LEAVE EVENTS
+        item_frame.bind(
+            "<Enter>",
+            partial(
+                self._on_menu_item_focus,
+                b
+            )
+        )
+        item_frame.bind(
+            "<Leave>",
+            partial(self._on_menu_item_focus_loss, b)
+        )
+        # BIND BUTTON_1 EVENTS
+        for bindable_element in [item_frame, icon_label, text_label, shortcut_label]:
+            if bindable_element is not None:
+                bindable_element.bind("<Button-1>", partial(self._on_menu_item_event, b))
+        self.buttons[self.current_menu_level].append(b)
+        return b
 
     def _close_submenu(self, parent_submenu=None):
         """Close submenu"""
@@ -301,7 +294,11 @@ class TopMenu:
 
     def _close_all_submenus(self, event=None):
         """Close all submenus"""
-        if self.current_menu_level > 0 and (event is None or not GuiUtils.is_child_of(self.menu_frame, event.widget)):
+        if self.current_menu_level > 0 and (
+                event is None or
+                self.root_menu_orientation == MenuOrientation.VERTICAL or
+                not GuiUtils.is_child_of(self.menu_frame, event.widget)
+        ):
             self._unhighlight_menu_item(self.buttons[0][self.current_menu_item_index[0]])
             self.root.focus_set()
             while len(self.opened_submenus) > 0:
@@ -337,7 +334,7 @@ class TopMenu:
             for submenu_item in item.submenu:
                 self._prepare_shortcuts_from_item(submenu_item)
 
-    def _bind_events(self):
+    def bind_events(self):
         """Bind events: Accelerators, shortcuts, keyboard navigation"""
         # Bind Alt + keys
         for i, key in enumerate(self.accelerators):
@@ -352,25 +349,32 @@ class TopMenu:
         for i, shortcut in enumerate(self.shortcuts):
             self.root.bind(shortcut, self.shortcuts[shortcut])
         # BIND CLICK OUTSIDE MENU AND ESC TO CLOSE SUBMENU
-        self.root.bind("<Button-1>", self._close_all_submenus)
-        self.root.bind("<Escape>", self._close_all_submenus)
-        self.root.bind("<FocusOut>", self._on_app_focus_loss)
+        self.global_handles["<Button-1>"] = self.root.bind("<Button-1>", self._close_all_submenus, "+")
+        self.global_handles["<Button-3>"] = self.root.bind("<Button-3>", self._close_all_submenus, "+")
+        self.global_handles["<Escape>"] = self.root.bind("<Escape>", self._close_all_submenus, "+")
+        self.global_handles["<FocusOut>"] = self.root.bind("<FocusOut>", self._on_app_focus_loss, "+")
+
+    def unbind_events(self):
+        """Unbind registered events"""
+        GuiUtils.unbind_events(self.root, self.global_handles)
 
     def _bind_keyboard_navigation(self):
         """Bind keyboard navigation events"""
         # BIND KEYS FOR NAVIGATION
-        if len(self.keyboard_nav_handles) == 0:
-            self.keyboard_nav_handles["<Up>"] = self.root.bind("<Up>", self._keyboard_nav_submenu_up, '+')
-            self.keyboard_nav_handles["<Down>"] = self.root.bind("<Down>", self._keyboard_nav_submenu_down, '+')
-            self.keyboard_nav_handles["<Left>"] = self.root.bind("<Left>", self._keyboard_nav_main_menu_left, '+')
-            self.keyboard_nav_handles["<Right>"] = self.root.bind("<Right>", self._keyboard_nav_main_menu_right, '+')
-            self.keyboard_nav_handles["<Return>"] = self.root.bind("<Return>", self._keyboard_nav_execute_command, '+')
+        # KEYBOARD NAVIGATION IS NOT SUPPORTED FOR VERTIAL (CONTEXT) MENU
+        if self.root_menu_orientation == MenuOrientation.HORIZONTAL:
+            if len(self.keyboard_nav_handles) == 0:
+                self.keyboard_nav_handles["<Up>"] = self.root.bind("<Up>", self._keyboard_nav_submenu_up, '+')
+                self.keyboard_nav_handles["<Down>"] = self.root.bind("<Down>", self._keyboard_nav_submenu_down, '+')
+                self.keyboard_nav_handles["<Left>"] = self.root.bind("<Left>", self._keyboard_nav_main_menu_left, '+')
+                self.keyboard_nav_handles["<Right>"] = self.root.bind("<Right>", self._keyboard_nav_main_menu_right,
+                                                                      '+')
+                self.keyboard_nav_handles["<Return>"] = self.root.bind("<Return>", self._keyboard_nav_execute_command,
+                                                                       '+')
 
     def _unbind_keyboard_navigation(self):
         """Unbind keyboard navigation events"""
-        for key in self.keyboard_nav_handles:
-            self.root.unbind(key, self.keyboard_nav_handles[key])
-        self.keyboard_nav_handles.clear()
+        GuiUtils.unbind_events(self.root, self.keyboard_nav_handles)
 
     def _on_app_focus_loss(self, event):
         """Callback: Application lost focus"""
@@ -401,10 +405,11 @@ class TopMenu:
         self._unhighlight_menu_item(self.buttons[button.menu_level][self.current_menu_item_index[button.menu_level]])
         self._highlight_menu_item(button)
         # IF ANOTHER SUBMENU IS OPENED, CLOSE IT AND OPEN SUBMENU OF THIS ITEM
-        if button.item.submenu and self.current_menu_level > 0 and len(button.item.submenu) > 0:
-            while self.current_menu_level > button.menu_level:
-                self._close_submenu()
-            self._open_submenu(button.item.submenu, button)
+        if button.item.submenu and len(button.item.submenu) > 0:
+            if self.current_menu_level > 0 or self.root_menu_orientation == MenuOrientation.VERTICAL:
+                while self.current_menu_level > button.menu_level:
+                    self._close_submenu()
+                self._open_submenu(button.item.submenu, button)
         else:
             self.current_menu_item_index[button.menu_level] = button.index
             self._close_submenu(button.parent_submenu)
@@ -440,7 +445,11 @@ class TopMenu:
 
     def _keyboard_nav_submenu_down(self, event=None):
         """Callback: keyboard down"""
+        print('_keyboard_nav_submenu_down')
         if self.current_menu_item_index[0] == -1:
+            if self.current_menu_level == 0 and self.root_menu_orientation == MenuOrientation.VERTICAL:
+                # IF VERTICAL MENU IS NOT FOCUSED, FOCUS FIRST ITEM
+                self._on_menu_item_focus(self.buttons[0][0])
             return
         if self.current_menu_level == 1 and self.current_menu_item_index[self.current_menu_level] == -1:
             # IF TOPLEVEL MENU IS FOCUSED, MOVE TO SUBMENU
@@ -490,3 +499,69 @@ class TopMenu:
                 next_button = self.buttons[button.menu_level + 1][0]
                 self.current_menu_level += 1
                 self._on_menu_item_focus(next_button, event)
+
+
+class ContextMenu:
+    """Context menu opened with mouse right click. Displays vertical menu with possible submenus"""
+    def __init__(self, root, background, foreground, icon_size=(16, 16)):
+        self.root = root
+        self.menu = None
+        self.toplevel = None
+        self.background = background
+        self.foreground = foreground
+        self.icon_size = icon_size
+        self.global_handles = {}
+
+    def show(self, menu_items, event: tk.Event):
+        """Show context menu with specified items"""
+        if self.menu is not None:
+            self.hide(event)
+        self.toplevel = tk.Toplevel(self.root)
+        self.toplevel.overrideredirect(True)
+
+        for menu_item in menu_items:
+            if menu_item.command is not None:
+                original_command = menu_item.command
+                menu_item.command = partial(Utils.execute_callbacks, [
+                    self.hide,
+                    original_command
+                ])
+
+        self.menu = HectorMenu(
+            self.toplevel,
+            menu_items,
+            self.background,
+            self.foreground,
+            self.icon_size,
+            MenuOrientation.VERTICAL
+        )
+
+        x = event.x_root
+        y = event.y_root
+
+        self.toplevel.update_idletasks()
+        tooltip_width = self.toplevel.winfo_reqwidth()
+        tooltip_height = self.toplevel.winfo_reqheight()
+
+        screen_width = self.root.winfo_screenwidth()
+        screen_height = self.root.winfo_screenheight()
+
+        # ADJUST X AND Y IF THE MENU WOULD GO OFF SCREEN
+        if x + 20 + tooltip_width > screen_width:
+            x = screen_width - tooltip_width - 20
+        if y + 20 + tooltip_height > screen_height:
+            y = screen_height - tooltip_height - 20
+
+        # POSITION THE TOOLTIP SLIGHTLY OFFSET FROM THE MOUSE POINTER
+        self.toplevel.geometry(f"+{x}+{y}")
+        self.toplevel.deiconify()
+        self.global_handles["<Button-1>"] = self.root.bind("<Button-1>", self.hide, "+")
+        self.global_handles["<Escape>"] = self.root.bind("<Escape>", self.hide, "+")
+        self.global_handles["<FocusOut>"] = self.root.bind("<FocusOut>", self.hide, "+")
+
+    def hide(self, event: tk.Event = None):
+        """Hide context menu"""
+        if event is None or not GuiUtils.is_child_of(self.menu, event.widget):
+            GuiUtils.unbind_events(self.root, self.global_handles)
+            self.menu._close_all_submenus()
+            self.toplevel.destroy()

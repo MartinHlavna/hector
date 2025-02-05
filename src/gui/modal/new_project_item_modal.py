@@ -6,7 +6,7 @@ from src.backend.run_context import RunContext
 from src.backend.service.project_service import ProjectService
 from src.const.colors import TEXT_EDITOR_FRAME_BG, PANEL_TEXT_COLOR, TEXT_EDITOR_BG, EDITOR_TEXT_COLOR, PRIMARY_COLOR
 from src.domain.project import ProjectItemType
-from src.gui.hector_button import HectorButton
+from src.gui.widgets.hector_button import HectorButton
 
 
 class NewProjectItemModal:
