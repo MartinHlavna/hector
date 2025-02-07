@@ -45,15 +45,15 @@ from src.const.tags import CLOSE_WORD_PREFIX, LONG_SENTENCE_TAG_NAME_HIGH, LONG_
 from src.const.values import READABILITY_MAX_VALUE, DOCUMENTATION_LINK, NLP_BATCH_SIZE
 from src.domain.htext_file import HTextFile
 from src.domain.metadata import RecentProject
-from src.domain.project import ProjectItemType, Project
+from src.domain.project import ProjectItemType
+from src.gui.gui_utils import GuiUtils
 from src.gui.modal.analysis_settings_modal import AnalysisSettingsModal
 from src.gui.modal.appearance_settings_modal import AppearanceSettingsModal
-from src.gui.gui_utils import GuiUtils
-from src.gui.menu import MenuItem, TopMenu, MenuSeparator
 from src.gui.modal.new_project_item_modal import NewProjectItemModal
 from src.gui.navigator import Navigator
+from src.gui.widgets.menu import MenuItem, HectorMenu, MenuSeparator, ContextMenu
+from src.gui.widgets.tooltip import Tooltip
 from src.gui.window.splash_window import SplashWindow
-from src.gui.tooltip import Tooltip
 from src.utils import Utils
 
 # A4 SIZE IN INCHES. WE LATER USE DPI TO SET EDITOR WIDTH
@@ -256,7 +256,8 @@ class MainWindow:
                 )
             ])
         ]
-        self.menu_bar = TopMenu(self.root, menu_items, background="#3B3B3B", foreground="white")
+        self.menu_bar = HectorMenu(self.root, menu_items, background="#3B3B3B", foreground="white")
+        self.context_menu = ContextMenu(self.root, background="#3B3B3B", foreground="white")
         # MAIN FRAME
         self.main_frame = tk.Frame(self.root)
         self.main_frame.pack(expand=1, fill=tk.BOTH, side=tk.LEFT)
@@ -485,12 +486,13 @@ class MainWindow:
         self.root.bind("<Control-f>", self.focus_search)
         self.root.bind("<Control-e>", self.focus_editor)
         self.root.bind("<Control-E>", self.focus_editor)
+        self.root.bind("<Button-3>", self.open_context_menu)
         # WINDOWS SPECIFIC
         self.root.bind("<MouseWheel>", self.change_text_size)
         # LINUX SPECIFIC
         self.root.bind("<Button-4>", self.change_text_size)
         self.root.bind("<Button-5>", self.change_text_size)
-        self.menu_bar._bind_events()
+        self.menu_bar.bind_events()
 
     # START MAIN LOOP
     def start_main_loop(self):
@@ -508,8 +510,8 @@ class MainWindow:
         if not editable:
             text.config(state=tk.DISABLED)
 
-    def get_carret_position(self):
-        possible_carret = self.text_editor.count("1.0", self.text_editor.index(tk.INSERT), "chars")
+    def get_carret_position(self, index_name=tk.INSERT):
+        possible_carret = self.text_editor.count("1.0", self.text_editor.index(index_name), "chars")
         if possible_carret is None:
             return None
         return possible_carret[0]
@@ -559,7 +561,6 @@ class MainWindow:
         for word in word_counts:
             word_text = f"{word.text}\t\t{len(word.occourences)}x\n"
             tag_name = f"{FREQUENT_WORD_PREFIX}{word.text}"
-
             # Insert the text
             self.word_freq_text.insert(tk.END, word_text)
             # Add the tag to the inserted text
@@ -568,18 +569,18 @@ class MainWindow:
             self.word_freq_text.tag_add(tag_name, start_index, end_index)
             self.word_freq_text.tag_add(FREQUENT_WORD_TAG_NAME, start_index, end_index)
             start_char += len(word_text)
-            self.bind_tag_mouse_event(tag_name,
-                                      self.word_freq_text,
-                                      on_enter=lambda e: self.highlight_same_word(
-                                          e,
+            GuiUtils.bind_tag_mouse_event(tag_name,
                                           self.word_freq_text,
-                                          tag_prefix=FREQUENT_WORD_PREFIX,
-                                          tooltip="Kliknutím nájsť další výskyt."
-                                      ),
-                                      on_leave=lambda e: self.unhighlight_same_word(e),
-                                      on_click=lambda e: self.jump_to_next_word_occourence(
-                                          e, self.word_freq_text, tag_prefix=FREQUENT_WORD_PREFIX)
-                                      )
+                                          on_enter=lambda e: self.highlight_same_word(
+                                              e,
+                                              self.word_freq_text,
+                                              tag_prefix=FREQUENT_WORD_PREFIX,
+                                              tooltip="Kliknutím nájsť další výskyt."
+                                          ),
+                                          on_leave=lambda e: self.unhighlight_same_word(e),
+                                          on_click=lambda e: self.jump_to_next_word_occourence(
+                                              e, self.word_freq_text, tag_prefix=FREQUENT_WORD_PREFIX)
+                                          )
         self.word_freq_text.config(state=tk.DISABLED)
         # ADD TAG TO ALL OCCOURENCES
         for word in word_counts:
@@ -595,20 +596,16 @@ class MainWindow:
         doc_size = len(doc.text)
         doc_text = doc.text
         for sentence in doc.sents:
-            if sentence._.is_long_sentence:
+            if sentence._.is_long_sentence or sentence._.is_mid_sentence:
                 start = sentence.start_char
                 while start < doc_size - 1 and (doc_text[start] == '\n' or doc_text[start] == '\r'):
                     start += 1
                 start_index = f"1.0 + {start} chars"
                 end_index = f"1.0 + {sentence.end_char} chars"
-                self.text_editor.tag_add(LONG_SENTENCE_TAG_NAME_HIGH, start_index, end_index)
-            elif sentence._.is_mid_sentence:
-                start = sentence.start_char
-                while start < doc_size - 1 and (doc_text[start] == '\n' or doc_text[start] == '\r'):
-                    start += 1
-                start_index = f"1.0 + {start} chars"
-                end_index = f"1.0 + {sentence.end_char} chars"
-                self.text_editor.tag_add(LONG_SENTENCE_TAG_NAME_MID, start_index, end_index)
+                if sentence._.is_long_sentence:
+                    self.text_editor.tag_add(LONG_SENTENCE_TAG_NAME_HIGH, start_index, end_index)
+                else:
+                    self.text_editor.tag_add(LONG_SENTENCE_TAG_NAME_MID, start_index, end_index)
 
     # HIGHLIGHT MULTIPLE SPACES
     def highlight_multiple_spaces(self, doc: Doc):
@@ -686,17 +683,17 @@ class MainWindow:
                 self.close_words_text.tag_add(tag_name, panel_start_index, panel_end_index)
                 self.close_words_text.tag_add(CLOSE_WORD_TAG_NAME, panel_start_index, panel_end_index)
                 panel_start_char += len(word_text)
-                self.bind_tag_mouse_event(tag_name,
-                                          self.close_words_text,
-                                          lambda e: self.highlight_same_word(
-                                              e,
+                GuiUtils.bind_tag_mouse_event(tag_name,
                                               self.close_words_text,
-                                              tooltip="Kliknutím nájsť další výskyt."
-                                          ),
-                                          lambda e: self.unhighlight_same_word(e),
-                                          on_click=lambda e: self.jump_to_next_word_occourence(
-                                              e, self.close_words_text, tag_prefix=CLOSE_WORD_PREFIX)
-                                          )
+                                              lambda e: self.highlight_same_word(
+                                                  e,
+                                                  self.close_words_text,
+                                                  tooltip="Kliknutím nájsť další výskyt."
+                                              ),
+                                              lambda e: self.unhighlight_same_word(e),
+                                              on_click=lambda e: self.jump_to_next_word_occourence(
+                                                  e, self.close_words_text, tag_prefix=CLOSE_WORD_PREFIX)
+                                              )
                 word_partitions = NlpService.partition_close_words(
                     close_words[word],
                     self.config.analysis_settings.close_words_min_distance_between_words
@@ -717,17 +714,17 @@ class MainWindow:
                         self.close_words_text.insert(tk.END, partition_text)
                         self.close_words_text.tag_add(range_tag_name, panel_start_index, panel_end_index)
                         tooltip = f"Kliknutím prejsť na odsek {first_token_par}."
-                        self.bind_tag_mouse_event(range_tag_name,
-                                                  self.close_words_text,
-                                                  lambda e, p=prefix, t=tooltip: self.highlight_same_word(
-                                                      e,
+                        GuiUtils.bind_tag_mouse_event(range_tag_name,
                                                       self.close_words_text,
-                                                      tag_prefix=p,
-                                                      tooltip=t
-                                                  ),
-                                                  lambda e: self.unhighlight_same_word(e),
-                                                  on_click=lambda e, fti=first_token_index: self.move_carret(fti)
-                                                  )
+                                                      lambda e, p=prefix, t=tooltip: self.highlight_same_word(
+                                                          e,
+                                                          self.close_words_text,
+                                                          tag_prefix=p,
+                                                          tooltip=t
+                                                      ),
+                                                      lambda e: self.unhighlight_same_word(e),
+                                                      on_click=lambda e, fti=first_token_index: self.move_carret(fti)
+                                                      )
                         panel_start_char += len(partition_text)
                     for occ in word_partition:
                         color = random.choice(CLOSE_WORDS_PALLETE)
@@ -745,13 +742,6 @@ class MainWindow:
                         self.text_editor.tag_config(tag_name, foreground=color,
                                                     font=(HELVETICA_FONT_NAME, self.text_size + 2, BOLD_FONT))
             self.close_words_text.config(state=tk.DISABLED)
-
-    # BIND MOUSE ENTER AND MOUSE LEAVE EVENTS
-    def bind_tag_mouse_event(self, tag_name, text, on_enter, on_leave, on_click=None):
-        text.tag_bind(tag_name, "<Enter>", on_enter)
-        text.tag_bind(tag_name, "<Leave>", on_leave)
-        if on_click is not None:
-            text.tag_bind(tag_name, "<Button-1>", on_click)
 
     # HIGHLIGHT SAME WORD ON MOUSE OVER
     def highlight_same_word(self, event, trigger, tag_prefix=CLOSE_WORD_PREFIX, tooltip=None):
@@ -1092,18 +1082,23 @@ class MainWindow:
         except tk.TclError:
             clipboard_text = ''
 
-        # IF THERE SI SELECTED TEXT IN EDITOR, OVERWRITE IT WITH SELECTED TEXT
-        if event.widget.tag_ranges("sel"):
-            event.widget.delete("sel.first", "sel.last")
-
-        # NORMALIZE TEXT
-        text = ImportService.normalize_text(clipboard_text)
-        event.widget.insert(tk.INSERT, text)
-        self.analyze_text(force_reload=True, event=event)
-        if self.ctx.current_file is not None:
-            self.save_text_file()
+        self.paste_text(clipboard_text, event)
         # CANCEL DEFAULT PASTE
         return "break"
+
+    def paste_text(self, text, event, force_reload=True):
+        # IF THERE SI SELECTED TEXT IN EDITOR, OVERWRITE IT WITH SELECTED TEXT
+        if event.widget.tag_ranges(tk.SEL):
+            event.widget.delete("sel.first", "sel.last")
+        # NORMALIZE TEXT
+        text = ImportService.normalize_text(text)
+        event.widget.insert(tk.INSERT, text)
+        self.analyze_text(force_reload=force_reload, event=event)
+        if self.ctx.current_file is not None:
+            self.save_text_file()
+
+    def create_selection(self, from_char, to_char):
+        self.text_editor.tag_add(tk.SEL, f"1.0 + {from_char} chars", f"1.0 + {to_char} chars")
 
     # ANALYZE TEXT
     def analyze_text(self, force_reload=False, event=None):
@@ -1175,11 +1170,11 @@ class MainWindow:
         self.close_words_text.tag_raise("sel")
         self.word_freq_text.tag_raise("sel")
         # MOUSE BINDINGS
-        self.bind_tag_mouse_event(CLOSE_WORD_TAG_NAME,
-                                  self.text_editor,
-                                  lambda e: self.highlight_same_word(e, self.text_editor),
-                                  lambda e: self.unhighlight_same_word(e)
-                                  )
+        GuiUtils.bind_tag_mouse_event(CLOSE_WORD_TAG_NAME,
+                                      self.text_editor,
+                                      lambda e: self.highlight_same_word(e, self.text_editor),
+                                      lambda e: self.unhighlight_same_word(e)
+                                      )
         readability = NlpService.compute_readability(self.doc)
         self.readability_value.configure(text=f"{readability: .0f} / {READABILITY_MAX_VALUE}")
         self.introspect(event)
@@ -1310,6 +1305,82 @@ class MainWindow:
     def focus_editor(self, event=None):
         self.text_editor.focus()
         return
+
+    def open_context_menu(self, event):
+        context_menu_items = []
+        if GuiUtils.is_child_of(self.project_tree, event.widget):
+            # THIS IS CLICK ON PROJECT TREE MENU
+            # ADD NEW FILE OPTION
+            context_menu_items.append(MenuItem(label="Nový súbor", command=self.open_new_file_dialog))
+            iid = self.project_tree.identify_row(event.y)
+            if iid and iid != self.project_tree_root:
+                # IF USER CLICKED ON ITEM, FOCUS IT AND ADD DELETE FILE OPTION
+                self.project_tree.selection_set(iid)
+                self.project_tree.focus(iid)
+                context_menu_items.append(
+                    MenuItem(
+                        label="Vymazať",
+                        command=partial(self._on_project_tree_item_delete, event)
+                    )
+                )
+        if GuiUtils.is_child_of(self.text_editor, event.widget):
+            # THIS IS CLICK ON EDITOR
+            clicked_text_index = self.text_editor.index(tk.CURRENT)
+            # ADD PASTE OPTION, IF CLIPBOARDS CONTAINS ANYTHING
+            if event.widget.selection_get(selection='CLIPBOARD'):
+                context_menu_items.append(MenuItem(
+                    label="Prilepiť",
+                    shortcut_label="Ctrl+V",
+                    command=lambda: Utils.execute_callbacks(
+                        [
+                            partial(self.move_carret, clicked_text_index),
+                            partial(self.handle_clipboard_paste, event)
+                        ]
+                    )
+                ))
+            # ADD COPY OPTION IF EDITOR HAS SELECTED TEXT
+            if event.widget.tag_ranges(tk.SEL):
+                context_menu_items.append(MenuItem(
+                    label="Kopírovať",
+                    shortcut_label="Ctrl+C",
+                    command=partial(self.copy_to_clipboard, event.widget.selection_get())
+                ))
+
+            # IF CLICKED WORD HAS GRAMMAR ERROR, APPEND SUGGESTIONS
+            clicked_text_char_position = self.get_carret_position(tk.CURRENT)
+            if clicked_text_char_position is not None:
+                span = self.doc.char_span(clicked_text_char_position, clicked_text_char_position,
+                                          alignment_mode='expand')
+                if span is not None and len(span.text) > 0 and span.root._.is_word:
+                    token = span.root
+                    if token._.has_grammar_error:
+                        # FOR NOW, WE SUPPORT ONLY HUNSPELL SUGGESTIONS, BUT WE MAY PROVIDE SUGGESTION
+                        # FOR MORE ADVANCED SPELLCHECKS IN FUTURE
+                        if token._.grammar_error_type == GRAMMAR_ERROR_TYPE_MISSPELLED_WORD:
+                            suggestions = self.ctx.spellcheck_dictionary.suggest(token.text)
+                            for index, suggestion in enumerate(suggestions):
+                                s = suggestion
+                                context_menu_items.append(
+                                    MenuItem(
+                                        label=s,
+                                        command=partial(self.apply_suggestion, span, s, event, clicked_text_index)
+                                    )
+                                )
+
+        # IF WE HAVE ANY CONTEXT MENU ITEMS TO DISPLAY SHOW MENU
+        if len(context_menu_items) > 0:
+            self.context_menu.show(context_menu_items, event)
+        return
+
+    def apply_suggestion(self, span, suggestion, event, carret_index):
+        self.move_carret(carret_index)
+        self.create_selection(span.start_char, span.end_char)
+        self.paste_text(suggestion, event, False)
+
+    def copy_to_clipboard(self, text):
+        self.root.clipboard_clear()
+        self.root.clipboard_append(text)
+        self.root.update()
 
     # RUN SPELLCHECK
     def run_spellcheck(self, doc: Doc):

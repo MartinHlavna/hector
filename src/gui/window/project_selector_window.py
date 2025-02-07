@@ -8,7 +8,6 @@ from tkinter import ttk, filedialog, messagebox
 from PIL import ImageTk, Image
 from tkinter_autoscrollbar import AutoScrollbar
 
-from src.backend.run_context import RunContext
 from src.backend.service.metadata_service import MetadataService
 from src.backend.service.project_service import ProjectService
 from src.const.colors import PRIMARY_COLOR, TEXT_EDITOR_FRAME_BG, PANEL_TEXT_COLOR, GREY, TEXT_EDITOR_BG, \
@@ -20,9 +19,8 @@ from src.const.values import VERSION
 from src.domain.metadata import RecentProject
 from src.domain.project import Project
 from src.gui.gui_utils import GuiUtils
-from src.gui.hector_button import HectorButton
+from src.gui.widgets.hector_button import HectorButton
 from src.gui.navigator import Navigator
-from src.gui.window.main_window import MainWindow
 from src.utils import Utils
 
 
