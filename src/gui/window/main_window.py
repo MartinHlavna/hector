@@ -1327,7 +1327,11 @@ class MainWindow:
             # THIS IS CLICK ON EDITOR
             clicked_text_index = self.text_editor.index(tk.CURRENT)
             # ADD PASTE OPTION, IF CLIPBOARDS CONTAINS ANYTHING
-            if event.widget.selection_get(selection='CLIPBOARD'):
+            try:
+                clipboard_text = event.widget.selection_get(selection='CLIPBOARD')
+            except tk.TclError:
+                clipboard_text = None
+            if clipboard_text:
                 context_menu_items.append(MenuItem(
                     label="Prilepiť",
                     shortcut_label="Ctrl+V",

@@ -503,6 +503,7 @@ class HectorMenu:
 
 class ContextMenu:
     """Context menu opened with mouse right click. Displays vertical menu with possible submenus"""
+
     def __init__(self, root, background, foreground, icon_size=(16, 16)):
         self.root = root
         self.menu = None
@@ -557,7 +558,8 @@ class ContextMenu:
         self.toplevel.deiconify()
         self.global_handles["<Button-1>"] = self.root.bind("<Button-1>", self.hide, "+")
         self.global_handles["<Escape>"] = self.root.bind("<Escape>", self.hide, "+")
-        self.global_handles["<FocusOut>"] = self.root.bind("<FocusOut>", self.hide, "+")
+        self.global_handles["<FocusOut>"] = self.root.bind("<FocusOut>",
+                                                           partial(self.root.after, 0, self._on_app_focus_loss), "+")
 
     def hide(self, event: tk.Event = None):
         """Hide context menu"""
@@ -565,3 +567,9 @@ class ContextMenu:
             GuiUtils.unbind_events(self.root, self.global_handles)
             self.menu._close_all_submenus()
             self.toplevel.destroy()
+
+    def _on_app_focus_loss(self, event):
+        # check which widget getting the focus
+        w = self.root.tk.call('focus')
+        if not w:
+            self.root.after(0, partial(self.hide, None))
