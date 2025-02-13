@@ -766,7 +766,11 @@ def test_project_items():
     if os.path.exists(file_name):
         shutil.rmtree(file_name)
     p = ProjectService.create_project(name, desc, file_name)
+    p.config = Config()
+    ProjectService.save(p, p.path)
     item = ProjectService.new_item(p, "001", None, ProjectItemType.HTEXT)
+    item.config = Config()
+    ProjectService.save(p, p.path)
     assert ProjectService.load_file_contents(p, item).raw_text == ""
     item.contents = HTextFile(TEST_TEXT_1)
     ProjectService.save_file_contents(p, item)
@@ -777,6 +781,8 @@ def test_project_items():
     item2 = ProjectService.load_file_contents(p, item)
     assert item2.raw_text == TEST_TEXT_1
     dir_item = ProjectService.new_item(p, "tests", None, ProjectItemType.DIRECTORY)
+    dir_item.config = Config()
+    ProjectService.save(p, p.path)
     subitem = ProjectService.new_item(p, "002", dir_item, ProjectItemType.HTEXT)
     assert subitem.path == os.path.join(dir_item.path, "002.htext")
     assert subitem.path != os.path.join(os.path.dirname(p.path), "data", "002.htext")
