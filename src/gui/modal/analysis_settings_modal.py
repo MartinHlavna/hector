@@ -2,19 +2,29 @@ import platform
 import tkinter as tk
 from tkinter import ttk, messagebox
 
+from src.backend.run_context import RunContext
 from src.backend.service.config_service import ConfigService
+from src.backend.service.project_service import ProjectService
 from src.const.fonts import HELVETICA_FONT_NAME, BOLD_FONT
 from src.const.paths import CONFIG_FILE_PATH
-from src.domain.config import AnalysisSettings
+from src.domain.config import AnalysisSettings, ConfigLevel
+from src.domain.project import ProjectItem
 
 
 class AnalysisSettingsModal:
-    def __init__(self, root, config, on_config_change):
+    def __init__(self, root, config, on_config_change, config_level: ConfigLevel, item: ProjectItem):
         self.root = root
         self.config = config
         self.on_config_change = on_config_change
         self.toplevel = tk.Toplevel(self.root)
-        self.toplevel.title("Nastavenia analýzy")
+        self.level = config_level
+        self.item = item
+        if config_level == ConfigLevel.GLOBAL:
+            self.toplevel.title("Globálne nastavenia analýzy")
+        elif config_level == ConfigLevel.PROJECT:
+            self.toplevel.title("Projektové nastavenia analýzy")
+        elif config_level == ConfigLevel.ITEM:
+            self.toplevel.title("Nastavenia analýzy - pre súbor")
         row = 0
         # Frequent words settings
         tk.Label(self.toplevel, text="Často použité slová", font=(HELVETICA_FONT_NAME, 12, BOLD_FONT),
@@ -246,7 +256,16 @@ class AnalysisSettingsModal:
         self.config.analysis_settings.enable_spellcheck = self.spellcheck_var.get()
         self.config.analysis_settings.enable_partial_nlp = self.partial_nlp_var.get()
         self.config.analysis_settings.enable_quote_corrections = self.quote_corrections_var.get()
-        ConfigService.save(self.config, CONFIG_FILE_PATH)
+        if self.level == ConfigLevel.GLOBAL:
+            ConfigService.save(self.config, CONFIG_FILE_PATH)
+        elif self.level == ConfigLevel.PROJECT:
+            ctx = RunContext()
+            ctx.project.config = self.config
+            ProjectService().save(ctx.project, ctx.project.path)
+        elif self.level == ConfigLevel.ITEM and self.item is not None:
+            ctx = RunContext()
+            self.item.config = self.config
+            ProjectService().save(ctx.project, ctx.project.path)
         self.on_config_change()
         self.toplevel.destroy()
 

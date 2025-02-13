@@ -1,6 +1,7 @@
 from enum import Enum
 
 from src.const.values import CURRENT_PROJECT_VERSION
+from src.domain.config import Config
 
 
 class Project:
@@ -20,11 +21,15 @@ class Project:
         self.description = data.get('description', None)
         self.path = path
         self.items = []
+        self.config = None
+        config = data.get('config', None)
+        if config is not None:
+            self.config = Config(config)
         for i in data.get('items', []):
-            item = Project.construct_project_item(i)
+            item = Project.construct_project_item(i, None)
             self.items.append(item)
 
-    def to_dict(self):
+    def to_dict(self) -> dict:
         """
         Exports the current state of the object to a dictionary.
 
@@ -34,26 +39,28 @@ class Project:
         for i in self.items:
             item = i.to_dict()
             items.append(item)
-        return {
+        output = {
             'name': self.name,
             'description': self.description,
             'version': self.version,
             'items': items
-
         }
+        if self.config is not None:
+            output['config'] = self.config.to_dict()
+        return output
 
     @staticmethod
-    def construct_project_item(data):
+    def construct_project_item(data, parent):
         """Helper function that construct ProjectItem or appropiate subclass"""
         if data.get('type', ProjectItemType.UNKNOWN) == ProjectItemType.DIRECTORY:
-            return DirectoryProjectItem(data)
-        return ProjectItem(data)
+            return DirectoryProjectItem(data, parent)
+        return ProjectItem(data, parent)
 
 
 class ProjectItem:
     """Single file or directory in project"""
 
-    def __init__(self, data=None):
+    def __init__(self, data=None, parent=None):
         """
         Constructor accepts a dictionary and sets the class attributes.
         If a key is not provided in the dictionary, the default value is used.
@@ -66,8 +73,13 @@ class ProjectItem:
         self.path = data.get('path', '')
         self.name = data.get('name', '')
         self.imported_path = data.get('imported_path', '')
+        self.config = None
+        config = data.get('config', None)
+        if config is not None:
+            self.config = Config(config)
         # TRANSIENT
         self.contents = None
+        self.parent = parent
 
     def to_dict(self):
         """
@@ -75,18 +87,21 @@ class ProjectItem:
 
         :return: Dictionary containing the current state of the object.
         """
-        return {
+        output = {
             'name': self.name,
             'type': self.type,
             'path': self.path,
             'imported_path': self.imported_path,
         }
+        if self.config is not None:
+            output['config'] = self.config.to_dict()
+        return output
 
 
 class DirectoryProjectItem(ProjectItem):
     """Special ProjectItem used for directories. Stores opened state and subitems"""
 
-    def __init__(self, data=None):
+    def __init__(self, data=None, parent=None):
         """
         Constructor accepts a dictionary and sets the class attributes.
         If a key is not provided in the dictionary, the default value is used.
@@ -99,7 +114,7 @@ class DirectoryProjectItem(ProjectItem):
         self.subitems = []
         self.opened = data.get("opened", False)
         for i in data.get('subitems', []):
-            item = Project.construct_project_item(i)
+            item = Project.construct_project_item(i, parent)
             self.subitems.append(item)
 
     def to_dict(self):
