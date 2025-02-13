@@ -26,7 +26,7 @@ from src.const.values import NLP_BATCH_SIZE
 from src.domain.config import Config
 from src.domain.htext_file import HTextFile
 from src.domain.metadata import Metadata
-from src.domain.project import Project, ProjectItemType, ProjectItem
+from src.domain.project import Project, ProjectItemType, ProjectItem, DirectoryProjectItem
 from src.utils import Utils
 from test_utils import TestUtils
 
@@ -640,6 +640,59 @@ def test_config_save_load(setup_teardown):
     assert c.analysis_settings.long_sentence_words_high == 999
 
 
+def test_config_overrides(setup_teardown):
+    # PREPERE MULTIPLE CONFIGS TO TEST EVERY POSSIBLE CASCADE
+    c1 = Config()
+    c1.analysis_settings.long_sentence_words_high = 999
+    c1.analysis_settings.enable_long_sentences = False
+    c2 = Config(c1.to_dict())
+    c2.analysis_settings.long_sentence_words_mid = 666
+    c2.analysis_settings.enable_long_sentences = True
+    c3 = Config(c2.to_dict())
+    c3.analysis_settings.long_sentence_words_mid = 333
+    c3.analysis_settings.enable_long_sentences = True
+    c4 = Config(c3.to_dict())
+    c4.analysis_settings.close_words_use_lemma = True
+    # SET CONFIGS TO PROJECT, DIR_ITEM AND ITEM. RETAIN C1 AS GLOBAL CONFIG
+    p = Project()
+    p.config = c2
+    dir_item = DirectoryProjectItem()
+    dir_item.config = c3
+    item = ProjectItem()
+    item.config = c4
+    item.parent = dir_item
+    # SELECT AND TEST CONFIG. SHOULD CONFORM TO ITEM CONFIG
+    c5 = ConfigService.select_config(c1, p, item)
+    assert c5.analysis_settings.enable_long_sentences
+    assert c5.analysis_settings.long_sentence_words_high == 999
+    assert c5.analysis_settings.long_sentence_words_mid == 333
+    assert c5.analysis_settings.close_words_use_lemma
+    # REMOVE ITEM CONFIG
+    # SELECT AND TEST CONFIG. SHOULD CONFORM TO DIR_ITEM CONFIG
+    item.config = None
+    c6 = ConfigService.select_config(c1, p, item)
+    assert c6.analysis_settings.enable_long_sentences
+    assert c6.analysis_settings.long_sentence_words_high == 999
+    assert c6.analysis_settings.long_sentence_words_mid == 333
+    assert not c6.analysis_settings.close_words_use_lemma
+    # REMOVE DIR ITEM CONFIG
+    # SELECT AND TEST CONFIG. SHOULD CONFORM TO PROJECT CONFIG
+    dir_item.config = None
+    c7 = ConfigService.select_config(c1, p, item)
+    assert c7.analysis_settings.enable_long_sentences
+    assert c7.analysis_settings.long_sentence_words_high == 999
+    assert c7.analysis_settings.long_sentence_words_mid == 666
+    assert not c7.analysis_settings.close_words_use_lemma
+    # REMOVE PROJECT CONFIG
+    # SELECT AND TEST CONFIG. SHOULD CONFORM TO GLOBAL CONFIG
+    p.config = None
+    c8 = ConfigService.select_config(c1, p, item)
+    assert not c8.analysis_settings.enable_long_sentences
+    assert c8.analysis_settings.long_sentence_words_high == 999
+    assert c8.analysis_settings.long_sentence_words_mid == 8
+    assert not c8.analysis_settings.close_words_use_lemma
+
+
 def test_export_sentences(setup_teardown):
     nlp = setup_teardown[0]
     doc = NlpService.full_analysis(TEST_TEXT_1, nlp, NLP_BATCH_SIZE, Config())
@@ -713,7 +766,11 @@ def test_project_items():
     if os.path.exists(file_name):
         shutil.rmtree(file_name)
     p = ProjectService.create_project(name, desc, file_name)
+    p.config = Config()
+    ProjectService.save(p, p.path)
     item = ProjectService.new_item(p, "001", None, ProjectItemType.HTEXT)
+    item.config = Config()
+    ProjectService.save(p, p.path)
     assert ProjectService.load_file_contents(p, item).raw_text == ""
     item.contents = HTextFile(TEST_TEXT_1)
     ProjectService.save_file_contents(p, item)
@@ -724,6 +781,8 @@ def test_project_items():
     item2 = ProjectService.load_file_contents(p, item)
     assert item2.raw_text == TEST_TEXT_1
     dir_item = ProjectService.new_item(p, "tests", None, ProjectItemType.DIRECTORY)
+    dir_item.config = Config()
+    ProjectService.save(p, p.path)
     subitem = ProjectService.new_item(p, "002", dir_item, ProjectItemType.HTEXT)
     assert subitem.path == os.path.join(dir_item.path, "002.htext")
     assert subitem.path != os.path.join(os.path.dirname(p.path), "data", "002.htext")

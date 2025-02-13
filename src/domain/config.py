@@ -1,3 +1,6 @@
+from enum import Enum
+
+
 class Config:
     def __init__(self, data=None):
         """
@@ -121,3 +124,11 @@ class AppearanceSettings:
             "paragraph_lmargin1": self.paragraph_lmargin1,
             "paragraph_spacing3": self.paragraph_spacing3,
         }
+
+
+class ConfigLevel(str, Enum):
+    """Enum with available ConfigLevels"""
+    GLOBAL = "GLOBAL"
+    PROJECT = "PROJECT"
+    ITEM = "ITEM"
+

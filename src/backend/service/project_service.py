@@ -71,6 +71,7 @@ class ProjectService:
         item.path = os.path.relpath(path, data_dir)
         item.name = name
         if parent_item is not None:
+            item.parent = parent_item
             parent_item.subitems.append(item)
         else:
             p.items.append(item)

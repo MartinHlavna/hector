@@ -43,9 +43,10 @@ from src.const.tags import CLOSE_WORD_PREFIX, LONG_SENTENCE_TAG_NAME_HIGH, LONG_
     FREQUENT_WORD_PREFIX, FREQUENT_WORD_TAG_NAME, COMPUTER_QUOTE_MARKS_TAG_NAME, DANGLING_QUOTE_MARK_TAG_NAME, \
     SHOULD_USE_LOWER_QUOTE_MARK_TAG_NAME, SHOULD_USE_UPPER_QUOTE_MARK_TAG_NAME, FORMATTING_TAGS, CLOSE_WORD_RANGE_PREFIX
 from src.const.values import READABILITY_MAX_VALUE, DOCUMENTATION_LINK, NLP_BATCH_SIZE
+from src.domain.config import Config, ConfigLevel
 from src.domain.htext_file import HTextFile
 from src.domain.metadata import RecentProject
-from src.domain.project import ProjectItemType
+from src.domain.project import ProjectItemType, ProjectItem
 from src.gui.gui_utils import GuiUtils
 from src.gui.modal.analysis_settings_modal import AnalysisSettingsModal
 from src.gui.modal.appearance_settings_modal import AppearanceSettingsModal
@@ -129,6 +130,13 @@ class MainWindow:
             MenuItem(label="Projekt",
                      underline_index=0,
                      submenu=[
+                         MenuItem(label="Nastavenia analýzy",
+                                  command=partial(
+                                      self.show_analysis_settings,
+                                      self.ctx.project.config,
+                                      ConfigLevel.PROJECT
+                                  ),
+                                  ),
                          MenuItem(label="Zavrieť",
                                   command=self.close_project,
                                   ),
@@ -213,7 +221,11 @@ class MainWindow:
                     label="Parametre analýzy",
                     icon=GuiUtils.fa_image(FA_SOLID, "#3B3B3B", "white", FontAwesomeIcons.gears, 16),
                     highlight_icon=GuiUtils.fa_image(FA_SOLID, "white", "#3B3B3B", FontAwesomeIcons.gears, 16),
-                    command=self.show_analysis_settings
+                    command=partial(
+                        self.show_analysis_settings,
+                        self.config,
+                        ConfigLevel.GLOBAL
+                    )
                 ),
                 MenuItem(
                     label="Vzhľad",
@@ -548,10 +560,10 @@ class MainWindow:
         self.page_count_info_value.config(text=f"{doc._.total_pages}")
 
     # CALCULATE AND DISPLAY FREQUENT WORDS
-    def display_word_frequencies(self, doc: Doc):
-        if not self.config.analysis_settings.enable_frequent_words:
+    def display_word_frequencies(self, doc: Doc, config: Config):
+        if not config.analysis_settings.enable_frequent_words:
             return
-        word_counts = NlpService.compute_word_frequencies(doc, self.config)
+        word_counts = NlpService.compute_word_frequencies(doc, config)
         # NOTE
         # In tk, there is problem with scrolling so we default to using on big text to dispaly frequencies
         # There is way of making canvas with scrollregion but this is more performant
@@ -590,8 +602,8 @@ class MainWindow:
                 self.text_editor.tag_add(f'{FREQUENT_WORD_PREFIX}{word.text}', start_index, end_index)
 
     # HIGHLIGHT LONG SENTENCES
-    def highlight_long_sentences(self, doc: Doc):
-        if not self.config.analysis_settings.enable_long_sentences:
+    def highlight_long_sentences(self, doc: Doc, config: Config):
+        if not config.analysis_settings.enable_long_sentences:
             return
         doc_size = len(doc.text)
         doc_text = doc.text
@@ -608,9 +620,9 @@ class MainWindow:
                     self.text_editor.tag_add(LONG_SENTENCE_TAG_NAME_MID, start_index, end_index)
 
     # HIGHLIGHT MULTIPLE SPACES
-    def highlight_multiple_spaces(self, doc: Doc):
+    def highlight_multiple_spaces(self, doc: Doc, config: Config):
         self.text_editor.tag_remove(MULTIPLE_SPACES_TAG_NAME, "1.0", tk.END)
-        if self.config.analysis_settings.enable_multiple_spaces:
+        if config.analysis_settings.enable_multiple_spaces:
             matches = NlpService.find_multiple_spaces(doc)
             for match in matches:
                 start_index = f"1.0 + {match.start()} chars"
@@ -618,8 +630,8 @@ class MainWindow:
                 self.text_editor.tag_add(MULTIPLE_SPACES_TAG_NAME, start_index, end_index)
 
     # HIGHLIGHT MULTIPLE PUNCTUATION
-    def highlight_multiple_punctuation(self, doc: Doc):
-        if self.config.analysis_settings.enable_multiple_punctuation:
+    def highlight_multiple_punctuation(self, doc: Doc, config: Config):
+        if config.analysis_settings.enable_multiple_punctuation:
             matches = NlpService.find_multiple_punctuation(doc)
             for match in matches:
                 if match.group() not in ["?!"]:
@@ -628,8 +640,8 @@ class MainWindow:
                     self.text_editor.tag_add(MULTIPLE_PUNCTUATION_TAG_NAME, start_index, end_index)
 
     # HIGHLIGHT TRAILING SPACES
-    def highlight_trailing_spaces(self, doc: Doc):
-        if self.config.analysis_settings.enable_trailing_spaces:
+    def highlight_trailing_spaces(self, doc: Doc, config: Config):
+        if config.analysis_settings.enable_trailing_spaces:
             matches = NlpService.find_trailing_spaces(doc)
             for match in matches:
                 start_index = f"1.0 + {match.start()} chars"
@@ -637,8 +649,8 @@ class MainWindow:
                 self.text_editor.tag_add(TRAILING_SPACES_TAG_NAME, start_index, end_index)
 
     # HIGHLIGHT QUOTE_MARK_ERRORS
-    def highlight_quote_mark_errors(self, doc: Doc):
-        if self.config.analysis_settings.enable_quote_corrections:
+    def highlight_quote_mark_errors(self, doc: Doc, config: Config):
+        if config.analysis_settings.enable_quote_corrections:
             matches = NlpService.find_computer_quote_marks(doc)
             for match in matches:
                 start_index = f"1.0 + {match.start()} chars"
@@ -661,10 +673,10 @@ class MainWindow:
                 self.text_editor.tag_add(SHOULD_USE_LOWER_QUOTE_MARK_TAG_NAME, start_index, end_index)
 
     # HIGHLIGHT WORDS THAT REPEATS CLOSE TO EACH OTHER
-    def highlight_close_words(self, doc: Doc):
-        if self.config.analysis_settings.enable_close_words:
+    def highlight_close_words(self, doc: Doc, config: Config):
+        if config.analysis_settings.enable_close_words:
             self.text_editor.tag_remove("close_word", "1.0", tk.END)
-            close_words = NlpService.evaluate_close_words(doc, self.config)
+            close_words = NlpService.evaluate_close_words(doc, config)
             # NOTE
             # In tk, there is problem with scrolling so we default to using on big text to dispaly frequencies
             # There is way of making canvas with scrollregion but this is more performant
@@ -696,7 +708,7 @@ class MainWindow:
                                               )
                 word_partitions = NlpService.partition_close_words(
                     close_words[word],
-                    self.config.analysis_settings.close_words_min_distance_between_words
+                    config.analysis_settings.close_words_min_distance_between_words
                 )
 
                 for word_partition in word_partitions:
@@ -1110,6 +1122,7 @@ class MainWindow:
             return
         if self.search_debounce_timer is not None:
             self.root.after_cancel(self.search_debounce_timer)
+        config = ConfigService.select_config(self.config, self.ctx.project, self.ctx.current_file)
         self.search_debounce_timer = None
         self.search_matches.clear()
         self.last_search = ''
@@ -1117,20 +1130,20 @@ class MainWindow:
         # GET TEXT FROM EDITOR
         # RUN ANALYSIS
         if not force_reload and len(text) > 100 and abs(
-                len(self.doc.text) - len(text)) < 20 and self.config.analysis_settings.enable_partial_nlp:
+                len(self.doc.text) - len(text)) < 20 and config.analysis_settings.enable_partial_nlp:
             # PARTIAL NLP
             carret_position = self.get_carret_position()
             if carret_position is not None:
-                self.doc = NlpService.partial_analysis(text, self.doc, self.ctx.nlp, self.config, carret_position)
+                self.doc = NlpService.partial_analysis(text, self.doc, self.ctx.nlp, config, carret_position)
                 self.text_editor.edit_separator()
             else:
                 # FALLBACK TO FULL NLP
-                self.doc = NlpService.full_analysis(text, self.ctx.nlp, NLP_BATCH_SIZE, self.config)
+                self.doc = NlpService.full_analysis(text, self.ctx.nlp, NLP_BATCH_SIZE, config)
                 self.text_editor.edit_separator()
         else:
             # FULL NLP
             # FALLBACK TO FULL NLP
-            self.doc = NlpService.full_analysis(text, self.ctx.nlp, NLP_BATCH_SIZE, self.config)
+            self.doc = NlpService.full_analysis(text, self.ctx.nlp, NLP_BATCH_SIZE, config)
         # CLEAR TAGS
         for tag in self.text_editor.tag_names():
             self.text_editor.tag_delete(tag)
@@ -1141,18 +1154,18 @@ class MainWindow:
             self.text_editor.tag_add(PARAGRAPH_TAG_NAME, start_index, end_index)
         # RUN ANALYSIS FUNCTIONS
         self.display_size_info(self.doc)
-        self.highlight_long_sentences(self.doc)
-        self.display_word_frequencies(self.doc)
-        self.highlight_close_words(self.doc)
-        self.highlight_multiple_spaces(self.doc)
-        self.highlight_multiple_punctuation(self.doc)
-        self.highlight_trailing_spaces(self.doc)
-        self.highlight_quote_mark_errors(self.doc)
-        self.run_spellcheck(self.doc)
+        self.highlight_long_sentences(self.doc, config)
+        self.display_word_frequencies(self.doc, config)
+        self.highlight_close_words(self.doc, config)
+        self.highlight_multiple_spaces(self.doc, config)
+        self.highlight_multiple_punctuation(self.doc, config)
+        self.highlight_trailing_spaces(self.doc, config)
+        self.highlight_quote_mark_errors(self.doc, config)
+        self.run_spellcheck(self.doc, config)
         # CONFIG TAGS
         self.text_editor.tag_config(PARAGRAPH_TAG_NAME,
-                                    lmargin1=f'{self.config.appearance_settings.paragraph_lmargin1}m',
-                                    spacing3=f'{self.config.appearance_settings.paragraph_spacing3}m')
+                                    lmargin1=f'{config.appearance_settings.paragraph_lmargin1}m',
+                                    spacing3=f'{config.appearance_settings.paragraph_spacing3}m')
         self.text_editor.tag_config(LONG_SENTENCE_TAG_NAME_MID, background=LONG_SENTENCE_HIGHLIGHT_COLOR_MID)
         self.text_editor.tag_config(LONG_SENTENCE_TAG_NAME_HIGH, background=LONG_SENTENCE_HIGHLIGHT_COLOR_HIGH)
         self.text_editor.tag_config(TRAILING_SPACES_TAG_NAME, background="red")
@@ -1317,10 +1330,17 @@ class MainWindow:
                 # IF USER CLICKED ON ITEM, FOCUS IT AND ADD DELETE FILE OPTION
                 self.project_tree.selection_set(iid)
                 self.project_tree.focus(iid)
+                item = self.project_tree_item_to_project_item[iid]
                 context_menu_items.append(
                     MenuItem(
                         label="Vymazať",
                         command=partial(self._on_project_tree_item_delete, event)
+                    )
+                )
+                context_menu_items.append(
+                    MenuItem(
+                        label="Prispôsobiť nastavenia analýzy",
+                        command=partial(self.show_analysis_settings, item.config, ConfigLevel.ITEM, item)
                     )
                 )
         if GuiUtils.is_child_of(self.text_editor, event.widget):
@@ -1387,8 +1407,8 @@ class MainWindow:
         self.root.update()
 
     # RUN SPELLCHECK
-    def run_spellcheck(self, doc: Doc):
-        if self.config.analysis_settings.enable_spellcheck:
+    def run_spellcheck(self, doc: Doc, config: Config):
+        if config.analysis_settings.enable_spellcheck:
             SpellcheckService.spellcheck(self.ctx.spellcheck_dictionary, doc)
             for word in self.doc._.words:
                 if word._.has_grammar_error:
@@ -1397,8 +1417,20 @@ class MainWindow:
                     self.text_editor.tag_add(GRAMMAR_ERROR_TAG_NAME, start_index, end_index)
 
     # SHOW SETTINGS WINDOW
-    def show_analysis_settings(self):
-        settings_window = AnalysisSettingsModal(self.root, self.config, lambda: self.analyze_text(True))
+    def show_analysis_settings(self, c, config_level: ConfigLevel, item: ProjectItem = None):
+        if c is None and config_level == ConfigLevel.ITEM:
+            i = item
+            while i is not None:
+                if i.config is None:
+                    i = i.parent
+                else:
+                    c = Config(i.config.to_dict())
+                    break
+            if c is None and self.ctx.project.config is not None:
+                c = Config(self.ctx.project.config.to_dict())
+        if c is None:
+            c = Config(self.config.to_dict())
+        settings_window = AnalysisSettingsModal(self.root, c, lambda: self.analyze_text(True), config_level, item)
         self.configure_modal(settings_window.toplevel, height=660, width=780)
 
     # SHOW SETTINGS WINDOW
