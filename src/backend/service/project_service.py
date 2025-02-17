@@ -65,9 +65,11 @@ class ProjectService:
             os.makedirs(dir_path, exist_ok=True)
             path = os.path.join(dir_path, f"{Utils.normalize_file_name(name)}.htext")
             if not os.path.exists(path):
-                open(path, 'w').close()
-                item = ProjectItem()
-                item.type = ProjectItemType.HTEXT
+                with open(path, 'w') as file:
+                    item = ProjectItem()
+                    item.type = ProjectItemType.HTEXT
+            else:
+                raise FileExistsError()
         item.path = os.path.relpath(path, data_dir)
         item.name = name
         if parent_item is not None:
