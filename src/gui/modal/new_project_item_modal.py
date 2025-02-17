@@ -72,6 +72,9 @@ class NewProjectItemModal:
             messagebox.showerror("Chyba", "Názov je povinný.")
             return
         item = ProjectService.new_item(ctx.project, name, self.parent_item, item_type)
+        if item is None:
+            messagebox.showerror("Chyba", "Nie je možné vytvoriť súbor, súbor už existuje.")
+            return
         if self.on_new_file:
             self.on_new_file(item)
         self.close()

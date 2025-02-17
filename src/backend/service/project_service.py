@@ -68,6 +68,8 @@ class ProjectService:
                 open(path, 'w').close()
                 item = ProjectItem()
                 item.type = ProjectItemType.HTEXT
+            else:
+                return None
         item.path = os.path.relpath(path, data_dir)
         item.name = name
         if parent_item is not None:

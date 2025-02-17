@@ -16,6 +16,7 @@ from spacy import displacy
 from spacy.tokens import Doc
 from svglib.svglib import svg2rlg
 from tkinter_autoscrollbar import AutoScrollbar
+from typer.colors import WHITE
 
 from src.backend.run_context import RunContext
 from src.backend.service.config_service import ConfigService
@@ -28,9 +29,10 @@ from src.backend.service.spellcheck_service import SpellcheckService
 from src.const.colors import PRIMARY_COLOR, ACCENT_2_COLOR, TEXT_EDITOR_FRAME_BG, PANEL_TEXT_COLOR, \
     TEXT_EDITOR_BG, EDITOR_TEXT_COLOR, CLOSE_WORDS_PALLETE, LONG_SENTENCE_HIGHLIGHT_COLOR_MID, \
     LONG_SENTENCE_HIGHLIGHT_COLOR_HIGH, SEARCH_RESULT_HIGHLIGHT_COLOR, CURRENT_SEARCH_RESULT_HIGHLIGHT_COLOR, \
-    TRANSPARENT
+    TRANSPARENT, LIGHT_WHITE
 from src.const.font_awesome_icons import FontAwesomeIcons
-from src.const.fonts import HELVETICA_FONT_NAME, TEXT_SIZE_SECTION_HEADER, TEXT_SIZE_BOTTOM_BAR, BOLD_FONT, FA_SOLID
+from src.const.fonts import HELVETICA_FONT_NAME, TEXT_SIZE_SECTION_HEADER, TEXT_SIZE_BOTTOM_BAR, BOLD_FONT, FA_SOLID, \
+    TEXT_SIZE_MENU
 from src.const.grammar_error_types import GRAMMAR_ERROR_TYPE_MISSPELLED_WORD, GRAMMAR_ERROR_TYPE_WRONG_Y_SUFFIX, \
     GRAMMAR_ERROR_TYPE_WRONG_I_SUFFIX, GRAMMAR_ERROR_TYPE_WRONG_YSI_SUFFIX, GRAMMAR_ERROR_TYPE_WRONG_ISI_SUFFIX, \
     GRAMMAR_ERROR_NON_LITERAL_WORD, NON_LITERAL_WORDS, GRAMMAR_ERROR_S_INSTEAD_OF_Z, \
@@ -385,6 +387,12 @@ class MainWindow:
         text_editor_outer_frame = tk.Frame(text_editor_frame, borderwidth=0, width=int(A4_SIZE_INCHES * dpi),
                                            relief=tk.RAISED, background=TEXT_EDITOR_BG)
         text_editor_outer_frame.pack(expand=True, fill=tk.Y, padx=5, pady=10, )
+        # EDITOR TOOLBAR
+        self.editor_toolbar_frame = tk.Frame(text_editor_outer_frame, background=ACCENT_2_COLOR, borderwidth=1)
+        self.editor_toolbar_frame.pack(fill=tk.X, pady=5)
+        ttk.Separator(text_editor_outer_frame, orient='horizontal').pack(fill=tk.X)
+        self.toolbar_file_name = tk.Label(self.editor_toolbar_frame, text="(neuložený súbor)", background=ACCENT_2_COLOR, foreground=LIGHT_WHITE, padx=10, font=(HELVETICA_FONT_NAME, TEXT_SIZE_MENU))
+        self.toolbar_file_name.pack(side=tk.LEFT)
         self.text_editor = tk.Text(text_editor_outer_frame, wrap=tk.WORD, relief=tk.RAISED, highlightthickness=0,
                                    yscrollcommand=text_editor_scroll.set, background=TEXT_EDITOR_BG,
                                    foreground=EDITOR_TEXT_COLOR, borderwidth=0,
@@ -1004,6 +1012,8 @@ class MainWindow:
             )
             if should_delete:
                 ProjectService.delete_item(self.ctx.project, item, parent_item)
+                if self.ctx.current_file == item:
+                    self.open_text_file(None)
                 self._show_project_files()
 
     def _on_project_tree_item_close(self, e=None):
@@ -1014,11 +1024,19 @@ class MainWindow:
             ProjectService.save(self.ctx.project, self.ctx.project.path)
 
     def open_text_file(self, item):
-        self.ctx.current_file = item
-        self.root.title(f"{item.name} | {self.ctx.project.name} | Hector")
-        item.contents = ProjectService.load_file_contents(self.ctx.project, item)
-        MainWindow.set_text(self.text_editor, item.contents.raw_text, editable=True)
-        self.analyze_text(True)
+        if item is not None:
+            self.ctx.current_file = item
+            self.root.title(f"{item.name} | {self.ctx.project.name} | Hector")
+            item.contents = ProjectService.load_file_contents(self.ctx.project, item)
+            MainWindow.set_text(self.text_editor, item.contents.raw_text, editable=True)
+            self.toolbar_file_name.config(text=item.name)
+            self.analyze_text(True)
+        else:
+            self.ctx.current_file = None
+            self.root.title(f"{self.ctx.project.name} | Hector")
+            MainWindow.set_text(self.text_editor, "", editable=True)
+            self.toolbar_file_name.config(text="(neuloźený súbor)")
+            self.analyze_text(True)
 
     # LOAD TEXT FILE
     def import_file(self):
