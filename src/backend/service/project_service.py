@@ -65,7 +65,7 @@ class ProjectService:
             os.makedirs(dir_path, exist_ok=True)
             path = os.path.join(dir_path, f"{Utils.normalize_file_name(name)}.htext")
             if not os.path.exists(path):
-                with open(path, 'w').close() as file:
+                with open(path, 'w') as file:
                     item = ProjectItem()
                     item.type = ProjectItemType.HTEXT
             else:
