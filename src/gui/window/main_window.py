@@ -16,7 +16,6 @@ from spacy import displacy
 from spacy.tokens import Doc
 from svglib.svglib import svg2rlg
 from tkinter_autoscrollbar import AutoScrollbar
-from typer.colors import WHITE
 
 from src.backend.run_context import RunContext
 from src.backend.service.config_service import ConfigService

@@ -784,7 +784,8 @@ def test_project_items():
     dir_item.config = Config()
     ProjectService.save(p, p.path)
     subitem = ProjectService.new_item(p, "002", dir_item, ProjectItemType.HTEXT)
-    duplicate_subitem = ProjectService.new_item(p, "002", dir_item, ProjectItemType.HTEXT)
+    with pytest.raises(FileExistsError) as e_info:
+        duplicate_subitem = ProjectService.new_item(p, "002", dir_item, ProjectItemType.HTEXT)
     assert duplicate_subitem is None
     assert subitem.path == os.path.join(dir_item.path, "002.htext")
     assert subitem.path != os.path.join(os.path.dirname(p.path), "data", "002.htext")
