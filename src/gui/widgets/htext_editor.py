@@ -74,6 +74,11 @@ class HTextEditor:
         self.close_words = {}
         self.highlighted_word = None
         dpi = self.root.winfo_fpixels('1i')
+        text_editor_scroll_frame = tk.Frame(text_editor_frame, width=10, relief=tk.FLAT, background=PRIMARY_COLOR)
+        text_editor_scroll_frame.pack(side=tk.RIGHT, fill=tk.Y)
+        text_editor_scroll = AutoScrollbar(text_editor_scroll_frame, orient='vertical',
+                                           style='arrowless.Vertical.TScrollbar', takefocus=False)
+        text_editor_scroll.pack(side=tk.RIGHT, fill=tk.Y)
         text_editor_outer_frame = tk.Frame(text_editor_frame, borderwidth=0, width=int(A4_SIZE_INCHES * dpi),
                                            relief=tk.RAISED, background=TEXT_EDITOR_BG)
         text_editor_outer_frame.pack(expand=True, fill=tk.Y, padx=5, pady=10, )
@@ -119,12 +124,6 @@ class HTextEditor:
             relief=tk.FLAT,
             cursor="hand2"
         ).pack(side=tk.RIGHT)
-
-        text_editor_scroll_frame = tk.Frame(text_editor_frame, width=10, relief=tk.FLAT, background=PRIMARY_COLOR)
-        text_editor_scroll_frame.pack(side=tk.RIGHT, fill=tk.Y)
-        text_editor_scroll = AutoScrollbar(text_editor_scroll_frame, orient='vertical',
-                                           style='arrowless.Vertical.TScrollbar', takefocus=False)
-        text_editor_scroll.pack(side=tk.RIGHT, fill=tk.Y)
         self.text_editor = tk.Text(text_editor_outer_frame, wrap=tk.WORD, relief=tk.RAISED, highlightthickness=0,
                                    yscrollcommand=text_editor_scroll.set, background=TEXT_EDITOR_BG,
                                    foreground=EDITOR_TEXT_COLOR, borderwidth=0,

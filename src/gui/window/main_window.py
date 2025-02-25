@@ -254,11 +254,6 @@ class MainWindow:
         # MIDDLE TEXT EDITOR WINDOW
         text_editor_frame = tk.Frame(self.main_frame, background=TEXT_EDITOR_FRAME_BG, borderwidth=0)
         text_editor_frame.pack(expand=1, fill=tk.BOTH)
-        text_editor_scroll_frame = tk.Frame(text_editor_frame, width=10, relief=tk.FLAT, background=PRIMARY_COLOR)
-        text_editor_scroll_frame.pack(side=tk.RIGHT, fill=tk.Y)
-        text_editor_scroll = AutoScrollbar(text_editor_scroll_frame, orient='vertical',
-                                           style='arrowless.Vertical.TScrollbar', takefocus=False)
-        text_editor_scroll.pack(side=tk.RIGHT, fill=tk.Y)
         # BOTTOM PANEL WITH TEXT SIZE
         bottom_panel = tk.Frame(text_editor_frame, background=ACCENT_2_COLOR, height=20)
         bottom_panel.pack(fill=tk.BOTH, side=tk.BOTTOM)
