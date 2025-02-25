@@ -82,8 +82,7 @@ class MainWindow:
         # TOKEN SELECTED IN LEFT BOTTOM INTOSPECTION WINDOW
         self.current_instrospection_token = None
         # LOAD CONFIG
-        self.config = ConfigService.load(CONFIG_FILE_PATH)
-        self.ctx.global_config = self.config
+        self.ctx.global_config = ConfigService.load(CONFIG_FILE_PATH)
         # LOAD METADATA
         self.metadata = MetadataService.load(METADATA_FILE_PATH)
         # PROJECT TREE ITEMS TO PROJCT ITEM INDEX
@@ -195,7 +194,7 @@ class MainWindow:
                     highlight_icon=GuiUtils.fa_image(FA_SOLID, "white", "#3B3B3B", FontAwesomeIcons.gears, 16),
                     command=partial(
                         self.show_analysis_settings,
-                        self.config,
+                        self.ctx.global_config,
                         ConfigLevel.GLOBAL
                     )
                 ),
@@ -770,16 +769,15 @@ class MainWindow:
                                                  confirmoverwrite=True,
                                                  filetypes=[("Nastavenia programu Hector", "*.hector.conf")])
         if file_path:
-            ConfigService.save(self.config, file_path)
+            ConfigService.save(self.ctx.global_config, file_path)
 
     # IMPORT SETTINGS FROM A FILE
     def import_settings(self):
         file_path = filedialog.askopenfilename(
             filetypes=[("Nastavenia programu Hector", "*.hector.conf")]
         )
-        self.config = ConfigService.load(file_path)
-        self.ctx.global_config = self.config
-        ConfigService.save(self.config, CONFIG_FILE_PATH)
+        self.ctx.global_config = ConfigService.load(file_path)
+        ConfigService.save(self.ctx.global_config, CONFIG_FILE_PATH)
         self.text_editor.analyze_text(True)
 
     def export_sentences(self, event=None):
@@ -949,14 +947,14 @@ class MainWindow:
             if c is None and self.ctx.project.config is not None:
                 c = Config(self.ctx.project.config.to_dict())
         if c is None:
-            c = Config(self.config.to_dict())
+            c = Config(self.ctx.global_config.to_dict())
         settings_window = AnalysisSettingsModal(self.root, c, lambda: self.text_editor.analyze_text(True), config_level,
                                                 item)
         GuiUtils.configure_modal(self.root, settings_window.toplevel, height=660, width=780)
 
     # SHOW SETTINGS WINDOW
     def show_appearance_settings(self):
-        settings_window = AppearanceSettingsModal(self.root, self.config, lambda: self.text_editor.analyze_text(True))
+        settings_window = AppearanceSettingsModal(self.root, self.ctx.global_config, lambda: self.text_editor.analyze_text(True))
         GuiUtils.configure_modal(self.root, settings_window.toplevel, height=150, width=780)
 
     # SHOW ABOUT DIALOG

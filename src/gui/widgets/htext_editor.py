@@ -25,7 +25,7 @@ from src.const.tags import ITALIC_TAG_NAME, BOLD_TAG_NAME, CLOSE_WORD_PREFIX, SE
     CURRENT_SEARCH_RESULT_TAG_NAME, PARAGRAPH_TAG_NAME, FORMATTING_TAGS, LONG_SENTENCE_TAG_NAME_MID, \
     LONG_SENTENCE_TAG_NAME_HIGH, TRAILING_SPACES_TAG_NAME, COMPUTER_QUOTE_MARKS_TAG_NAME, DANGLING_QUOTE_MARK_TAG_NAME, \
     SHOULD_USE_LOWER_QUOTE_MARK_TAG_NAME, SHOULD_USE_UPPER_QUOTE_MARK_TAG_NAME, MULTIPLE_PUNCTUATION_TAG_NAME, \
-    MULTIPLE_SPACES_TAG_NAME, GRAMMAR_ERROR_TAG_NAME, CLOSE_WORD_TAG_NAME, CLOSE_WORD_RANGE_PREFIX
+    MULTIPLE_SPACES_TAG_NAME, GRAMMAR_ERROR_TAG_NAME, CLOSE_WORD_TAG_NAME, CLOSE_WORD_RANGE_PREFIX, BOLD_ITALIC_TAG_NAME
 from src.const.values import A4_SIZE_INCHES, NLP_BATCH_SIZE, READABILITY_MAX_VALUE
 from src.domain.config import Config
 from src.gui.gui_utils import GuiUtils
@@ -164,29 +164,32 @@ class HTextEditor:
     def create_selection(self, from_char, to_char):
         self.tag_add(tk.SEL, f"1.0 + {from_char} chars", f"1.0 + {to_char} chars")
 
-    def toggle_italic(self):
+    def toggle_format(self, new_tag_name):
         if self.text_editor.tag_ranges(tk.SEL):
             selection_range = self.text_editor.tag_ranges(tk.SEL)
             tags_at_selection = self.tag_names(selection_range[0])
             removed = False
             for tag in tags_at_selection:
-                if tag == ITALIC_TAG_NAME:
-                    self.tag_remove(tag, selection_range[0], selection_range[1])
-                    removed = True
+                if tag in [BOLD_TAG_NAME, ITALIC_TAG_NAME, BOLD_ITALIC_TAG_NAME]:
+                    if tag == BOLD_ITALIC_TAG_NAME:
+                        self.tag_remove(tag, selection_range[0], selection_range[1])
+                        self.tag_add(BOLD_TAG_NAME if new_tag_name == ITALIC_TAG_NAME else ITALIC_TAG_NAME, selection_range[0], selection_range[1])
+                        removed = True
+                    elif tag == new_tag_name:
+                        self.tag_remove(tag, selection_range[0], selection_range[1])
+                        removed = True
+                    elif tag != new_tag_name:
+                        self.tag_remove(tag, selection_range[0], selection_range[1])
+                        self.tag_add(BOLD_ITALIC_TAG_NAME, selection_range[0], selection_range[1])
+                        removed = True
             if not removed:
-                self.tag_add(ITALIC_TAG_NAME, selection_range[0], selection_range[1])
+                self.tag_add(new_tag_name, selection_range[0], selection_range[1])
+
+    def toggle_italic(self):
+        self.toggle_format(ITALIC_TAG_NAME)
 
     def toggle_bold(self):
-        if self.text_editor.tag_ranges(tk.SEL):
-            selection_range = self.text_editor.tag_ranges(tk.SEL)
-            tags_at_selection = self.tag_names(selection_range[0])
-            removed = False
-            for tag in tags_at_selection:
-                if tag == BOLD_TAG_NAME:
-                    self.tag_remove(tag, selection_range[0], selection_range[1])
-                    removed = True
-            if not removed:
-                self.tag_add(BOLD_TAG_NAME, selection_range[0], selection_range[1])
+        self.toggle_format(BOLD_TAG_NAME)
 
     def get_text_size(self):
         return self.text_size
@@ -197,15 +200,15 @@ class HTextEditor:
         self.text_editor.config(font=(HELVETICA_FONT_NAME, self.text_size))
         # CLOSE WORDS ARE ALWAYS HIGHLIGHTED WITH BIGGER FONT. WE NEED TO UPDATE TAGS
         for tag in self.text_editor.tag_names():
-            if tag.startswith(CLOSE_WORD_PREFIX):
+            if tag == BOLD_TAG_NAME:
                 self.text_editor.tag_configure(tagName=tag,
                                                font=(HELVETICA_FONT_NAME, self.text_size, BOLD_FONT))
-            elif tag == BOLD_TAG_NAME:
-                self.text_editor.tag_configure(tagName=tag,
-                                               font=(HELVETICA_FONT_NAME, self.text_size, BOLD_FONT))
-            elif tag == BOLD_TAG_NAME:
+            elif tag == ITALIC_TAG_NAME:
                 self.text_editor.tag_configure(tagName=tag,
                                                font=(HELVETICA_FONT_NAME, self.text_size, ITALIC_FONT))
+            elif tag == BOLD_ITALIC_TAG_NAME:
+                self.text_editor.tag_configure(tagName=tag,
+                                               font=(HELVETICA_FONT_NAME, self.text_size, f"{BOLD_FONT} {ITALIC_FONT}"))
 
     def tag_config(self, tagName, cnf=None, **kw):
         self.text_editor.tag_config(tagName, cnf=cnf, **kw)
@@ -246,6 +249,7 @@ class HTextEditor:
         self.tag_config(GRAMMAR_ERROR_TAG_NAME, underline=True, underlinefg="red")
         self.tag_config(BOLD_TAG_NAME, font=(HELVETICA_FONT_NAME, self.text_size, BOLD_FONT))
         self.tag_config(ITALIC_TAG_NAME, font=(HELVETICA_FONT_NAME, self.text_size, ITALIC_FONT))
+        self.tag_config(BOLD_ITALIC_TAG_NAME, font=(HELVETICA_FONT_NAME, self.text_size, f"{BOLD_FONT} {ITALIC_FONT}"))
         self.text_editor.tag_raise(COMPUTER_QUOTE_MARKS_TAG_NAME)
         self.text_editor.tag_raise("sel")
 
@@ -635,9 +639,7 @@ class HTextEditor:
                         self.tag_add(tag_name, start_index, end_index)
                         self.tag_add(range_tag_name, start_index, end_index)
                         self.tag_add(CLOSE_WORD_TAG_NAME, start_index, end_index)
-                        self.tag_config(tag_name, foreground=color,
-                                        font=(HELVETICA_FONT_NAME, self.get_text_size(),
-                                              BOLD_FONT))
+                        self.tag_config(tag_name, foreground=color)
 
     # HIGHLIGHT SAME WORD ON MOUSE OVER
     def highlight_same_word(self, event, trigger, tag_prefix=CLOSE_WORD_PREFIX, tooltip=None):
