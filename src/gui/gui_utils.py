@@ -1,4 +1,5 @@
 import os
+import platform
 
 from PIL import ImageFont, ImageDraw, Image, ImageTk
 import tkinter as tk
@@ -10,6 +11,7 @@ from src.backend.service.project_service import ProjectService
 from src.const.paths import METADATA_FILE_PATH
 from src.domain.metadata import RecentProject
 from src.domain.project import Project
+from src.utils import Utils
 
 
 class GuiUtils:
@@ -17,6 +19,7 @@ class GuiUtils:
     # BIND MOUSE ENTER AND MOUSE LEAVE EVENTS
     @staticmethod
     def bind_tag_mouse_event(tag_name, text, on_enter, on_leave, on_click=None):
+        """Bind tag mouse event"""
         text.tag_bind(tag_name, "<Enter>", on_enter)
         text.tag_bind(tag_name, "<Leave>", on_leave)
         if on_click is not None:
@@ -33,16 +36,19 @@ class GuiUtils:
 
     @staticmethod
     def unbind_events(widget, handles):
+        """Unbing given  handles from widget"""
         for key in handles:
             widget.unbind(key, handles[key])
         handles.clear()
 
     @staticmethod
     def fa_image(font, background, foreground, char, size, padding=2):
+        """Get fontawesome image"""
         return ImageTk.PhotoImage(GuiUtils.fa_image_raw(font, background, foreground, char, size, padding))
 
     @staticmethod
     def fa_image_raw(font, background, foreground, char, size, padding=2):
+        """Get raw fontawesome image"""
         img = Image.new("RGBA", (size, size), background)
         draw = ImageDraw.Draw(img)
         font_awesome = ImageFont.truetype(font, size - (padding * 2))
@@ -61,6 +67,7 @@ class GuiUtils:
 
     @staticmethod
     def open_recent_project(project: RecentProject, e=None):
+        """Opening recent project"""
         if project.path is None or not os.path.isfile(project.path):
             metadata = MetadataService.load(METADATA_FILE_PATH)
             MetadataService.remove_recent_project(metadata, project.path)
@@ -71,6 +78,7 @@ class GuiUtils:
 
     @staticmethod
     def open_project(project: Project):
+        """Common open project handling"""
         metadata = MetadataService.load(METADATA_FILE_PATH)
         MetadataService.put_recent_project(metadata, project, project.path)
         MetadataService.save(metadata, METADATA_FILE_PATH)
@@ -80,9 +88,44 @@ class GuiUtils:
         return True
 
     @staticmethod
+    def set_text(text: tk.Text, value, editable=False):
+        """Method that will set text of tk.Text widget"""
+        text.config(state=tk.NORMAL)
+        text.delete(1.0, tk.END)
+        text.insert(tk.END, value)
+        if not editable:
+            text.config(state=tk.DISABLED)
+
+    @staticmethod
+    def copy_to_clipboard(root: tk.Widget, text):
+        """Method that will copy text value into cliboard"""
+        root.clipboard_clear()
+        root.clipboard_append(text)
+        root.update()
+
+    @staticmethod
+    def configure_modal(root, modal, width=600, height=400):
+        if platform.system() == "Windows":
+            scaling_factor = Utils.get_windows_scaling_factor()
+            width = width * scaling_factor
+            height = height * scaling_factor
+        modal.bind('<Escape>', lambda e: modal.destroy())
+        modal.geometry("%dx%d" % (width, height))
+        modal.resizable(False, False)
+        screen_width = root.winfo_screenwidth()
+        screen_height = root.winfo_screenheight()
+        x = screen_width / 2 - (width / 2)
+        y = screen_height / 2 - (height / 2)
+        modal.geometry("+%d+%d" % (x, y))
+        modal.wait_visibility()
+        modal.grab_set()
+        modal.focus_set()
+        modal.transient(root)
+
+    @staticmethod
     def stylename_elements_options(stylename):
-        '''Function to expose the options of every element associated to a widget
-           stylename.'''
+        """Function to expose the options of every element associated to a widget
+           stylename."""
         try:
             # Get widget elements
             style = ttk.Style()

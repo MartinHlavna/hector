@@ -20,4 +20,6 @@ class RunContext(object):
             self.project = None
             # CURRENT FILE OPENED IN EDITOR
             self.current_file = None
+            # GLOBAL CONFIGURATIONS
+            self.global_config = None
         return cls.instance

@@ -16,3 +16,5 @@ class FontAwesomeIcons:
     download = '\uf019'
     link = '\uf0c1'
     link_broken = '\uf127'
+    italic = '\uf033'
+    bold = '\uf032'
