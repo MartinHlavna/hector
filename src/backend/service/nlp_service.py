@@ -114,7 +114,7 @@ class NlpService:
             Token.set_extension("paragraph", default=None, force=True)
             Doc.set_extension("words", default=[], force=True)
             Doc.set_extension("paragraphs", default=[], force=True)
-            Doc.set_extension("unique_words", default=[], force=True)
+            Doc.set_extension("unique_words", default={}, force=True)
             Doc.set_extension("lemmas", default=[], force=True)
             Doc.set_extension("total_chars", default=0, force=False)
             Doc.set_extension("total_words", default=0, force=True)
@@ -273,7 +273,7 @@ class NlpService:
         words = {k: v for (k, v) in x.items() if
                  len(k) >= config.analysis_settings.repeated_words_min_word_length and len(
                      v.occourences) >= config.analysis_settings.repeated_words_min_word_frequency}
-        return sorted(words.values(), key=lambda x: len(x.occourences), reverse=True)
+        return sorted(words.values(), key=lambda _x: len(_x.occourences), reverse=True)
 
     @staticmethod
     def evaluate_close_words(doc: Doc, config: Config):

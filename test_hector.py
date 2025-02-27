@@ -22,9 +22,10 @@ from src.const.grammar_error_types import GRAMMAR_ERROR_TYPE_MISSPELLED_WORD, GR
     GRAMMAR_ERROR_TOMU_INSTEAD_OF_TO, GRAMMAR_ERROR_Z_INSTEAD_OF_S, GRAMMAR_ERROR_S_INSTEAD_OF_Z, \
     GRAMMAR_ERROR_SVOJ_MOJ_TVOJ_PLUR, GRAMMAR_ERROR_SVOJ_MOJ_TVOJ_SING
 from src.const.paths import DATA_DIRECTORY, CONFIG_FILE_PATH, METADATA_FILE_PATH
+from src.const.tags import BOLD_TAG_NAME
 from src.const.values import NLP_BATCH_SIZE
 from src.domain.config import Config
-from src.domain.htext_file import HTextFile
+from src.domain.htext_file import HTextFile, HTextFormattingTag
 from src.domain.metadata import Metadata
 from src.domain.project import Project, ProjectItemType, ProjectItem, DirectoryProjectItem
 from src.utils import Utils
@@ -772,7 +773,9 @@ def test_project_items():
     item.config = Config()
     ProjectService.save(p, p.path)
     assert ProjectService.load_file_contents(p, item).raw_text == ""
-    item.contents = HTextFile(TEST_TEXT_1)
+    item.contents = HTextFile(TEST_TEXT_1, [
+        HTextFormattingTag(BOLD_TAG_NAME, "1.1", "1.4")
+    ])
     ProjectService.save_file_contents(p, item)
     fake_item = ProjectItem()
     fake_item.path = "non_existing.htext"
@@ -780,6 +783,10 @@ def test_project_items():
     item.contents = None
     item2 = ProjectService.load_file_contents(p, item)
     assert item2.raw_text == TEST_TEXT_1
+    assert len(item2.formatting) == 1
+    assert item2.formatting[0].tag_name == BOLD_TAG_NAME
+    assert item2.formatting[0].start_index == "1.1"
+    assert item2.formatting[0].end_index == "1.4"
     dir_item = ProjectService.new_item(p, "tests", None, ProjectItemType.DIRECTORY)
     dir_item.config = Config()
     ProjectService.save(p, p.path)

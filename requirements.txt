@@ -14,5 +14,4 @@ requests~=2.32.3
 semver~=3.0.4
 ufal.morphodita~=1.11.2.1
 rlPyCairo~=0.3.0
-dicttoxml~=1.7.16
-untangle~=1.2.1
+declxml~=1.1.3
