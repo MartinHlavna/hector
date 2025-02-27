@@ -3,12 +3,10 @@ import os
 import pathlib
 import shutil
 import string
-from xml.dom.minidom import parseString
 
-import untangle
-from dicttoxml import dicttoxml
+import declxml as xml
 
-from src.domain.htext_file import HTextFile
+from src.domain.htext_file import HTextFile, HTextFormattingTag
 from src.domain.project import Project, ProjectItem, ProjectItemType, DirectoryProjectItem
 from src.utils import Utils
 
@@ -29,6 +27,7 @@ class ProjectService:
         return project
 
     """Service for project manipulation"""
+
     @staticmethod
     def load(path: string):
         """Load project from file"""
@@ -106,10 +105,10 @@ class ProjectService:
         if os.path.exists(path):
             content = pathlib.Path(path).read_text(encoding='utf-8')
             if len(content) > 0:
-                doc = untangle.parse(content)
-                return HTextFile(doc.htext.raw_text.cdata)
+                htext_file = xml.parse_from_string(ProjectService.htext_xml_processor, content)
+                return htext_file
             else:
-                return HTextFile("")
+                return HTextFile("", [])
         return None
 
     @staticmethod
@@ -118,8 +117,17 @@ class ProjectService:
         path = os.path.join(os.path.dirname(p.path), "data", item.path)
         if os.path.exists(path):
             with open(path, 'w', encoding='utf-8') as file:
-                xml = dicttoxml(vars(item.contents), attr_type=False, custom_root='htext', return_bytes=False)
-                dom = parseString(xml)
-                file.write(dom.toprettyxml(standalone=True))
+                xml_string = xml.serialize_to_string(ProjectService.htext_xml_processor, item.contents, indent='  ')
+                file.write(xml_string)
                 return True
         return False
+
+
+ProjectService.htext_xml_processor = xml.user_object("htext", HTextFile, [
+    xml.string("raw_text", required=True),
+    xml.array(xml.user_object("formatting_tag", HTextFormattingTag, child_processors=[
+        xml.string("tag_name", required=True),
+        xml.string("start_index", required=True),
+        xml.string("end_index", required=True),
+    ], required=False), "formatting", omit_empty=True, nested="formatting")
+], True)

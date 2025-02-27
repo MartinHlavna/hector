@@ -1,6 +1,7 @@
 import random
 import re
 import tkinter as tk
+from functools import partial
 from tkinter import ttk
 
 from spacy.tokens import Doc
@@ -28,6 +29,7 @@ from src.const.tags import ITALIC_TAG_NAME, BOLD_TAG_NAME, CLOSE_WORD_PREFIX, SE
     MULTIPLE_SPACES_TAG_NAME, GRAMMAR_ERROR_TAG_NAME, CLOSE_WORD_TAG_NAME, CLOSE_WORD_RANGE_PREFIX, BOLD_ITALIC_TAG_NAME
 from src.const.values import A4_SIZE_INCHES, NLP_BATCH_SIZE, READABILITY_MAX_VALUE
 from src.domain.config import Config
+from src.domain.htext_file import HTextFormattingTag
 from src.gui.gui_utils import GuiUtils
 from src.gui.widgets.hector_button import HectorButton
 from src.gui.widgets.tooltip import Tooltip
@@ -38,7 +40,6 @@ NLP_DEBOUNCE_LENGTH = 500
 
 class HTextEditor:
     """Rich text editor for manipulation of htext files"""
-
     def __init__(
             self,
             root: tk.Widget,
@@ -50,16 +51,33 @@ class HTextEditor:
             on_word_selected,
             on_text_paste,
             on_text_analyzed,
+            on_formatting_changed,
     ):
+        """
+        Constructor for rich tect editor
+        :param root tkinter root widget reprersenting window
+        :param text_editor_frame Outer container for editor
+        :param tooltip Tooltip implementation for showing tooltips on mouse over
+        :param word_freq_text Temporary workaround for handling on mouse overs on frequend words. Tkinter text widget
+        :param close_words_text Temporary workaround for handling on mouse overs on close words. Tkinter text widget
+        :param on_word_selected Callback - User clicked on word
+        :param on_text_paste Callback - text has been pasted
+        :param on_text_analyzed Callback - text has been analyzed
+        :param on_formatting_changed Callback - formatting has been changed
+        """
+        # NLP DOCUMENT
         self.doc = doc
+        # WIDGETS
         self.root = root
         self.text_editor_frame = text_editor_frame
+        self.word_freq_text = word_freq_text
+        self.close_words_text = close_words_text
+        # CALLBACKS
         self.on_word_selected = on_word_selected
         self.on_text_paste = on_text_paste
         self.on_text_analyzed = on_text_analyzed
+        self.on_formatting_changed = on_formatting_changed
         self.tooltip = tooltip
-        self.word_freq_text = word_freq_text
-        self.close_words_text = close_words_text
         # DICTIONARY THAT HOLDS COLOR OF WORD TO PREVENT RECOLORING WHILE TYPING
         self.close_word_colors = {}
         # TIMERS FOR DEBOUNCING CHANGE EVENTS
@@ -71,8 +89,10 @@ class HTextEditor:
         self.last_search = ''
         self.last_match_index = 0
         self.last_tags = set()
+        # CLOSE WORDS METADATA
         self.close_words = {}
         self.highlighted_word = None
+        # GUI INITIALIZATION
         dpi = self.root.winfo_fpixels('1i')
         text_editor_scroll_frame = tk.Frame(text_editor_frame, width=10, relief=tk.FLAT, background=PRIMARY_COLOR)
         text_editor_scroll_frame.pack(side=tk.RIGHT, fill=tk.Y)
@@ -110,7 +130,7 @@ class HTextEditor:
             background=ACCENT_2_COLOR,
             foreground=LIGHT_WHITE,
             highlightthickness=0,
-            command=self.toggle_italic,
+            command=partial(self.toggle_format, ITALIC_TAG_NAME),
             relief=tk.FLAT,
             cursor="hand2"
         ).pack(side=tk.RIGHT)
@@ -120,7 +140,7 @@ class HTextEditor:
             background=ACCENT_2_COLOR,
             foreground=LIGHT_WHITE,
             highlightthickness=0,
-            command=self.toggle_bold,
+            command=partial(self.toggle_format, BOLD_TAG_NAME),
             relief=tk.FLAT,
             cursor="hand2"
         ).pack(side=tk.RIGHT)
@@ -135,36 +155,40 @@ class HTextEditor:
         text_editor_scroll.config(command=self.text_editor.yview)
 
     def bind_events(self):
-        # MOUSE AND KEYBOARD BINDINGS
+        """Apply mouse and keyboard bindings"""
         self.text_editor.unbind('<Control-z>')
         self.text_editor.unbind('<Control-Z>')
         self.text_editor.unbind('<Control-y>')
         self.text_editor.unbind('<Control-Y>')
         self.text_editor.unbind('<Control-Shift-z>')
         self.text_editor.unbind('<Control-Shift-Z>')
-        self.text_editor.bind("<KeyRelease>", self._analyze_text_debounced)
+        self.text_editor.bind("<KeyRelease>", self._on_typing_done)
         self.text_editor.bind("<Button-1>", lambda e: self.root.after(0, self.on_word_selected))
         self.text_editor.bind("<Control-a>", self.select_all)
         self.text_editor.bind("<Control-A>", self.select_all)
         self.text_editor.bind("<<Paste>>", self.handle_clipboard_paste)
-        self.text_editor.bind('<Motion>', self.editor_on_mouse_motion)
-        self.text_editor.bind('<Leave>', self.editor_on_mouse_leave)
+        self.text_editor.bind('<Motion>', self._editor_on_mouse_motion)
+        self.text_editor.bind('<Leave>', self._editor_on_mouse_leave)
 
     def get_carret_position(self, index_name):
+        """Get carret possition for given index"""
         possible_carret = self.text_editor.count("1.0", self.text_editor.index(index_name), "chars")
         if possible_carret is None:
             return None
         return possible_carret[0]
 
     def apply_suggestion(self, span, suggestion, event, carret_index):
+        """Apply suggestion at position"""
         self.move_carret(carret_index)
         self.create_selection(span.start_char, span.end_char)
-        self.paste_text(suggestion, event, False)
+        self._paste_text(suggestion, event, False)
 
     def create_selection(self, from_char, to_char):
+        """Create new selection"""
         self.tag_add(tk.SEL, f"1.0 + {from_char} chars", f"1.0 + {to_char} chars")
 
     def toggle_format(self, new_tag_name):
+        """Toggle given formatting tag"""
         if self.text_editor.tag_ranges(tk.SEL):
             selection_range = self.text_editor.tag_ranges(tk.SEL)
             tags_at_selection = self.tag_names(selection_range[0])
@@ -173,7 +197,8 @@ class HTextEditor:
                 if tag in [BOLD_TAG_NAME, ITALIC_TAG_NAME, BOLD_ITALIC_TAG_NAME]:
                     if tag == BOLD_ITALIC_TAG_NAME:
                         self.tag_remove(tag, selection_range[0], selection_range[1])
-                        self.tag_add(BOLD_TAG_NAME if new_tag_name == ITALIC_TAG_NAME else ITALIC_TAG_NAME, selection_range[0], selection_range[1])
+                        self.tag_add(BOLD_TAG_NAME if new_tag_name == ITALIC_TAG_NAME else ITALIC_TAG_NAME,
+                                     selection_range[0], selection_range[1])
                         removed = True
                     elif tag == new_tag_name:
                         self.tag_remove(tag, selection_range[0], selection_range[1])
@@ -184,17 +209,10 @@ class HTextEditor:
                         removed = True
             if not removed:
                 self.tag_add(new_tag_name, selection_range[0], selection_range[1])
-
-    def toggle_italic(self):
-        self.toggle_format(ITALIC_TAG_NAME)
-
-    def toggle_bold(self):
-        self.toggle_format(BOLD_TAG_NAME)
-
-    def get_text_size(self):
-        return self.text_size
+            self.on_formatting_changed()
 
     def set_text_size(self, text_size):
+        """Set text size and apply to all tags"""
         self.text_size = min(30, max(1, int(text_size)))
         # CHANGE FONT SIZE IN EDITOR
         self.text_editor.config(font=(HELVETICA_FONT_NAME, self.text_size))
@@ -210,28 +228,34 @@ class HTextEditor:
                 self.text_editor.tag_configure(tagName=tag,
                                                font=(HELVETICA_FONT_NAME, self.text_size, f"{BOLD_FONT} {ITALIC_FONT}"))
 
-    def tag_config(self, tagName, cnf=None, **kw):
-        self.text_editor.tag_config(tagName, cnf=cnf, **kw)
+    def tag_config(self, tag_name, cnf=None, **kw):
+        """Configure tag"""
+        self.text_editor.tag_config(tag_name, cnf=cnf, **kw)
 
     def tag_add(self, tag_name, start_index, end_index):
+        """Add tag"""
         self.text_editor.tag_add(tag_name, start_index, end_index)
 
     def tag_bind(self, tag_name, event_name, func):
+        """Bind tag to event"""
         self.text_editor.tag_bind(tag_name, event_name, func)
 
     def tag_remove(self, tag_name, start_index, end_index):
+        """Remove tag"""
         self.text_editor.tag_remove(tag_name, start_index, end_index)
 
     def tag_names(self, index):
+        """Get all tag names"""
         return self.text_editor.tag_names(index)
 
     def clear_tags(self):
+        """Clear tags"""
         for tag in self.text_editor.tag_names():
             if tag != PARAGRAPH_TAG_NAME and tag not in FORMATTING_TAGS:
                 self.text_editor.tag_delete(tag)
 
     def setup_tags(self, config):
-        # CONFIG TAGS
+        """Setup tag colors and priorities"""
         self.tag_config(PARAGRAPH_TAG_NAME,
                         lmargin1=f'{config.appearance_settings.paragraph_lmargin1}m',
                         spacing3=f'{config.appearance_settings.paragraph_spacing3}m')
@@ -253,34 +277,63 @@ class HTextEditor:
         self.text_editor.tag_raise(COMPUTER_QUOTE_MARKS_TAG_NAME)
         self.text_editor.tag_raise("sel")
 
+    def get_formatting(self) -> list[HTextFormattingTag]:
+        """Get formatting applied to text"""
+        output = []
+        for tag in self.text_editor.tag_names():
+            if tag in [BOLD_TAG_NAME, ITALIC_TAG_NAME, BOLD_ITALIC_TAG_NAME]:
+                indices = self.text_editor.tag_ranges(tag)
+                for i in range(0, len(indices), 2):
+                    output.append(HTextFormattingTag(tag, str(indices[i]), str(indices[i + 1])))
+        return output
+
+    def set_formatting(self, formatting: list[HTextFormattingTag]):
+        """Apply new formatting to text"""
+        if formatting:
+            for formatting_tag in formatting:
+                self.text_editor.tag_add(
+                    formatting_tag.tag_name,
+                    formatting_tag.start_index,
+                    formatting_tag.end_index,
+                )
+
     def index(self, index_name):
+        """Get editor index"""
         return self.text_editor.index(index_name)
 
     def move_carret(self, index, event=None):
+        """Move carret to a new index"""
         self.text_editor.see(index)
         self.text_editor.mark_set(tk.INSERT, index)
 
     def get_text(self, start_index, end_index):
+        """Get text from editor"""
         return self.text_editor.get(start_index, end_index)
 
     def set_text(self, text):
+        """Set text to editor"""
         self.text_editor.delete(1.0, tk.END)
         self.text_editor.insert(tk.END, text)
 
     def set_filename(self, text):
+        """Set filename"""
         self.toolbar_file_name.config(text=text)
 
     def mark_edit_separator(self):
+        """Mark undo separator"""
         self.text_editor.edit_separator()
 
     def edit_undo(self):
+        """Undo"""
         self.text_editor.edit_undo()
 
     def edit_redo(self):
+        """Redo"""
         self.text_editor.edit_redo()
 
     # SEARCH IN TEXT EDITOR
     def search_text(self, text):
+        """Search text in editor"""
         search_string = Utils.remove_accents(text.replace("\n", "").lower())
         if self.last_search == search_string:
             return
@@ -309,28 +362,29 @@ class HTextEditor:
         self.text_editor.tag_raise(CURRENT_SEARCH_RESULT_TAG_NAME)
 
     def reset_search(self):
+        """Reset search"""
         self.search_matches.clear()
         self.last_search = ''
         self.last_match_index = 0
 
-    # FOCUS NEXT SEARCH RESULT
     def next_search(self, event):
+        """Jump to next search result"""
         results_count = len(self.search_matches)
         if results_count == 0:
             return
         self.last_match_index = (self.last_match_index + 1) % results_count
         self.highlight_search()
 
-    # FOCUS PREVIOUS SEARCH RESULT
     def prev_search(self, event):
+        """Jump to previous search result"""
         results_count = len(self.search_matches)
         if results_count == 0:
             return
         self.last_match_index = (self.last_match_index - 1) % results_count
         self.highlight_search()
 
-    # HIGHLIGHT CURRENT FOCUSED SEARCH RESULT
     def highlight_search(self):
+        """Highlight search results"""
         self.tag_remove(CURRENT_SEARCH_RESULT_TAG_NAME, "1.0", tk.END)
         start, end = self.search_matches[self.last_match_index].span()
         start_index = f"1.0 + {start} chars"
@@ -338,17 +392,19 @@ class HTextEditor:
         self.tag_add(CURRENT_SEARCH_RESULT_TAG_NAME, start_index, end_index)
         self.move_carret(end_index)
 
-    # SELECT ALL TEXT
     def select_all(self, event):
+        """Create selection on all text"""
         self.tag_add(tk.SEL, "1.0", tk.END)
         self.text_editor.tag_raise(tk.SEL)
         return "break"
 
     def focus(self):
+        """Focus editor"""
         self.text_editor.focus()
         return
 
     def jump_to_next_word_occourence(self, event, trigger, tag_prefix=CLOSE_WORD_PREFIX):
+        """Jump to next tag, prefiexed by tag_tag_prefix"""
         self.focus()
         # Získanie indexu myši
         mouse_index = trigger.index(f"@{event.x},{event.y}")
@@ -363,15 +419,122 @@ class HTextEditor:
                     self.move_carret(next_range[1])
         return "break"
 
-    # HANDLE EVENT MOUSE MOTION EVENT
-    def editor_on_mouse_motion(self, event):
+    # noinspection PyMethodMayBeStatic
+    def get_hunspell_suggestions(self, token):
+        """Get hunspell suggestion for token"""
+        return ", ".join(RunContext().spellcheck_dictionary.suggest(token.lower_))
+
+    def handle_clipboard_paste(self, event):
+        """Handle paste event"""
+        # GET CLIPBOARD
+        try:
+            clipboard_text = event.widget.selection_get(selection='CLIPBOARD')
+        except tk.TclError:
+            clipboard_text = ''
+
+        self._paste_text(clipboard_text, event)
+        # CANCEL DEFAULT PASTE
+        return "break"
+
+    def analyze_text(self, force_full_analysis=False):
+        """Execute test analysis"""
+        text = self.text_editor.get(1.0, tk.END)
+        if not force_full_analysis and self.doc.text == text:
+            return
+        ctx = RunContext()
+        config = ConfigService.select_config(ctx.global_config, ctx.project, ctx.current_file)
+        # GET TEXT FROM EDITOR
+        # RUN ANALYSIS
+        if not force_full_analysis and len(text) > 100 and abs(
+                len(self.doc.text) - len(text)) < 20 and config.analysis_settings.enable_partial_nlp:
+            # PARTIAL NLP
+            carret_position = self.get_carret_position(tk.INSERT)
+            if carret_position is not None:
+                self.doc = NlpService.partial_analysis(text, self.doc, ctx.nlp, config, carret_position)
+                self.mark_edit_separator()
+            else:
+                # FALLBACK TO FULL NLP
+                self.doc = NlpService.full_analysis(text, ctx.nlp, NLP_BATCH_SIZE, config)
+                self.mark_edit_separator()
+                self.reset_search()
+        else:
+            # FULL NLP
+            # FALLBACK TO FULL NLP
+            self.doc = NlpService.full_analysis(text, ctx.nlp, NLP_BATCH_SIZE, config)
+            self.mark_edit_separator()
+            self.reset_search()
+        # CLEAR TAGS
+        self.clear_tags()
+        # SETUP PARAGRAPH TAGGING
+        for paragraph in self.doc._.paragraphs:
+            start_index = f"1.0 + {paragraph.start_char} chars"
+            end_index = f"1.0 + {paragraph.end_char} chars"
+            self.tag_add(PARAGRAPH_TAG_NAME, start_index, end_index)
+        # RUN ANALYSIS FUNCTIONS
+        self._highlight_long_sentences(self.doc, config)
+        self._highlight_close_words(self.doc, config)
+        self._highlight_multiple_spaces(self.doc, config)
+        self._highlight_multiple_punctuation(self.doc, config)
+        self._highlight_trailing_spaces(self.doc, config)
+        self._highlight_quote_mark_errors(self.doc, config)
+        self._run_spellcheck(self.doc, config)
+        self.setup_tags(config)
+        # MOUSE BINDINGS
+        GuiUtils.bind_tag_mouse_event(CLOSE_WORD_TAG_NAME,
+                                      self.text_editor,
+                                      lambda e: self.highlight_same_word(e, self.text_editor),
+                                      lambda e: self.unhighlight_same_word(e)
+                                      )
+        # CLEAR DEBOUNCE TIMER IF ANY
+        self.analyze_text_debounce_timer = None
+        self.on_text_analyzed(self.doc)
+
+    def highlight_same_word(self, event, trigger, tag_prefix=CLOSE_WORD_PREFIX, tooltip=None):
+        """Highlight tag prefixed by tag_prefix"""
+        self.unhighlight_same_word(event)
+        # Získanie indexu myši
+        mouse_index = trigger.index(f"@{event.x},{event.y}")
+        if tooltip is not None:
+            abs_x = trigger.winfo_rootx() + event.x
+            abs_y = trigger.winfo_rooty() + event.y
+            self.tooltip.show(tooltip, abs_x, abs_y)
+        # Získanie všetkých tagov na pozícii myši
+        tags_at_mouse = trigger.tag_names(mouse_index)
+        self.word_freq_text.config(cursor="hand2")
+        self.close_words_text.config(cursor="hand2")
+        for tag in tags_at_mouse:
+            if tag.startswith(tag_prefix):
+                self.highlighted_word = tag
+                self.text_editor.tag_config(tag, background="white", foreground="black")
+                self.close_words_text.tag_config(tag, background="white", foreground="black")
+                self.word_freq_text.tag_config(tag, background="white", foreground="black")
+
+    def unhighlight_same_word(self, event):
+        """Unhiglight last higlight triggered by highlight_same_word method"""
+        if self.highlighted_word is not None and len(self.highlighted_word) > 0:
+            tags = [self.highlighted_word]
+            parts = self.highlighted_word.split(":")
+            if len(parts) > 1:
+                tags.append(parts[0])
+            for tag in tags:
+                self.word_freq_text.config(cursor="xterm")
+                self.close_words_text.config(cursor="xterm")
+                original_color = self.close_word_colors.get(tag, "")
+                self.text_editor.tag_config(tag, background="", foreground=original_color)
+                self.close_words_text.tag_config(tag, background="", foreground="")
+                self.word_freq_text.tag_config(tag, background="", foreground="")
+            self.tooltip.hide()
+            self.highlighted_word = None
+
+    def _editor_on_mouse_motion(self, event):
+        """Mouse motion handling"""
         x, y = event.x, event.y
         index = self.text_editor.index(f"@{x},{y}")
         current_tags = set(self.tag_names(index)) - FORMATTING_TAGS
         if current_tags != self.last_tags:
             if current_tags:
                 # There are tags under the mouse
-                error_messages = self.convert_tags_to_error_messages(current_tags, index)
+                error_messages = self._convert_tags_to_error_messages(current_tags, index)
                 if error_messages:
                     tooltip_text = "\n---\n".join(error_messages)
                     # Get the absolute position of the mouse
@@ -385,12 +548,13 @@ class HTextEditor:
                 self.tooltip.hide()
         self.last_tags = current_tags
 
-    def editor_on_mouse_leave(self, event):
+    def _editor_on_mouse_leave(self, event):
+        """Mouse leave handling"""
         self.tooltip.hide()
         self.last_tags = set()
 
-    # CONVERT SET OF TAGS (USUALLY UNDER CURSOR) TO SET OF ERROR MESSAGES FOR USER
-    def convert_tags_to_error_messages(self, current_tags, index):
+    def _convert_tags_to_error_messages(self, current_tags, index):
+        """Convert set of tags (usually under cursor) to set of error messages for user"""
         error_messages = set()
         tag_message_map = {
             LONG_SENTENCE_TAG_NAME_MID: 'Táto veta je trochu dlhšia.',
@@ -443,24 +607,8 @@ class HTextEditor:
                             error_messages.add(grammar_error_map[token._.grammar_error_type]())
         return error_messages
 
-    # noinspection PyMethodMayBeStatic
-    def get_hunspell_suggestions(self, token):
-        return ", ".join(RunContext().spellcheck_dictionary.suggest(token.lower_))
-
-    # HANDLE CLIPBOARD PASTE
-    # noinspection PyMethodMayBeStatic
-    def handle_clipboard_paste(self, event):
-        # GET CLIPBOARD
-        try:
-            clipboard_text = event.widget.selection_get(selection='CLIPBOARD')
-        except tk.TclError:
-            clipboard_text = ''
-
-        self.paste_text(clipboard_text, event)
-        # CANCEL DEFAULT PASTE
-        return "break"
-
-    def paste_text(self, text, event, force_full_analysis=True):
+    def _paste_text(self, text, event, force_full_analysis=True):
+        """Paste text"""
         # IF THERE SI SELECTED TEXT IN EDITOR, OVERWRITE IT WITH SELECTED TEXT
         if event.widget.tag_ranges(tk.SEL):
             event.widget.delete("sel.first", "sel.last")
@@ -470,64 +618,7 @@ class HTextEditor:
         self.analyze_text(force_full_analysis=force_full_analysis)
         self.on_text_paste(event)
 
-    def set_doc(self, doc: Doc):
-        self.doc = doc
-
-    # ANALYZE TEXT
-    def analyze_text(self, force_full_analysis=False):
-        text = self.text_editor.get(1.0, tk.END)
-        if not force_full_analysis and self.doc.text == text:
-            return
-        ctx = RunContext()
-        config = ConfigService.select_config(ctx.global_config, ctx.project, ctx.current_file)
-        # GET TEXT FROM EDITOR
-        # RUN ANALYSIS
-        if not force_full_analysis and len(text) > 100 and abs(
-                len(self.doc.text) - len(text)) < 20 and config.analysis_settings.enable_partial_nlp:
-            # PARTIAL NLP
-            carret_position = self.get_carret_position(tk.INSERT)
-            if carret_position is not None:
-                self.doc = NlpService.partial_analysis(text, self.doc, ctx.nlp, config, carret_position)
-                self.mark_edit_separator()
-            else:
-                # FALLBACK TO FULL NLP
-                self.doc = NlpService.full_analysis(text, ctx.nlp, NLP_BATCH_SIZE, config)
-                self.mark_edit_separator()
-                self.reset_search()
-        else:
-            # FULL NLP
-            # FALLBACK TO FULL NLP
-            self.doc = NlpService.full_analysis(text, ctx.nlp, NLP_BATCH_SIZE, config)
-            self.mark_edit_separator()
-            self.reset_search()
-        # CLEAR TAGS
-        self.clear_tags()
-        # SETUP PARAGRAPH TAGGING
-        for paragraph in self.doc._.paragraphs:
-            start_index = f"1.0 + {paragraph.start_char} chars"
-            end_index = f"1.0 + {paragraph.end_char} chars"
-            self.tag_add(PARAGRAPH_TAG_NAME, start_index, end_index)
-        # RUN ANALYSIS FUNCTIONS
-        self.highlight_long_sentences(self.doc, config)
-        self.highlight_close_words(self.doc, config)
-        self.highlight_multiple_spaces(self.doc, config)
-        self.highlight_multiple_punctuation(self.doc, config)
-        self.highlight_trailing_spaces(self.doc, config)
-        self.highlight_quote_mark_errors(self.doc, config)
-        self.run_spellcheck(self.doc, config)
-        self.setup_tags(config)
-        # MOUSE BINDINGS
-        GuiUtils.bind_tag_mouse_event(CLOSE_WORD_TAG_NAME,
-                                      self.text_editor,
-                                      lambda e: self.highlight_same_word(e, self.text_editor),
-                                      lambda e: self.unhighlight_same_word(e)
-                                      )
-        # CLEAR DEBOUNCE TIMER IF ANY
-        self.analyze_text_debounce_timer = None
-        self.on_text_analyzed(self.doc)
-
-    # HIGHLIGHT LONG SENTENCES
-    def highlight_long_sentences(self, doc: Doc, config: Config):
+    def _highlight_long_sentences(self, doc: Doc, config: Config):
         if not config.analysis_settings.enable_long_sentences:
             return
         doc_size = len(doc.text)
@@ -544,8 +635,7 @@ class HTextEditor:
                 else:
                     self.tag_add(LONG_SENTENCE_TAG_NAME_MID, start_index, end_index)
 
-    # HIGHLIGHT MULTIPLE SPACES
-    def highlight_multiple_spaces(self, doc: Doc, config: Config):
+    def _highlight_multiple_spaces(self, doc: Doc, config: Config):
         self.tag_remove(MULTIPLE_SPACES_TAG_NAME, "1.0", tk.END)
         if config.analysis_settings.enable_multiple_spaces:
             matches = NlpService.find_multiple_spaces(doc)
@@ -554,8 +644,7 @@ class HTextEditor:
                 end_index = f"1.0 + {match.end()} chars"
                 self.tag_add(MULTIPLE_SPACES_TAG_NAME, start_index, end_index)
 
-    # HIGHLIGHT MULTIPLE PUNCTUATION
-    def highlight_multiple_punctuation(self, doc: Doc, config: Config):
+    def _highlight_multiple_punctuation(self, doc: Doc, config: Config):
         if config.analysis_settings.enable_multiple_punctuation:
             matches = NlpService.find_multiple_punctuation(doc)
             for match in matches:
@@ -564,8 +653,7 @@ class HTextEditor:
                     end_index = f"1.0 + {match.end()} chars"
                     self.tag_add(MULTIPLE_PUNCTUATION_TAG_NAME, start_index, end_index)
 
-    # HIGHLIGHT TRAILING SPACES
-    def highlight_trailing_spaces(self, doc: Doc, config: Config):
+    def _highlight_trailing_spaces(self, doc: Doc, config: Config):
         if config.analysis_settings.enable_trailing_spaces:
             matches = NlpService.find_trailing_spaces(doc)
             for match in matches:
@@ -573,8 +661,7 @@ class HTextEditor:
                 end_index = f"1.0 + {match.end()} chars"
                 self.tag_add(TRAILING_SPACES_TAG_NAME, start_index, end_index)
 
-    # HIGHLIGHT QUOTE_MARK_ERRORS
-    def highlight_quote_mark_errors(self, doc: Doc, config: Config):
+    def _highlight_quote_mark_errors(self, doc: Doc, config: Config):
         if config.analysis_settings.enable_quote_corrections:
             matches = NlpService.find_computer_quote_marks(doc)
             for match in matches:
@@ -597,8 +684,7 @@ class HTextEditor:
                 end_index = f"1.0 + {match.end()} chars"
                 self.tag_add(SHOULD_USE_LOWER_QUOTE_MARK_TAG_NAME, start_index, end_index)
 
-    # RUN SPELLCHECK
-    def run_spellcheck(self, doc: Doc, config: Config):
+    def _run_spellcheck(self, doc: Doc, config: Config):
         if config.analysis_settings.enable_spellcheck:
             SpellcheckService.spellcheck(RunContext().spellcheck_dictionary, doc)
             for word in self.doc._.words:
@@ -607,8 +693,7 @@ class HTextEditor:
                     end_index = f"1.0 + {word.idx + len(word.lower_)} chars"
                     self.tag_add(GRAMMAR_ERROR_TAG_NAME, start_index, end_index)
 
-    # HIGHLIGHT WORDS THAT REPEATS CLOSE TO EACH OTHER
-    def highlight_close_words(self, doc: Doc, config: Config):
+    def _highlight_close_words(self, doc: Doc, config: Config):
         if config.analysis_settings.enable_close_words:
             self.tag_remove("close_word", "1.0", tk.END)
             raw_close_words = NlpService.evaluate_close_words(doc, config)
@@ -641,45 +726,7 @@ class HTextEditor:
                         self.tag_add(CLOSE_WORD_TAG_NAME, start_index, end_index)
                         self.tag_config(tag_name, foreground=color)
 
-    # HIGHLIGHT SAME WORD ON MOUSE OVER
-    def highlight_same_word(self, event, trigger, tag_prefix=CLOSE_WORD_PREFIX, tooltip=None):
-        self.unhighlight_same_word(event)
-        # Získanie indexu myši
-        mouse_index = trigger.index(f"@{event.x},{event.y}")
-        if tooltip is not None:
-            abs_x = trigger.winfo_rootx() + event.x
-            abs_y = trigger.winfo_rooty() + event.y
-            self.tooltip.show(tooltip, abs_x, abs_y)
-        # Získanie všetkých tagov na pozícii myši
-        tags_at_mouse = trigger.tag_names(mouse_index)
-        self.word_freq_text.config(cursor="hand2")
-        self.close_words_text.config(cursor="hand2")
-        for tag in tags_at_mouse:
-            if tag.startswith(tag_prefix):
-                self.highlighted_word = tag
-                self.text_editor.tag_config(tag, background="white", foreground="black")
-                self.close_words_text.tag_config(tag, background="white", foreground="black")
-                self.word_freq_text.tag_config(tag, background="white", foreground="black")
-
-    # REMOVE HIGHLIGHTING FROM SAME WORD ON MOUSE OVER END
-    def unhighlight_same_word(self, event):
-        if self.highlighted_word is not None and len(self.highlighted_word) > 0:
-            tags = [self.highlighted_word]
-            parts = self.highlighted_word.split(":")
-            if len(parts) > 1:
-                tags.append(parts[0])
-            for tag in tags:
-                self.word_freq_text.config(cursor="xterm")
-                self.close_words_text.config(cursor="xterm")
-                original_color = self.close_word_colors.get(tag, "")
-                self.text_editor.tag_config(tag, background="", foreground=original_color)
-                self.close_words_text.tag_config(tag, background="", foreground="")
-                self.word_freq_text.tag_config(tag, background="", foreground="")
-            self.tooltip.hide()
-            self.highlighted_word = None
-
-    # RUN ANALYSIS ONE SECOND AFTER LAST CHANGE
-    def _analyze_text_debounced(self, event):
+    def _on_typing_done(self, event):
         if self.analyze_text_debounce_timer is not None:
             self.root.after_cancel(self.analyze_text_debounce_timer)
         # PREVENT STANDARD ANALYSIS ON CTRL+V

@@ -379,7 +379,8 @@ class MainWindow:
                                        self.close_words_text, self.word_freq_text,
                                        on_word_selected=self.introspect,
                                        on_text_paste=self._on_editor_text_paste,
-                                       on_text_analyzed=self._on_text_analyzed
+                                       on_text_analyzed=self._on_text_analyzed,
+                                       on_formatting_changed=self._on_formatting_changed
                                        )
         # BOTTOM PANEL CONTENTS
         char_count_info_label = tk.Label(bottom_panel, text="Počet znakov s medzerami:", anchor='sw',
@@ -422,7 +423,7 @@ class MainWindow:
                                                   font=(HELVETICA_FONT_NAME, TEXT_SIZE_BOTTOM_BAR),
                                                   style='info.TSpinbox', takefocus=False,
                                                   command=lambda: self.set_text_size(self.editor_text_size_input.get()))
-        self.editor_text_size_input.set(self.text_editor.get_text_size())
+        self.editor_text_size_input.set(self.text_editor.text_size)
         self.editor_text_size_input.bind("<Return>", lambda e: self.set_text_size(self.editor_text_size_input.get()))
         self.editor_text_size_input.pack(side=tk.RIGHT)
         tk.Label(bottom_panel, text="Veľkosť textu v editore:", anchor='sw', justify='left',
@@ -467,11 +468,11 @@ class MainWindow:
             # ON WINDOWS IF USER SCROLLS "UP" event.delta IS POSITIVE
             # ON LINUX IF USER SCROLLS "UP" event.num IS 4
             if event.delta > 0 or event.num == 4:
-                self.set_text_size(self.text_editor.get_text_size() + 1)
+                self.set_text_size(self.text_editor.text_size + 1)
             # ON WINDOWS IF USER SCROLLS "DOWN" event.delta IS NEGATIVE
             # ON LINUX IF USER SCROLLS "DOWN" event.num IS 5
             elif event.delta < 0 or event.num == 5:
-                self.set_text_size(self.text_editor.get_text_size() - 1)
+                self.set_text_size(self.text_editor.text_size - 1)
 
     # DISPLAY INFORMATIONS ABOUT TEXT SIZE
     def display_bottom_bar_info(self, doc: Doc):
@@ -608,7 +609,7 @@ class MainWindow:
     # LOAD TEXT FILE
     def import_file_contents(self, item, file_path):
         text = ImportService.import_document(file_path)
-        item.contents = HTextFile(text)
+        item.contents = HTextFile(text, [])
         item.imported_path = file_path
         ProjectService.save_file_contents(self.ctx.project, item)
         ProjectService.save(self.ctx.project, self.ctx.project.path)
@@ -657,6 +658,7 @@ class MainWindow:
     def save_htext_file(self):
         if self.ctx.current_file:
             self.ctx.current_file.contents.raw_text = self.text_editor.get_text(1.0, tk.END)
+            self.ctx.current_file.contents.formatting = self.text_editor.get_formatting()
             ProjectService.save_file_contents(self.ctx.project, self.ctx.current_file)
         else:
             self.open_new_file_dialog(
@@ -717,6 +719,7 @@ class MainWindow:
             item.contents = ProjectService.load_file_contents(self.ctx.project, item)
             self.text_editor.set_text(item.contents.raw_text)
             self.text_editor.set_filename(item.name)
+            self.text_editor.set_formatting(item.contents.formatting)
             self.text_editor.analyze_text(True)
         else:
             self.ctx.current_file = None
@@ -806,6 +809,10 @@ class MainWindow:
         self.highlight_close_words(config)
         self.close_words_text.tag_raise("sel")
         self.word_freq_text.tag_raise("sel")
+        if self.ctx.current_file is not None:
+            self.save_htext_file()
+
+    def _on_formatting_changed(self):
         if self.ctx.current_file is not None:
             self.save_htext_file()
 
