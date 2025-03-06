@@ -162,6 +162,7 @@ class HTextEditor:
         self.text_editor.unbind('<Control-Y>')
         self.text_editor.unbind('<Control-Shift-z>')
         self.text_editor.unbind('<Control-Shift-Z>')
+        self.text_editor.bind("<Return>", self._on_enter)
         self.text_editor.bind("<KeyRelease>", self._on_typing_done)
         self.text_editor.bind("<Button-1>", lambda e: self.root.after(0, self.on_word_selected))
         self.text_editor.bind("<Control-a>", self.select_all)
@@ -169,6 +170,42 @@ class HTextEditor:
         self.text_editor.bind("<<Paste>>", self.handle_clipboard_paste)
         self.text_editor.bind('<Motion>', self._editor_on_mouse_motion)
         self.text_editor.bind('<Leave>', self._editor_on_mouse_leave)
+
+    def _on_enter(self, event):
+        """
+        Handle Enter key to:
+          - End the current paragraph and any active formatting.
+          - Insert a newline.
+          - Start a new paragraph and reapply formatting if it was active.
+        """
+        # Determine which formatting tags (bold, italic, bold_italic) are active at the insertion point.
+        current_tags = self.text_editor.tag_names("insert")
+        active_formatting = []
+        for tag in (BOLD_TAG_NAME, ITALIC_TAG_NAME, BOLD_ITALIC_TAG_NAME):
+            if tag in current_tags:
+                active_formatting.append(tag)
+
+        # Insert a newline to end the current paragraph.
+        self.text_editor.insert("insert", "\n")
+
+        # Get the boundaries of the new line.
+        new_line_start = self.text_editor.index("insert linestart")
+        new_line_end = self.text_editor.index("insert lineend")
+
+        # Apply the paragraph tag to the new line.
+        self.tag_add(PARAGRAPH_TAG_NAME, new_line_start, new_line_end)
+
+        # Remove any formatting tags that might have been carried over into the new line.
+        for tag in (BOLD_TAG_NAME, ITALIC_TAG_NAME, BOLD_ITALIC_TAG_NAME):
+            self.text_editor.tag_remove(tag, new_line_start, new_line_end)
+
+        # Reapply any formatting that was active when Enter was pressed
+        # so that the new paragraph begins with the desired formatting.
+        for tag in active_formatting:
+            self.tag_add(tag, new_line_start, new_line_end)
+
+        # Return "break" to stop the default newline behavior.
+        return "break"
 
     def get_carret_position(self, index_name):
         """Get carret possition for given index"""
@@ -309,6 +346,91 @@ class HTextEditor:
     def get_text(self, start_index, end_index):
         """Get text from editor"""
         return self.text_editor.get(start_index, end_index)
+
+    def get_text_as_html(self):
+        """
+        Exports the contents of the Tkinter Text widget to an HTML string.
+        Paragraphs are determined by newline characters.
+        If inline formatting (bold, italic, bold_italic) is active at a paragraph break,
+        it will be closed for the current paragraph and immediately re-applied in the new one.
+        """
+        dump = self.text_editor.dump("1.0", tk.END, tag=True, text=True)
+        html = ""
+        # List to track active inline formatting.
+        # Each entry is a tuple: (tag, closing_markup)
+        active_inline = []
+        # Mapping to determine opening tag from the formatting tag.
+        opening_mapping = {
+            BOLD_TAG_NAME: "<strong>",
+            ITALIC_TAG_NAME: "<em>",
+            BOLD_ITALIC_TAG_NAME: "<strong><em>"
+        }
+        # Mapping for closing tags is already stored with each active formatting.
+
+        # Start the first paragraph.
+        html += "<p>"
+
+        for item in dump:
+            event_type = item[0]
+            if event_type == "text":
+                text = item[1]
+                # Split text on newline characters.
+                parts = text.split("\n")
+                for i, part in enumerate(parts):
+                    html += part
+                    # If this part is not the last one, we encountered a newline.
+                    if i < len(parts) - 1:
+                        if active_inline:
+                            # Save a copy of active inline formatting.
+                            active = active_inline[:]
+                            # Close inline formatting in reverse order.
+                            for tag, closing in reversed(active):
+                                html += closing
+                        # End the current paragraph.
+                        html += "</p>\n"
+                        # Start a new paragraph.
+                        html += "<p>"
+                        if active_inline:
+                            # Reapply the inline formatting in the same order as originally applied.
+                            for tag, _ in active_inline:
+                                html += opening_mapping.get(tag, "")
+            elif event_type == "tagon":
+                tag = item[1]
+                if tag == BOLD_TAG_NAME:
+                    html += "<strong>"
+                    active_inline.append((BOLD_TAG_NAME, "</strong>"))
+                elif tag == ITALIC_TAG_NAME:
+                    html += "<em>"
+                    active_inline.append((ITALIC_TAG_NAME, "</em>"))
+                elif tag == BOLD_ITALIC_TAG_NAME:
+                    html += "<strong><em>"
+                    active_inline.append((BOLD_ITALIC_TAG_NAME, "</em></strong>"))
+                # We ignore any paragraph tag events since we are using newlines.
+            elif event_type == "tagoff":
+                tag = item[1]
+                if tag in (BOLD_TAG_NAME, ITALIC_TAG_NAME, BOLD_ITALIC_TAG_NAME):
+                    # Find the most recent matching tag and remove it.
+                    for i in range(len(active_inline) - 1, -1, -1):
+                        if active_inline[i][0] == tag:
+                            html += active_inline[i][1]
+                            active_inline.pop(i)
+                            break
+                # Ignore any paragraph tag closing events.
+
+        # At the end of the dump, close any remaining inline formatting.
+        while active_inline:
+            _, closing = active_inline.pop()
+            html += closing
+        # End the final paragraph.
+        html += "</p>"
+        return f"""<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+</head>
+{html}
+</body>
+</html>"""
 
     def set_text(self, text):
         """Set text to editor"""
