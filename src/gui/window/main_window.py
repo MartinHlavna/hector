@@ -762,9 +762,28 @@ class MainWindow:
 
     # SAVE TEXT FILE
     def export_file(self):
-        file_path = filedialog.asksaveasfilename(defaultextension=".txt", filetypes=[("Textové súbory", "*.txt")])
-        text = self.text_editor.get_text(1.0, tk.END)
-        ExportService.export_text_file(file_path, text)
+        file_path = filedialog.asksaveasfilename(
+            filetypes=[
+                ("Textové súbory", "*.txt"),
+                ("Microsoft Word 2007+ dokumenty", "*.docx"),
+                ("RTF dokumenty", "*.rtf"),
+            ]
+        )
+        if not file_path:
+            return
+        if file_path.endswith(".txt"):
+            text = self.text_editor.get_text(1.0, tk.END)
+            ExportService.export_text_file(file_path, text)
+        else:
+            text = self.text_editor.get_text_as_html()
+            config = self.ctx.global_config
+            ExportService.export_rich_file(
+                file_path,
+                text,
+                first_line_indent=config.appearance_settings.paragraph_lmargin1,
+                spacing_after=config.appearance_settings.paragraph_spacing3,
+                spacing_before=0,
+            )
 
     # SAVE SETTINGS TO FILE
     def export_settings(self):
@@ -961,7 +980,8 @@ class MainWindow:
 
     # SHOW SETTINGS WINDOW
     def show_appearance_settings(self):
-        settings_window = AppearanceSettingsModal(self.root, self.ctx.global_config, lambda: self.text_editor.analyze_text(True))
+        settings_window = AppearanceSettingsModal(self.root, self.ctx.global_config,
+                                                  lambda: self.text_editor.analyze_text(True))
         GuiUtils.configure_modal(self.root, settings_window.toplevel, height=150, width=780)
 
     # SHOW ABOUT DIALOG
