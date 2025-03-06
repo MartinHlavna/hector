@@ -32,6 +32,9 @@ from src.utils import Utils
 from test_utils import TestUtils
 
 SENTENCES_FILE = "sentences.txt"
+TXT_EXPORT_FILE = "export.txt"
+DOCX_EXPORT_FILE = "export.docx"
+RTF_EXPORT_FILE = "export.rtf"
 
 TEST_TEXT_1 = 'Toto je testovací text.\nToto je veta.'
 TEST_TEXT_2 = 'Toto  je testovací text. Toto      je veta. Haló! A toto je čo?! '
@@ -709,6 +712,25 @@ def test_export_sentences(setup_teardown):
         sents = file.read()
     with_spaces = "\n\n".join(TEST_TEXT_1.split("\n"))
     assert sents == f'{with_spaces}\n\n'
+
+
+def test_exports(setup_teardown):
+    ExportService.export_text_file(TXT_EXPORT_FILE, TEST_TEXT_1)
+    richt_text = f"""<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+</head>
+<p><strong>{TEST_TEXT_6}</strong></p>
+</body>
+</html>"""
+    ExportService.export_rich_file(DOCX_EXPORT_FILE, richt_text)
+    ExportService.export_rich_file(RTF_EXPORT_FILE, richt_text)
+    with open(TXT_EXPORT_FILE, 'r', encoding='utf-8') as file:
+        txt = file.read()
+        assert txt == TEST_TEXT_1
+    assert ImportService.import_document(DOCX_EXPORT_FILE) == TEST_TEXT_6
+    assert ImportService.import_document(RTF_EXPORT_FILE) == TEST_TEXT_6
 
 
 def test_metadata_save_load():
