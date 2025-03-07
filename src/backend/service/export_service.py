@@ -52,7 +52,7 @@ class ExportService:
                          default_font: str = "Arial",
                          heading_font: str = "Verdana",
                          first_line_indent: float = 12.7,
-                         line_spacing: float = 1.15,
+                         line_spacing: float = 1.2,
                          spacing_before: float = 0.0,
                          spacing_after: float = 0.0) -> None:
         """

@@ -25,17 +25,18 @@ Ak má súbor v názve ```debug``` ide o ladiacu verziu. Momentálne sa to použ
 konzolu z ktorej je možné v prípade chyby odčítať problém.
 
 <!-- BEGIN DOWNLOAD LINKS -->
+
 ## Stable
 
 **Najnovšia verzia:** [v.1.0.0-stable](https://github.com/MartinHlavna/hector/releases/tag/v.1.0.0-stable)
 
 ### Súbory:
 
-| Súbor | Stiahnuť |
-|------|----------|
-| hector-linux-amd64.bin | [Stiahnuť](https://github.com/MartinHlavna/hector/releases/download/v.1.0.0-stable/hector-linux-amd64.bin) |
+| Súbor                          | Stiahnuť                                                                                                           |
+|--------------------------------|--------------------------------------------------------------------------------------------------------------------|
+| hector-linux-amd64.bin         | [Stiahnuť](https://github.com/MartinHlavna/hector/releases/download/v.1.0.0-stable/hector-linux-amd64.bin)         |
 | hector-windows-amd64-debug.exe | [Stiahnuť](https://github.com/MartinHlavna/hector/releases/download/v.1.0.0-stable/hector-windows-amd64-debug.exe) |
-| hector-windows-amd64.exe | [Stiahnuť](https://github.com/MartinHlavna/hector/releases/download/v.1.0.0-stable/hector-windows-amd64.exe) |
+| hector-windows-amd64.exe       | [Stiahnuť](https://github.com/MartinHlavna/hector/releases/download/v.1.0.0-stable/hector-windows-amd64.exe)       |
 
 ## Beta
 
@@ -43,12 +44,11 @@ konzolu z ktorej je možné v prípade chyby odčítať problém.
 
 ### Súbory:
 
-| Súbor | Stiahnuť |
-|------|----------|
-| hector-linux-amd64.bin | [Download](https://github.com/MartinHlavna/hector/releases/download/v.1.1.0-beta/hector-linux-amd64.bin) |
+| Súbor                          | Stiahnuť                                                                                                         |
+|--------------------------------|------------------------------------------------------------------------------------------------------------------|
+| hector-linux-amd64.bin         | [Download](https://github.com/MartinHlavna/hector/releases/download/v.1.1.0-beta/hector-linux-amd64.bin)         |
 | hector-windows-amd64-debug.exe | [Download](https://github.com/MartinHlavna/hector/releases/download/v.1.1.0-beta/hector-windows-amd64-debug.exe) |
-| hector-windows-amd64.exe | [Download](https://github.com/MartinHlavna/hector/releases/download/v.1.1.0-beta/hector-windows-amd64.exe) |
-
+| hector-windows-amd64.exe       | [Download](https://github.com/MartinHlavna/hector/releases/download/v.1.1.0-beta/hector-windows-amd64.exe)       |
 
 <!-- END DOWNLOAD LINKS -->
 
@@ -94,6 +94,9 @@ Textový súbor sa pri editovaní automaticky ukladá.
 
 Funkcionalita je zatiať iba súčasťou testovej verzie.
 
+### [BETA] Formátovanie textu
+Hector umožnuje označiť bloky textu pomocou bold a italic tagov.
+
 ### Import súboru
 
 Do Hectora je možné text načítať aj z ```.txt```, ```.docx```, ```.odt```, alebo ```.rtf``` súborov.
@@ -107,6 +110,14 @@ Z hectora je možné exportovať ```.txt``` súbor.
 
 Funkcionalita je zatiať iba súčasťou testovej verzie (technicky je táto možnosť aj súčasť stable verzie, ale je
 označená, ako uloženie súboru).
+
+Z hectora je možné exportovať ```.docx``` aj ```.rtf``` súbor, ktorý si zachová formátovanie nastavené z hectora. Pri
+exporte sa na nastavenie odsadenia prvého riadku, či medzery medzi riadkami použije nastavenie z globálneho nastavenia
+vzhľadu.
+
+Statické parametre exportovaného dokumentu sú:
+Riadkovanie: 1.2 násobok riakdu
+Font textu: Arial
 
 ### Zvýraznenie dlhých viet
 
