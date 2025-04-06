@@ -3,7 +3,7 @@ ttkthemes~=3.2.2
 pillow~=11.1.0
 setuptools~=76.0.0
 fsspec~=2025.3.0
-cyhunspell @ https://github.com/MartinHlavna/cython_hunspell/archive/refs/tags/3.0.4.tar.gz
+cyhunspell @ https://github.com/MartinHlavna/cython_hunspell/archive/refs/tags/3.0.5.tar.gz
 svglib~=1.5.1
 reportlab~=4.3.1
 pytest~=8.3.5

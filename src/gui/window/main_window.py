@@ -536,7 +536,7 @@ class MainWindow:
             self.close_words_text.delete(1.0, tk.END)
             panel_start_char = 0
             for word in close_words:
-                word_text = f"{word.lower()}\t\t{close_words[word]["total"]}x\n"
+                word_text = f"{word.lower()}\t\t{close_words[word]['total']}x\n"
                 tag_name = f"{CLOSE_WORD_PREFIX}{word}"
                 # Insert the text
                 self.close_words_text.insert(tk.END, word_text)
