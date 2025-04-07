@@ -1,7 +1,7 @@
 spacy~=3.8.3
 ttkthemes~=3.2.2
 pillow~=11.1.0
-setuptools~=76.0.0
+setuptools~=78.1.0
 fsspec~=2025.3.0
 fsspec[http]~=2025.3.0
 cyhunspell @ https://github.com/MartinHlavna/cython_hunspell/archive/refs/tags/3.0.5.tar.gz
