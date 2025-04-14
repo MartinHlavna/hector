@@ -1,6 +1,6 @@
 spacy~=3.8.5
 ttkthemes~=3.2.2
-pillow~=11.1.0
+pillow~=11.2.1
 setuptools~=78.1.0
 fsspec~=2025.3.2
 fsspec[http]~=2025.3.0
