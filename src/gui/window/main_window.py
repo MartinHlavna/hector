@@ -812,7 +812,7 @@ class MainWindow:
             ExportService.export_sentences(file_path, self.doc, add_more_blank_lines)
         return 'break'
 
-    def _on_editor_text_paste(self):
+    def _on_editor_text_paste(self, event):
         if self.ctx.current_file is not None:
             self.save_htext_file()
 
