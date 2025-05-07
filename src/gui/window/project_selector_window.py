@@ -79,26 +79,7 @@ class ProjectSelectorWindow:
         midlle_scroll.pack(side=tk.RIGHT, fill=tk.Y)
         self.recent_projects_frame = tk.Frame(midlle_frame, background=TEXT_EDITOR_FRAME_BG, borderwidth=0)
         self.recent_projects_frame.pack(expand=1, fill=tk.BOTH)
-        metadata = MetadataService.load(METADATA_FILE_PATH)
-        tk.Label(self.recent_projects_frame, pady=10, padx=10, background=TEXT_EDITOR_FRAME_BG,
-                 foreground=PANEL_TEXT_COLOR,
-                 text="Nedávne projekty",
-                 font=(HELVETICA_FONT_NAME, TEXT_SIZE_SECTION_HEADER), anchor='nw',
-                 justify='left').pack(fill=tk.X)
-        for recent_project in metadata.recent_projects:
-            project_frame = tk.Frame(self.recent_projects_frame, background=TEXT_EDITOR_FRAME_BG, padx=10, pady=5,
-                                     cursor="hand2")
-            project_frame.pack(fill=tk.X)
-            project_name = ttk.Label(project_frame, foreground=PANEL_TEXT_COLOR, background=TEXT_EDITOR_FRAME_BG,
-                                     text=recent_project.name)
-            project_name.pack(fill=tk.X)
-            project_path = ttk.Label(project_frame, foreground=PANEL_TEXT_COLOR, background=TEXT_EDITOR_FRAME_BG,
-                                     text=recent_project.path)
-            project_path.pack(fill=tk.X)
-            project_frame.bind("<Button-1>", partial(self.open_recent_project, recent_project))
-            project_name.bind("<Button-1>", partial(self.open_recent_project, recent_project))
-            project_path.bind("<Button-1>", partial(self.open_recent_project, recent_project))
-            ttk.Separator(project_frame, style='Grey.TSeparator').pack(fill=tk.X)
+        self.build_recent_projects_pane()
         # NEW PROJECT FORM
         self.new_project_frame = tk.Frame(midlle_frame, background=TEXT_EDITOR_FRAME_BG, borderwidth=0)
         tk.Label(self.new_project_frame, pady=10, padx=10, background=TEXT_EDITOR_FRAME_BG, foreground=PANEL_TEXT_COLOR,
@@ -175,6 +156,31 @@ class ProjectSelectorWindow:
             buttons[1].pack(side=tk.LEFT, padx=(0, 5))
             buttons[0].pack(side=tk.LEFT, padx=5)
 
+    def build_recent_projects_pane(self):
+        """Function that loads recent projects from metadata and setups recent projects pane"""
+        for child in self.recent_projects_frame.winfo_children():
+            child.destroy()
+        tk.Label(self.recent_projects_frame, pady=10, padx=10, background=TEXT_EDITOR_FRAME_BG,
+                 foreground=PANEL_TEXT_COLOR,
+                 text="Nedávne projekty",
+                 font=(HELVETICA_FONT_NAME, TEXT_SIZE_SECTION_HEADER), anchor='nw',
+                 justify='left').pack(fill=tk.X)
+        metadata = MetadataService.load(METADATA_FILE_PATH)
+        for recent_project in metadata.recent_projects:
+            project_frame = tk.Frame(self.recent_projects_frame, background=TEXT_EDITOR_FRAME_BG, padx=10, pady=5,
+                                     cursor="hand2")
+            project_frame.pack(fill=tk.X)
+            project_name = ttk.Label(project_frame, foreground=PANEL_TEXT_COLOR, background=TEXT_EDITOR_FRAME_BG,
+                                     text=recent_project.name)
+            project_name.pack(fill=tk.X)
+            project_path = ttk.Label(project_frame, foreground=PANEL_TEXT_COLOR, background=TEXT_EDITOR_FRAME_BG,
+                                     text=recent_project.path)
+            project_path.pack(fill=tk.X)
+            project_frame.bind("<Button-1>", partial(self.open_recent_project, recent_project))
+            project_name.bind("<Button-1>", partial(self.open_recent_project, recent_project))
+            project_path.bind("<Button-1>", partial(self.open_recent_project, recent_project))
+            ttk.Separator(project_frame, style='Grey.TSeparator').pack(fill=tk.X)
+
     def open_project_from_file(self):
         file_path = filedialog.askopenfilename(
             filetypes=[
@@ -189,6 +195,9 @@ class ProjectSelectorWindow:
         if GuiUtils.open_recent_project(project):
             self.close()
             Navigator().navigate(Navigator.MAIN_WINDOW)
+        else:
+            # RELOAD RECENT PROJECTS TO REMOVE OBSOLETE PROJECT
+            self.build_recent_projects_pane()
 
     def open_project(self, project: Project):
         if GuiUtils.open_project(project):
