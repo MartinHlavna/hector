@@ -8,7 +8,8 @@ RUN_DIRECTORY = '.'
 if "NUITKA_ONEFILE_PARENT" in os.environ:
     # If the application is compiled using nuitka it sets enviroment value
     WORKING_DIRECTORY = os.path.dirname(sys.argv[0])
-    RUN_DIRECTORY = os.path.dirname(__file__)
+    # Climb up two directories to get to the root of the project
+    RUN_DIRECTORY = os.path.join(os.path.dirname(__file__), os.pardir, os.pardir)
 elif getattr(sys, 'frozen', False):
     # If the application is run as a bundle, the PyInstaller bootloader
     # extends the sys module by a flag frozen=True
