@@ -12,7 +12,7 @@ GITHUB_TOKEN = os.getenv('GITHUB_TOKEN')
 # Hlavičky pre autentifikáciu
 headers = {}
 if GITHUB_TOKEN:
-    headers['Authorization'] = f'token {GITHUB_TOKEN}'
+    headers['Authorization'] = f'Bearer {GITHUB_TOKEN}'
 
 
 # Funkcia na získanie releasov z GitHub API
