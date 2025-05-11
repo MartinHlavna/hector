@@ -20,6 +20,14 @@ class Utils:
         return os.path.join(RUN_DIRECTORY, relative_path)
 
     @staticmethod
+    def download_file(url, path, headers):
+        r = requests.get(
+            url,
+            headers=headers
+        )
+        open(path, 'wb').write(r.content)
+
+    @staticmethod
     def get_windows_scaling_factor():
         if platform.system() == "Windows":
             # Windows API call to get DPI scaling (for Windows)
