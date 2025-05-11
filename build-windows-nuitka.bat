@@ -7,7 +7,6 @@ python.exe -m nuitka hector.py  ^
   --include-package=cacheman ^
   --include-package=hunspell ^
   --include-package-data=hunspell ^
-  --include-module=fsspec.implementations.github ^
   --include-module=spacy.lexeme ^
   --include-data-dir=images=images ^
   --include-data-dir=fonts=fonts ^

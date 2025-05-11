@@ -102,7 +102,6 @@ jobs:
             ttkthemes
             hunspell
           include-module: |
-            fsspec.implementations.github
             spacy.lexeme
           include-data-dir: |
             images=images
