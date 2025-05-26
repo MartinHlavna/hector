@@ -26,7 +26,7 @@ jobs:
       fail-fast: false
       matrix:
         os: [ubuntu-latest, windows-latest, macos-13, macos-latest, macos-15] #macos-13 because macos-latest is arm64 only and we also need to support intell CPUs
-        python_version: ["3.9", "3.10", "3.11", "3.12"] # 3.13 not yet supported
+        python_version: ["3.9", "3.10", "3.11", "3.12", "3.13"]
         exclude:
           # python 3.10 on macos 13 is not supported
           - os: macos-13

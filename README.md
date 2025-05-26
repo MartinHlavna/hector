@@ -3,7 +3,7 @@
 [![codecov](https://codecov.io/github/MartinHlavna/hector/graph/badge.svg?token=KO5BAQUVGP)](https://codecov.io/github/MartinHlavna/hector)
 [![GitHub Release](https://img.shields.io/github/v/release/MartinHlavna/hector?include_prereleases&sort=semver&display_name=release)](https://github.com/MartinHlavna/hector/releases/latest)
 ![GitHub License](https://img.shields.io/github/license/MartinHlavna/hector)
-![Static Badge](https://img.shields.io/badge/python-3.9%20%7C%203.10%20%7C%203.11%20%7C%203.12-blue)
+![Static Badge](https://img.shields.io/badge/python-3.9%20%7C%203.10%20%7C%203.11%20%7C%203.12%20%7C%203.13-blue)
 
 # Hector
 
