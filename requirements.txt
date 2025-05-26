@@ -1,7 +1,7 @@
 spacy~=3.8.7
 ttkthemes~=3.2.2
 pillow~=11.2.1
-setuptools~=80.7.1
+setuptools~=80.8.0
 cyhunspell @ https://github.com/MartinHlavna/cython_hunspell/archive/refs/tags/3.0.5.tar.gz
 svglib~=1.5.1
 reportlab~=4.4.1
