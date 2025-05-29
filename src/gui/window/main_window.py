@@ -986,7 +986,7 @@ class MainWindow:
 
     # SHOW ABOUT DIALOG
     def show_about(self):
-        about_window = tk.Toplevel(self.root)
+        about_window = tk.Toplevel(self.root, background=TEXT_EDITOR_FRAME_BG)
         about_window.title("O programe")
         GuiUtils.configure_modal(self.root, about_window)
         about_text = tk.Label(about_window, font=(HELVETICA_FONT_NAME, 10), justify=tk.LEFT, wraplength=550, pady=10,
@@ -997,13 +997,14 @@ class MainWindow:
                                    f"Cieľom programu nie je dodať zoznam problémov, ktoré má autor určite opraviť, "
                                    f"ale len zvýrazniť potenciálne problematické časti. Konečné rozhodnutie je vždy "
                                    f"na autorovi.",
+                              background=TEXT_EDITOR_FRAME_BG, foreground=PANEL_TEXT_COLOR
                               )
         about_text.pack()
-        link = tk.Label(about_window, text="Viac info", fg="blue", cursor="hand2", font=(HELVETICA_FONT_NAME, 10))
+        link = tk.Label(about_window, text="Viac info", foreground=PANEL_TEXT_COLOR, background=TEXT_EDITOR_FRAME_BG, cursor="hand2", font=(HELVETICA_FONT_NAME, 10))
         link.pack()
         link.bind("<Button-1>", lambda e: webbrowser.open(DOCUMENTATION_LINK))
         if self.ctx.has_available_update:
-            new_version_button = tk.Label(about_window, text="K dispozícií je nová verzia", fg="blue", cursor="hand2",
+            new_version_button = tk.Label(about_window, text="K dispozícií je nová verzia", foreground=PANEL_TEXT_COLOR, background=TEXT_EDITOR_FRAME_BG, cursor="hand2",
                                           font=(HELVETICA_FONT_NAME, 10))
             new_version_button.pack()
             new_version_button.bind("<Button-1>", lambda e: webbrowser.open(DOCUMENTATION_LINK))
