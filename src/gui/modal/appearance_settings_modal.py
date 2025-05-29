@@ -3,9 +3,11 @@ import tkinter as tk
 from tkinter import ttk, messagebox
 
 from src.backend.service.config_service import ConfigService
+from src.const.colors import TEXT_EDITOR_FRAME_BG, PANEL_TEXT_COLOR, PRIMARY_COLOR
 from src.const.fonts import HELVETICA_FONT_NAME, BOLD_FONT
 from src.const.paths import CONFIG_FILE_PATH
 from src.domain.config import AppearanceSettings
+from src.gui.widgets.hector_button import HectorButton
 
 
 class AppearanceSettingsModal:
@@ -13,34 +15,34 @@ class AppearanceSettingsModal:
         self.root = root
         self.config = config
         self.on_config_change = on_config_change
-        self.toplevel = tk.Toplevel(self.root)
+        self.toplevel = tk.Toplevel(self.root, background=TEXT_EDITOR_FRAME_BG)
         self.toplevel.title("Nastavenia vzhľadu")
         row = 0
         tk.Label(self.toplevel, text="Odsek", font=(HELVETICA_FONT_NAME, 12, BOLD_FONT),
-                 anchor='w').grid(
+                 anchor='w', background=TEXT_EDITOR_FRAME_BG, foreground=PANEL_TEXT_COLOR).grid(
             row=row, column=0, columnspan=1, padx=(10, 80), pady=(10, 2), sticky='w'
         )
 
         row += 1
 
-        tk.Label(self.toplevel, text="Odsadenie prvého riadku", anchor='w').grid(
+        tk.Label(self.toplevel, text="Odsadenie prvého riadku", anchor='w', background=TEXT_EDITOR_FRAME_BG, foreground=PANEL_TEXT_COLOR).grid(
             row=row, column=0, padx=10, pady=2, sticky='w'
         )
-        self.paragraph_lmargin1_entry = ttk.Spinbox(self.toplevel, from_=1, to=100, width=6, justify=tk.LEFT)
+        self.paragraph_lmargin1_entry = ttk.Spinbox(self.toplevel, from_=1, to=100, width=6, justify=tk.LEFT, style='hector.TSpinbox')
         self.paragraph_lmargin1_entry.grid(row=row, column=1, padx=10, pady=2, sticky='w')
         self.paragraph_lmargin1_entry.set(self.config.appearance_settings.paragraph_lmargin1)
-        tk.Label(self.toplevel, text="milimetrov", anchor='w').grid(
+        tk.Label(self.toplevel, text="milimetrov", anchor='w', background=TEXT_EDITOR_FRAME_BG, foreground=PANEL_TEXT_COLOR).grid(
             row=row, column=2, padx=10, pady=2, sticky='w'
         )
 
         row += 1
-        tk.Label(self.toplevel, text="Medzera za odsekom", anchor='w').grid(
+        tk.Label(self.toplevel, text="Medzera za odsekom", anchor='w', background=TEXT_EDITOR_FRAME_BG, foreground=PANEL_TEXT_COLOR).grid(
             row=row, column=0, padx=10, pady=2, sticky='w'
         )
-        self.paragraph_spacing3_entry = ttk.Spinbox(self.toplevel, from_=1, to=100, width=6)
+        self.paragraph_spacing3_entry = ttk.Spinbox(self.toplevel, from_=1, to=100, width=6, style='hector.TSpinbox')
         self.paragraph_spacing3_entry.grid(row=row, column=1, padx=10, pady=2, sticky='w')
         self.paragraph_spacing3_entry.set(self.config.appearance_settings.paragraph_spacing3)
-        tk.Label(self.toplevel, text="milimetrov", anchor='w').grid(
+        tk.Label(self.toplevel, text="milimetrov", anchor='w', background=TEXT_EDITOR_FRAME_BG, foreground=PANEL_TEXT_COLOR).grid(
             row=row, column=2, padx=10, pady=2, sticky='w'
         )
 
@@ -52,10 +54,15 @@ class AppearanceSettingsModal:
         if platform.system() == 'Windows':
             save_btn_col = 1
             revert_btn_col = 2
-        ttk.Button(self.toplevel, text="Uložiť", command=self.save_settings).grid(
+        HectorButton(self.toplevel, text="Uložiť", command=self.save_settings, cursor="hand2",
+                     background=PRIMARY_COLOR, foreground=PANEL_TEXT_COLOR, relief=tk.FLAT, borderwidth=0,
+                     highlightbackground=PANEL_TEXT_COLOR,
+                     padx=10, pady=5).grid(
             row=row, column=save_btn_col, columnspan=1, padx=10, pady=10, sticky='w'
         )
-        ttk.Button(self.toplevel, text="Obnoviť pôvodné", command=self.reset_settings).grid(
+        HectorButton(self.toplevel, text="Obnoviť pôvodné", command=self.reset_settings, cursor="hand2",
+                     padx=10, pady=5,
+                     background=PRIMARY_COLOR, foreground=PANEL_TEXT_COLOR, relief=tk.FLAT, borderwidth=0).grid(
             row=row, column=revert_btn_col, columnspan=1, padx=10, pady=10, sticky='w'
         )
 

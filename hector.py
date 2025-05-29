@@ -5,13 +5,15 @@ import sys
 import tkinter as tk
 from tkinter import messagebox, ttk
 
+from pygments.styles.dracula import foreground
 from ttkthemes import ThemedTk
 
 from src.backend.run_context import RunContext
 from src.backend.service.import_service import ImportService
 from src.backend.service.nlp_service import NlpService
 from src.backend.service.spellcheck_service import SpellcheckService
-from src.const.colors import ACCENT_COLOR, PRIMARY_COLOR, ACCENT_2_COLOR, PANEL_TEXT_COLOR, TEXT_EDITOR_FRAME_BG
+from src.const.colors import ACCENT_COLOR, PRIMARY_COLOR, ACCENT_2_COLOR, PANEL_TEXT_COLOR, TEXT_EDITOR_FRAME_BG, \
+    TEXT_EDITOR_BG, EDITOR_TEXT_COLOR
 from src.const.values import VERSION
 from src.gui.navigator import Navigator
 from src.gui.window.main_window import MainWindow
@@ -68,6 +70,27 @@ if __name__ == "__main__":
     )
     style.configure("panel.Treeview", background=TEXT_EDITOR_FRAME_BG, foreground=PANEL_TEXT_COLOR,
                     fieldbackground=TEXT_EDITOR_FRAME_BG, bordercolor=ACCENT_2_COLOR, lightcolor=ACCENT_2_COLOR)
+    style.configure('hector.TSpinbox',
+                    fieldbackground=TEXT_EDITOR_BG,
+                    bordercolor=TEXT_EDITOR_BG,
+                    darkcolor=TEXT_EDITOR_BG,
+                    selectbackground=TEXT_EDITOR_BG,
+                    background=TEXT_EDITOR_BG,
+                    lightcolor=TEXT_EDITOR_BG,
+                    arrowcolor=EDITOR_TEXT_COLOR,
+                    foreground=EDITOR_TEXT_COLOR,
+                    insertcolor=EDITOR_TEXT_COLOR,
+                    arrowsize=12
+                    )
+    style.configure('hector.TCheckbutton',
+                    background=TEXT_EDITOR_FRAME_BG,
+                    focuscolor=TEXT_EDITOR_FRAME_BG,
+                    foreground=EDITOR_TEXT_COLOR,
+                    )
+    style.map('hector.TCheckbutton', background=[
+        ('disabled', TEXT_EDITOR_FRAME_BG),
+        ('selected', TEXT_EDITOR_FRAME_BG),
+        ('!selected', TEXT_EDITOR_FRAME_BG)])
     photo = tk.PhotoImage(file=Utils.resource_path('images/hector-icon.png'))
     root.wm_iconphoto(True, photo)
     splash = SplashWindow(root)
