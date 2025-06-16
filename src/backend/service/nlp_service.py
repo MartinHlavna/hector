@@ -105,6 +105,7 @@ class NlpService:
             nlp.remove_pipe('tagger')
             nlp.remove_pipe('morphologizer')
             nlp.remove_pipe('trainable_lemmatizer')
+            nlp.remove_pipe('tok2vec')
             print(nlp.pipe_names)
             # REGISTER SPACY EXTENSIONS
             Token.set_extension("is_word", default=False, force=True)
