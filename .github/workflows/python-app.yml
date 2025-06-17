@@ -78,7 +78,7 @@ jobs:
     - name: Test with pytest
       run: |
         pip install pytest pytest-cov
-        pytest -s --tb=line --github_token=${{ secrets.GITHUB_TOKEN }} --github_user=MartinHlavna --cov --cov-report=xml --junitxml=junit.xml -o junit_family=legacy
+        pytest --github_token=${{ secrets.GITHUB_TOKEN }} --github_user=MartinHlavna --cov --cov-report=xml --junitxml=junit.xml -o junit_family=legacy
     - name: Upload test results to Codecov
       if: ${{ !cancelled() }}
       uses: codecov/test-results-action@v1
