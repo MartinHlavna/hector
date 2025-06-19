@@ -40,6 +40,7 @@ from src.gui.gui_utils import GuiUtils
 from src.gui.modal.analysis_settings_modal import AnalysisSettingsModal
 from src.gui.modal.appearance_settings_modal import AppearanceSettingsModal
 from src.gui.modal.new_project_item_modal import NewProjectItemModal
+from src.gui.modal.project_edit_modal import EditProjectModal
 from src.gui.navigator import Navigator
 from src.gui.widgets.menu import MenuItem, HectorMenu, MenuSeparator, ContextMenu
 from src.gui.widgets.htext_editor import HTextEditor
@@ -101,6 +102,9 @@ class MainWindow:
             MenuItem(label="Projekt",
                      underline_index=0,
                      submenu=[
+                         MenuItem(label="Upraviť",
+                                  command=self.show_project_edit,
+                                  ),
                          MenuItem(label="Nastavenia analýzy",
                                   command=partial(
                                       self.show_analysis_settings,
@@ -262,18 +266,20 @@ class MainWindow:
         left_side_panel_project = tk.Frame(left_panel_notebook, width=300, relief=tk.FLAT, borderwidth=1,
                                            background=PRIMARY_COLOR)
         left_side_panel_project.pack(fill=tk.BOTH, side=tk.LEFT, expand=0)
-        tk.Label(left_side_panel_project, pady=10, background=PRIMARY_COLOR, foreground=PANEL_TEXT_COLOR,
+        self.project_name_element = tk.Label(left_side_panel_project, pady=10, background=PRIMARY_COLOR, foreground=PANEL_TEXT_COLOR,
                  wraplength=300,
                  text=f"{self.ctx.project.name}",
                  font=(HELVETICA_FONT_NAME, TEXT_SIZE_SECTION_HEADER), anchor='n',
                  padx=10,
-                 justify='left').pack(fill=tk.X)
-        tk.Label(left_side_panel_project, pady=10, background=PRIMARY_COLOR, foreground=PANEL_TEXT_COLOR,
+                 justify='left')
+        self.project_name_element.pack(fill=tk.X)
+        self.project_description_element =tk.Label(left_side_panel_project, pady=10, background=PRIMARY_COLOR, foreground=PANEL_TEXT_COLOR,
                  wraplength=300,
                  text=f"{self.ctx.project.description}",
                  anchor='n',
                  padx=10,
-                 justify='left').pack(fill=tk.X)
+                 justify='left')
+        self.project_description_element.pack(fill=tk.X)
         separator = ttk.Separator(left_side_panel_project, orient='horizontal')
         separator.pack(fill=tk.X, padx=10)
         self.project_tree = ttk.Treeview(left_side_panel_project, show="tree", style="panel.Treeview")
@@ -715,7 +721,6 @@ class MainWindow:
     def open_text_file(self, item):
         if item is not None:
             self.ctx.current_file = item
-            self.root.title(f"{item.name} | {self.ctx.project.name} | Hector")
             item.contents = ProjectService.load_file_contents(self.ctx.project, item)
             self.text_editor.set_text(item.contents.raw_text)
             self.text_editor.set_filename(item.name)
@@ -723,10 +728,10 @@ class MainWindow:
             self.text_editor.analyze_text(True)
         else:
             self.ctx.current_file = None
-            self.root.title(f"{self.ctx.project.name} | Hector")
             self.text_editor.set_text("")
             self.text_editor.set_filename("(neuloźený súbor)")
             self.text_editor.analyze_text(True)
+        self.update_title()
 
     # LOAD TEXT FILE
     def import_file(self):
@@ -984,6 +989,24 @@ class MainWindow:
                                                   lambda: self.text_editor.analyze_text(True))
         GuiUtils.configure_modal(self.root, settings_window.toplevel, height=150, width=780)
 
+    # SHOW SETTINGS WINDOW
+    def show_project_edit(self):
+        edit_project_modal = EditProjectModal(self.root, self.ctx.project,
+                                              self.on_project_change)
+        GuiUtils.configure_modal(self.root, edit_project_modal.toplevel, width=500, height=180)
+
+    def on_project_change(self):
+        self.update_title()
+        self.project_name_element.config(text=self.ctx.project.name)
+        self.project_description_element.config(text=self.ctx.project.description)
+
+    # UPDATE TITLE
+    def update_title(self):
+        if (self.ctx.current_file is not None):
+            self.root.title(f"{self.ctx.current_file.name} | {self.ctx.project.name} | Hector")
+        else:
+            self.root.title(f"{self.ctx.project.name} | Hector")
+
     # SHOW ABOUT DIALOG
     def show_about(self):
         about_window = tk.Toplevel(self.root, background=TEXT_EDITOR_FRAME_BG)
@@ -1000,11 +1023,13 @@ class MainWindow:
                               background=TEXT_EDITOR_FRAME_BG, foreground=PANEL_TEXT_COLOR
                               )
         about_text.pack()
-        link = tk.Label(about_window, text="Viac info", foreground=PANEL_TEXT_COLOR, background=TEXT_EDITOR_FRAME_BG, cursor="hand2", font=(HELVETICA_FONT_NAME, 10))
+        link = tk.Label(about_window, text="Viac info", foreground=PANEL_TEXT_COLOR, background=TEXT_EDITOR_FRAME_BG,
+                        cursor="hand2", font=(HELVETICA_FONT_NAME, 10))
         link.pack()
         link.bind("<Button-1>", lambda e: webbrowser.open(DOCUMENTATION_LINK))
         if self.ctx.has_available_update:
-            new_version_button = tk.Label(about_window, text="K dispozícií je nová verzia", foreground=PANEL_TEXT_COLOR, background=TEXT_EDITOR_FRAME_BG, cursor="hand2",
+            new_version_button = tk.Label(about_window, text="K dispozícií je nová verzia", foreground=PANEL_TEXT_COLOR,
+                                          background=TEXT_EDITOR_FRAME_BG, cursor="hand2",
                                           font=(HELVETICA_FONT_NAME, 10))
             new_version_button.pack()
             new_version_button.bind("<Button-1>", lambda e: webbrowser.open(DOCUMENTATION_LINK))
