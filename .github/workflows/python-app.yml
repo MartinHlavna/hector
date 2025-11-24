@@ -25,67 +25,60 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu-latest, windows-latest, macos-13, macos-latest, macos-15] #macos-13 because macos-latest is arm64 only and we also need to support intell CPUs
-        python_version: ["3.9", "3.10", "3.11", "3.12", "3.13"]
-        exclude:
-          # python 3.10 on macos 13 is not supported
-          - os: macos-13
-            python_version: "3.10"
-          # python 3.10 on macos 13 is not supported
-          - os: macos-13
-            python_version: "3.9"
+        os: [ ubuntu-latest, windows-latest, macos-latest, macos-15 ]
+        python_version: [ "3.10", "3.11", "3.12", "3.13" ]
     runs-on: ${{ matrix.os }}
     steps:
-    - uses: actions/checkout@v4
-    - name: Setup hector enviroment
-      id: setup-hector-enviroment
-      uses: ./.github/actions/setup-hector-enviroment
-      with:
-        python_version: ${{matrix.python_version}}
-    - name: Check dependencies licences
-      if: matrix.os == 'ubuntu-latest'
-      id: generate-licence-check-report
-      uses: ./.github/actions/generate-licence-check-report
-      with:
-        python_version: ${{matrix.python_version}}
-    - name: Lint with flake8
-      if: matrix.os == 'ubuntu-latest'
-      run: |
-        # Run flake8 and capture the output for errors
-        output=$(flake8 . --select=E9,F63,F7,F82 --show-source || true)
-        echo "$output"
-
-        # Check if the output contains any lint issues
-        if [ -n "$output" ]; then
-          message="$output"
-        else
-          message=""
-        fi
-
-        # Run flake8 with exit-zero to capture warnings
-        output=$(flake8 . --exit-zero --max-complexity=10 --max-line-length=127 || true)
-        echo "$output"
-
-        # Append the warnings to the message
-        if [ -n "$output" ]; then
-          message="${message}Warnings:\n$output\n"
-        fi
-
-        # Output warning annotation with all lint issues
-        if [ -n "$message" ]; then
-          echo -e "::warning:: Lint issues found. See log for details."
-        fi
-    - name: Test with pytest
-      run: |
-        pip install pytest pytest-cov
-        pytest --github_token=${{ secrets.GITHUB_TOKEN }} --github_user=MartinHlavna --cov --cov-report=xml --junitxml=junit.xml -o junit_family=legacy
-    - name: Upload test results to Codecov
-      if: ${{ !cancelled() }}
-      uses: codecov/test-results-action@v1
-      with:
-        token: ${{ secrets.CODECOV_TOKEN }}
-    - name: Upload coverage results to Codecov
-      uses: codecov/codecov-action@v4
-      with:
-        token: ${{ secrets.CODECOV_TOKEN }}
+      - uses: actions/checkout@v4
+      - name: Setup hector enviroment
+        id: setup-hector-enviroment
+        uses: ./.github/actions/setup-hector-enviroment
+        with:
+          python_version: ${{matrix.python_version}}
+      - name: Check dependencies licences
+        if: matrix.os == 'ubuntu-latest'
+        id: generate-licence-check-report
+        uses: ./.github/actions/generate-licence-check-report
+        with:
+          python_version: ${{matrix.python_version}}
+      - name: Lint with flake8
+        if: matrix.os == 'ubuntu-latest'
+        run: |
+          # Run flake8 and capture the output for errors
+          output=$(flake8 . --select=E9,F63,F7,F82 --show-source || true)
+          echo "$output"
+          
+          # Check if the output contains any lint issues
+          if [ -n "$output" ]; then
+            message="$output"
+          else
+            message=""
+          fi
+          
+          # Run flake8 with exit-zero to capture warnings
+          output=$(flake8 . --exit-zero --max-complexity=10 --max-line-length=127 || true)
+          echo "$output"
+          
+          # Append the warnings to the message
+          if [ -n "$output" ]; then
+            message="${message}Warnings:\n$output\n"
+          fi
+          
+          # Output warning annotation with all lint issues
+          if [ -n "$message" ]; then
+            echo -e "::warning:: Lint issues found. See log for details."
+          fi
+      - name: Test with pytest
+        run: |
+          pip install pytest pytest-cov
+          pytest --github_token=${{ secrets.GITHUB_TOKEN }} --github_user=MartinHlavna --cov --cov-report=xml --junitxml=junit.xml -o junit_family=legacy
+      - name: Upload test results to Codecov
+        if: ${{ !cancelled() }}
+        uses: codecov/test-results-action@v1
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }}
+      - name: Upload coverage results to Codecov
+        uses: codecov/codecov-action@v4
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }}
 
